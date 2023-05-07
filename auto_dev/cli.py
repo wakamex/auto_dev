@@ -68,13 +68,20 @@ def lint(verbose, path):
 
 @cli.command()
 @click.option("-v", "--verbose", is_flag=True, default=False)
-def test(verbose):
+@click.option(
+    "-p",
+    "--path",
+    help="Path to directory to test. If not provided will test all packages.",
+    type=click.Path(exists=True, file_okay=False),
+    default=None,
+)
+def test(verbose, path):
     """
     Runs the test tooling
     """
     click.echo("Testing Open Autonomy Packages")
     try:
-        packages = get_packages()
+        packages = get_packages() if not path else [path]
     except Exception as error:
         raise click.ClickException(f"Unable to get packages are you in the right directory? {error}")
     results = {}

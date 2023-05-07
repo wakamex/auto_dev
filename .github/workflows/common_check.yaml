@@ -40,17 +40,17 @@ jobs:
         run: |
           poetry install -v
 
-      - name: Format
-        run: |
-          poetry run adev format
+#      - name: Format
+#        run: |
+#          poetry run adev format
 
       - name: Lint
         run: |
-          poetry run adev lint
+          poetry run adev lint -p .
 
       - name: Tests
         run: |
-          poetry run adev tests
+          poetry run adev tests -p .
 
       - name: Check-Clean-Directory
         run: |

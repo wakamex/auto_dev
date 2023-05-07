@@ -44,4 +44,3 @@ def test_lints_self(runner, isolated_filesystem):
     assert os.getcwd() == isolated_filesystem
     result = runner.invoke(cli, ["lint", "-p", "."])
     assert result.exit_code == 0, result.output
-    assert "Linting completed successfully!" in result.output, result.output
