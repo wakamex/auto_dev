@@ -26,8 +26,8 @@ def isolated_filesystem():
     with tempfile.TemporaryDirectory() as tmpdir:
         test_dir = f"{tmpdir}/dir"
         shutil.copytree(Path(cwd), test_dir)
-        os.chdir(f"{tmpdir}/dir")
-        yield f"{tmpdir}/dir"
+        os.chdir(test_dir)
+        yield test_dir
     os.chdir(cwd)
 
 
