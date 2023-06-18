@@ -6,6 +6,7 @@ It is used by the lint and test functions.
 
 """
 
+import os
 import subprocess
 from typing import List, Optional, Union
 
@@ -29,7 +30,11 @@ class CommandExecutor:
         logger.debug(f"Executing command:\n\"\"\n{' '.join(self.command)}\n\"\"")
         try:
             result = subprocess.run(
-                self.command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=self.cwd, check=False
+                self.command,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                cwd=self.cwd, check=False,
+                env=os.environ
             )
             if verbose:
                 if len(result.stdout) > 0:
