@@ -11,8 +11,10 @@ pip install autonomy-dev[all]
 bump the version in pyoproject and create a new branch and tag
 
 ```bash
-git checkout -b v0.1.5
-git tag v0.1.5
-git push --tag
+export new_version=v0.1.5
+git checkout -b $new_version
+git add .
+git tag $new_version
 git push --set-upstream origin (git rev-parse --abbrev-ref HEAD)
+git push --tag
 ```
