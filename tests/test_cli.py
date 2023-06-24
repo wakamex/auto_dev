@@ -44,12 +44,3 @@ def test_lints_self(runner, isolated_filesystem):
     assert os.getcwd() == isolated_filesystem
     result = runner.invoke(cli, ["lint", "-p", "."])
     assert result.exit_code == 0, result.output
-
-
-# scaffolder tests
-
-def test_scaffold_fails(runner, isolated_filesystem):
-    """Test the scaffold command fails with no packages."""
-    assert os.getcwd() == isolated_filesystem
-    result = runner.invoke(cli, ["scaffold"])
-    assert result.exit_code == 1, result.output

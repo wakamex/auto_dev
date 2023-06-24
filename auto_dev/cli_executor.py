@@ -30,11 +30,7 @@ class CommandExecutor:
         logger.debug(f"Executing command:\n\"\"\n{' '.join(self.command)}\n\"\"")
         try:
             result = subprocess.run(
-                self.command,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                cwd=self.cwd, check=False,
-                env=os.environ
+                self.command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=self.cwd, check=False, env=os.environ
             )
             if verbose:
                 if len(result.stdout) > 0:

@@ -10,7 +10,7 @@ from rich.logging import RichHandler
 from .constants import AUTONOMY_PACKAGES_FILE, DEFAULT_ENCODING
 
 
-def get_logger(name=__name__):
+def get_logger(name=__name__, log_level="INFO"):
     """Get the logger."""
     msg_format = "%(message)s"
     handler = RichHandler(
@@ -20,6 +20,7 @@ def get_logger(name=__name__):
     logging.basicConfig(level="NOTSET", format=msg_format, datefmt="[%X]", handlers=[handler])
 
     log = logging.getLogger(name)
+    log.setLevel(log_level)
     return log
 
 
