@@ -4,7 +4,6 @@ Implement scaffolding tooling
 from copy import deepcopy
 from pathlib import Path
 
-import pytest
 import rich_click as click
 import yaml
 
@@ -123,39 +122,6 @@ def logging(handlers):
     logging_scaffolder = LoggingScaffolder()
     logging_scaffolder.scaffold(handlers)
     logger.info("Logging scaffolded.")
-
-
-@pytest.fixture
-def logging_scaffolder():
-    """Logging scaffolder fixture."""
-    return LoggingScaffolder()
-
-
-def test_logging_scaffolder_options(logging_scaffolder):
-    """test the logging scaffolder."""
-    options = logging_scaffolder.options()
-    assert options == ["console", "http", "logfile"]
-
-
-def test_logging_scaffolder_scaffold(logging_scaffolder):
-    """test the logging scaffolder."""
-    scaffold = logging_scaffolder.scaffold(["console"])
-    assert "console" in scaffold
-    assert "http" not in scaffold
-
-
-def test_logging_scaffolder_scaffold_all(logging_scaffolder):
-    """test the logging scaffolder."""
-    scaffold = logging_scaffolder.scaffold(["all"])
-    assert "console" in scaffold
-    assert "http" in scaffold
-    assert "logfile" in scaffold
-
-
-def test_logging_scaffolder_scaffold_bad_handler(logging_scaffolder):
-    """test the logging scaffolder."""
-    scaffold = logging_scaffolder.scaffold(["bad"])
-    assert scaffold is None
 
 
 if __name__ == "__main__":

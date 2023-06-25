@@ -26,7 +26,7 @@ def test(ctx, path):
     """
     verbose = ctx.obj["VERBOSE"]
     logger = ctx.obj["LOGGER"]
-    logger.info("Testing Open Autonomy Packages")
+    logger.info(f"Testing path: `{path}`")
     try:
         packages = get_packages() if not path else [path]
     except Exception as error:
