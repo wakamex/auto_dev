@@ -142,7 +142,7 @@ def logging_scaffolder():
 def test_logging_scaffolder_options(logging_scaffolder):
     """test the logging scaffolder."""
     options = logging_scaffolder.options()
-    assert options == ["console", "http"]
+    assert options == ["console", "http", "logfile"]
 
 
 def test_logging_scaffolder_scaffold(logging_scaffolder):
@@ -157,6 +157,7 @@ def test_logging_scaffolder_scaffold_all(logging_scaffolder):
     scaffold = logging_scaffolder.scaffold(["all"])
     assert "console" in scaffold
     assert "http" in scaffold
+    assert "logfile" in scaffold
 
 
 def test_logging_scaffolder_scaffold_bad_handler(logging_scaffolder):
