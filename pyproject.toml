@@ -1,7 +1,7 @@
 [tool]
 [tool.poetry]
 name = "autonomy_dev"
-version = "0.1.7"
+version = "0.1.8"
 homepage = "https://github.com/8ball030/auto_dev"
 description = "A collection of tooling to enable open source development of autonomy tools"
 authors = ["8Baller <8ball030@gmail.com>"]
@@ -25,7 +25,7 @@ packages = [
 
 
 [tool.poetry.dependencies]
-python = ">=3.7,<3.11"
+python = ">=3.7,<=3.11"
 click = ">=8.0.2"
 black = "^22.6.0"
 mypy = "^0.971"
