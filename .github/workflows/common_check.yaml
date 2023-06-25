@@ -40,9 +40,9 @@ jobs:
         run: |
           poetry install -v
 
-#      - name: Format
-#        run: |
-#          poetry run adev format
+      - name: Format
+        run: |
+          poetry run adev fmt -p .
 
       - name: Lint
         run: |
