@@ -36,7 +36,8 @@ def test_lint_fails(runner, isolated_filesystem):
     assert os.getcwd() == isolated_filesystem
     result = runner.invoke(cli, ["lint"])
     assert result.exit_code == 1, result.output
-    assert "Unable to get packages" in result.output, result.output
+    assert result.exception is not None
+    assert isinstance(result.exception, FileNotFoundError)
 
 
 def test_lints_self(runner, isolated_filesystem):
