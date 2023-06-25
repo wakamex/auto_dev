@@ -2,23 +2,26 @@
 Base CLI for auto_dev.
 """
 import os
+from dataclasses import dataclass
 
 import rich_click as click
 
-from auto_dev.constants import DEFAULT_ENCODING
+from auto_dev.constants import DEFAULT_ENCODING, PLUGIN_FOLDER
 from auto_dev.utils import get_logger
 
-plugin_folder = os.path.join(os.path.dirname(__file__), 'commands')
 click.rich_click.USE_RICH_MARKUP = True
 
 
+@dataclass
 class CLIs:
     """C;I class."""
+
+    plugin_folder: str = PLUGIN_FOLDER
 
     def list_commands(self):
         """List commands."""
         results = []
-        for filename in os.listdir(plugin_folder):
+        for filename in os.listdir(self.plugin_folder):
             if filename.endswith('.py') and filename != '__init__.py':
                 results.append(filename[:-3])
         results.sort()
@@ -27,7 +30,7 @@ class CLIs:
     def get_command(self, name):
         """Get the command."""
         name_space = {}
-        file_name = os.path.join(plugin_folder, name + '.py')
+        file_name = os.path.join(self.plugin_folder, name + '.py')
         with open(file_name, encoding=DEFAULT_ENCODING) as file:
             code = compile(file.read(), file_name, 'exec')
             eval(code, name_space, name_space)  # pylint: disable=eval-used

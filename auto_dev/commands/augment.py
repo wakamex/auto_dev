@@ -69,34 +69,31 @@ HANDLERS = {
 }
 
 
-class Scaffolder:
-    """Base scaffolder."""
-
-    def write(self, path: str, content: dict):
-        """Safe write the contents to the path using yaml."""
-        with open(path, "w", encoding=DEFAULT_ENCODING) as file:
-            yaml.dump(content, file, default_flow_style=False)
+def write(path: str, content: dict):
+    """Safe write the contents to the path using yaml."""
+    with open(path, "w", encoding=DEFAULT_ENCODING) as file:
+        yaml.dump(content, file, default_flow_style=False)
 
 
-class LoggingScaffolder(Scaffolder):
+class LoggingScaffolder:
     """Logging scaffolder."""
 
-    def __init__(self):
+    def __init__(self, handlers: list = None):
         """Init scaffolder."""
         self.logger = get_logger()
-
-    def generate(self, handlers: list):
-        """Scaffold logging."""
         if not handlers:
             raise ValueError("No handlers provided")
         if handlers == ["all"]:
             handlers = HANDLERS
+        self.handlers = handlers
 
-        else:
-            for handler in handlers:
-                if handler not in HANDLERS:
-                    raise ValueError(f"Handler '{handler}' not found")
-                handlers = {handler: HANDLERS[handler] for handler in handlers}
+    def generate(self, handlers: list):
+        """Scaffold logging."""
+
+        for handler in self.handlers:
+            if handler not in HANDLERS:
+                raise ValueError(f"Handler '{handler}' not found")
+            handlers = {handler: HANDLERS[handler] for handler in handlers}
         logging_config = deepcopy(BASE_LOGGING_CONFIG)
         logging_config["logging_config"]["handlers"] = handlers
         logging_config["logging_config"]["loggers"]["aea"]["handlers"] = list(handlers.keys())
@@ -110,12 +107,8 @@ class LoggingScaffolder(Scaffolder):
         aea_config = yaml.safe_load(Path(path).read_text(encoding=DEFAULT_ENCODING))
         logging_config = self.generate(handlers)
         aea_config.update(logging_config)
-        self.write(path, aea_config)
+        write(path, aea_config)
         return logging_config
-
-    def options(self):
-        """Get options for the logging scaffolder."""
-        return list(HANDLERS.keys())
 
 
 @cli.group()
@@ -124,7 +117,7 @@ def augment():
 
 
 @augment.command()
-@click.argument("handlers", nargs=-1, type=click.Choice(LoggingScaffolder().options()), required=True)
+@click.argument("handlers", nargs=-1, type=click.Choice(HANDLERS.keys()), required=True)
 def logging(handlers):
     """Augment an aeas logging configuration."""
     logger.info(f"Augmenting logging with handlers: {handlers}")
