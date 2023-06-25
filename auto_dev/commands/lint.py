@@ -5,8 +5,7 @@ Simple cli to allow users to perform the following actions against an autonomy r
 - test
 - build
 """
-from functools import partial, reduce
-from glob import glob
+from functools import partial
 from multiprocessing import Pool
 
 import rich_click as click
@@ -14,7 +13,7 @@ from rich.progress import track
 
 from auto_dev.base import build_cli
 from auto_dev.lint import check_path
-from auto_dev.utils import get_packages
+from auto_dev.utils import get_paths
 
 cli = build_cli()
 
@@ -36,12 +35,7 @@ def lint(ctx, path):
     verbose = ctx.obj["VERBOSE"]
     num_processes = ctx.obj["NUM_PROCESSES"]
     logger.info("Linting Open Autonomy Packages")
-    try:
-        packages = get_packages() if not path else [path]
-    except Exception as error:
-        raise click.ClickException(f"Unable to get packages are you in the right directory? {error}")
-
-    paths = reduce(lambda x, y: x + y, [glob(f"{package}/**/*py", recursive=True) for package in packages])
+    paths = get_paths(path)
     logger.info(f"Linting {len(paths)} files...")
     if num_processes > 1:
         results = multi_thread_lint(paths, verbose, num_processes)

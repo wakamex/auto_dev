@@ -3,7 +3,10 @@ Utilities for auto_dev.
 """
 import json
 import logging
+from functools import reduce
+from glob import glob
 from pathlib import Path
+from typing import Optional
 
 from rich.logging import RichHandler
 
@@ -37,3 +40,11 @@ def get_packages():
             raise FileNotFoundError(f"Package {package} does not exist")
         results.append(package_path)
     return results
+
+
+def get_paths(path=Optional[str]):
+    """Get the paths."""
+    if not path and not Path(AUTONOMY_PACKAGES_FILE).exists():
+        raise FileNotFoundError("No path was provided and no default packages file found")
+    packages = get_packages() if not path else [path]
+    return reduce(lambda x, y: x + y, [glob(f"{package}/**/*py", recursive=True) for package in packages])

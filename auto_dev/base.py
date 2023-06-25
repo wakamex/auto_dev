@@ -59,11 +59,18 @@ def build_cli(plugins=False):
     @click.option("-n", "--num-processes", default=1, help="Number of processes to use for linting", type=int)
     @click.pass_context
     def cli(ctx, log_level=False, verbose=False, num_processes=1):
-        """Cli linting tooling."""
+        """Cli development tooling."""
         ctx.obj = {}
         ctx.obj["VERBOSE"] = verbose
         ctx.obj["LOGGER"] = get_logger(log_level=log_level)
         ctx.obj["NUM_PROCESSES"] = num_processes
+        ctx.obj["LOGGER"].info("Starting Auto Dev...")
+        if verbose:
+            ctx.obj["LOGGER"].info("Verbose mode enabled")
+        if num_processes > 1:
+            ctx.obj["LOGGER"].info(f"Using {num_processes} processes for processing")
+        if log_level:
+            ctx.obj["LOGGER"].info(f"Setting log level to {log_level}")
 
     if plugins:
         plugins = CLIs().get_all_commands()

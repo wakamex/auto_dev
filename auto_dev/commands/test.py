@@ -4,17 +4,14 @@ Test command cli module.
 import rich_click as click
 from rich.progress import track
 
+from auto_dev.base import build_cli
 from auto_dev.test import test_path
 from auto_dev.utils import get_packages
 
-
-@click.group()
-def cli():
-    """Cli testing tooling."""
+cli = build_cli()
 
 
 @cli.command()
-@click.option("-v", "--verbose", is_flag=True, default=False)
 @click.option(
     "-p",
     "--path",
@@ -22,11 +19,14 @@ def cli():
     type=click.Path(exists=True, file_okay=False),
     default=None,
 )
-def test(verbose, path):
+@click.pass_context
+def test(ctx, path):
     """
     Runs the test tooling
     """
-    click.echo("Testing Open Autonomy Packages")
+    verbose = ctx.obj["VERBOSE"]
+    logger = ctx.obj["LOGGER"]
+    logger.info("Testing Open Autonomy Packages")
     try:
         packages = get_packages() if not path else [path]
     except Exception as error:
@@ -44,3 +44,7 @@ def test(verbose, path):
         raise click.ClickException("Testing failed!")
 
     click.echo("Testing completed successfully!")
+
+
+if __name__ == "__main__":
+    cli()  # pylint: disable=no-value-for-parameter

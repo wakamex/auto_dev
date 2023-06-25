@@ -44,3 +44,10 @@ def test_lints_self(runner, isolated_filesystem):
     assert os.getcwd() == isolated_filesystem
     result = runner.invoke(cli, ["lint", "-p", "."])
     assert result.exit_code == 0, result.output
+
+
+def test_formats_self(runner, isolated_filesystem):
+    """Test the format command works with the current package."""
+    assert os.getcwd() == isolated_filesystem
+    result = runner.invoke(cli, ["fmt", "-p", "."])
+    assert result.exit_code == 0, result.output

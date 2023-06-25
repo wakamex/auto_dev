@@ -78,19 +78,18 @@ def write(path: str, content: dict):
 class LoggingScaffolder:
     """Logging scaffolder."""
 
-    def __init__(self, handlers: list = None):
+    def __init__(self):
         """Init scaffolder."""
         self.logger = get_logger()
+
+    def generate(self, handlers: list):
+        """Scaffold logging."""
+        self.logger.info(f"Generating logging config with handlers: {handlers}")
         if not handlers:
             raise ValueError("No handlers provided")
         if handlers == ["all"]:
             handlers = HANDLERS
-        self.handlers = handlers
-
-    def generate(self, handlers: list):
-        """Scaffold logging."""
-
-        for handler in self.handlers:
+        for handler in handlers:
             if handler not in HANDLERS:
                 raise ValueError(f"Handler '{handler}' not found")
             handlers = {handler: HANDLERS[handler] for handler in handlers}

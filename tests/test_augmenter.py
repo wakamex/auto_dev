@@ -19,9 +19,10 @@ def isolated_filesystem():
         test_dir = f"{tmpdir}/dir"
         shutil.copytree(Path(cwd), test_dir)
         os.chdir(test_dir)
+        Path("aea-config.yaml").write_text("author: aea-config.yaml\nversion: 1.0.0\n", encoding="utf-8")
         yield test_dir
     os.chdir(cwd)
-    Path("aea-config.yaml").write_text("author: aea-config.yaml\nversion: 1.0.0\n", encoding="utf-8")
+
 
 @pytest.fixture
 def logging_scaffolder(isolated_filesystem):
@@ -30,11 +31,6 @@ def logging_scaffolder(isolated_filesystem):
     return LoggingScaffolder()
 
 
-def test_logging_scaffolder_options(logging_scaffolder):
-    """test the logging scaffolder."""
-    options = logging_scaffolder.options()
-    assert options == ["console", "http", "logfile"]
-
 def test_logging_scaffolder_scaffold_all(logging_scaffolder):
     """test the logging scaffolder."""
     scaffold = logging_scaffolder.scaffold(["all"])
@@ -42,12 +38,14 @@ def test_logging_scaffolder_scaffold_all(logging_scaffolder):
     assert "http" in scaffold['logging_config']['handlers']
     assert "logfile" in scaffold['logging_config']['handlers']
 
+
 def test_logging_scaffolder_scaffold(logging_scaffolder):
     """test the logging scaffolder."""
     scaffold = logging_scaffolder.scaffold(["console"])
     assert "console" in scaffold['logging_config']['handlers']
     assert "http" not in scaffold['logging_config']['handlers']
     assert "logfile" not in scaffold['logging_config']['handlers']
+
 
 def test_logging_scaffolder_scaffold_bad_handler(logging_scaffolder):
     """test the logging scaffolder."""
