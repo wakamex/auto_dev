@@ -1,11 +1,15 @@
 """
 Utilities for auto_dev.
 """
+from contextlib import contextmanager
 import json
 import logging
 from functools import reduce
 from glob import glob
+import os
 from pathlib import Path
+import shutil
+from tempfile import TemporaryDirectory
 from typing import Optional
 
 from rich.logging import RichHandler
@@ -48,3 +52,17 @@ def get_paths(path=Optional[str]):
         raise FileNotFoundError("No path was provided and no default packages file found")
     packages = get_packages() if not path else [path]
     return reduce(lambda x, y: x + y, [glob(f"{package}/**/*py", recursive=True) for package in packages])
+
+@contextmanager
+def isolated_filesystem(copy_cwd: bool = False):
+    """
+    Context manager to create an isolated file system.
+    And to navigate to it and then to clean it up.
+    """
+    original_path = Path.cwd()
+    with TemporaryDirectory() as temp_dir:
+        os.chdir(temp_dir)
+        if copy_cwd:
+            shutil.copytree(original_path, temp_dir)
+        yield Path(temp_dir)
+    os.chdir(original_path)

@@ -65,11 +65,30 @@ class BlockExplorer:
         return json.loads(json.loads(response.text)['result'])
 
 
-def from_snake_case(string: str):
+def from_snake_case_to_camel_case(string: str):
     """
     Convert a string from snake case to camel case.
     """
     return "".join(word.capitalize() for word in string.split("_"))
+
+def from_camel_case_to_snake_case(string: str):
+    """
+    Convert a string from camel case to snake case.
+    """
+    return "".join("_" + c.lower() if c.isupper() else c for c in string).lstrip("_")
+
+
+
+
+
+
+
+
+
+def build_function(function):
+    """
+    Build a function from a web3 contract function.
+    """
 
 
 class Contract:
@@ -102,6 +121,8 @@ class Contract:
                 self.write_functions.append(function)
             else:
                 raise ValueError(f"Function {function} has unknown state mutability.")
+            
+    
 
     def __init__(self, author: str, name: str, abi: dict, address: str):
         """
@@ -142,7 +163,7 @@ class Contract:
         with contract_yaml_path.open("r", encoding=DEFAULT_ENCODING) as file_pointer:
             contract_yaml = yaml.safe_load(file_pointer)
         contract_yaml["contract_interface_paths"]["ethereum"] = f"build/{self.name}.json"
-        contract_yaml["class_name"] = from_snake_case(self.name)
+        contract_yaml["class_name"] = from_snake_case_to_camel_case(self.name)
         with contract_yaml_path.open("w", encoding=DEFAULT_ENCODING) as file_pointer:
             yaml.dump(contract_yaml, file_pointer, sort_keys=False)
 
@@ -156,7 +177,8 @@ class Contract:
         contract_py_path = self.path / "contract.py"
         with contract_py_path.open("r", encoding=DEFAULT_ENCODING) as file_pointer:
             contract_py = file_pointer.read()
-        contract_py = contract_py.replace("class MyScaffoldContract", f"class {from_snake_case(self.name)}")
+        contract_py = contract_py.replace("class MyScaffoldContract",
+                                          f"class {from_snake_case_to_camel_case(self.name)}")
         contract_py = contract_py.replace(
             'contract_id = PublicId.from_str("open_aea/scaffold:0.1.0")',
             "contract_id = PUBLIC_ID",
@@ -185,6 +207,134 @@ class Contract:
         self.update_contract_yaml()
         self.update_contract_py()
         self.update_contract_init__()
+
+    def scaffold_read_function(self, function: underlyingAsset):
+        """
+        Scaffold a read function.
+        """
+        breakpoint()
+        return ReadContractFunction(function)
+
+
+READ_FUNCTION_TEMPLATE = """
+
+    @classmethod
+    def {function_name}(  # pylint: disable=too-many-arguments,too-many-locals
+        cls,
+        ledger_api: EthereumApi,
+        contract_address: str,
+        {function_arguments_with_types}
+        ) -> Tuple[TxParams, str]:
+        \"""
+        {function_description}
+        \"""
+        contract = cls.get_instance(ledger_api, contract_address)
+        raw_result = contract.{function_name}(
+            {function_arguments}
+            ).call()
+        result = {
+            {function_return_values}
+        }
+        return result
+
+"""
+from web3._utils.datatypes import underlyingAsset
+
+
+@dataclass
+class ReadContractFunction:
+    w3_function: underlyingAsset
+
+    def __str__(self) -> str:
+        return READ_FUNCTION_TEMPLATE.format(
+            function_name=self.function_name,
+            function_arguments_with_types=self.function_arguments_with_types,
+            function_arguments=self.function_arguments,
+            function_description=self.function_description,
+            function_return_values=self.function_return_values,
+        )
+    
+    @property
+    def function_arguments(self):
+        """
+        Parse the w3 function arguments into a string.
+        expected format: "arg1, arg2, arg3"
+        """
+        arguments = []
+        for argument in self.w3_function.abi['inputs']:
+            arguments.append(argument['name'])
+        return ", ".join(arguments)
+    
+    @property
+    def function_arguments_with_types(self):
+        """
+        Parse the w3 function arguments into a string. 
+        We need to map the types to python types.
+        expected format: "
+        arg1: type,
+        arg2: type,
+        arg3: type
+        """
+        SOLIDITY_TO_PYTHON_TYPES = {
+            "address": "str",
+            "bool": "bool",
+            "bytes32": "str",
+            "bytes": "str",
+            "uint256": "int",
+            "int8": "int",
+        }
+        arguments = []
+        for argument in self.w3_function.abi['inputs']:
+            arguments.append(f"{argument['name']}: {SOLIDITY_TO_PYTHON_TYPES[argument['type']]}")
+        
+        return ",\n".join(arguments)
+    
+    @property
+    def function_description(self):
+        """
+        Parse the w3 function description into a string. 
+        ensure to use the input and return variables 
+        expected format: "
+            arg1: type,
+            arg2: type,
+            arg3: type
+            return1: type,
+            return2: type,
+            return3: type
+        """
+        return f"{self.w3_function.abi['name']}({self.function_arguments_with_types}) -> ({self.function_return_values})"
+
+    
+    @property
+    def function_return_values(self):
+        """
+        Parse the w3 function return values.
+        expected output:
+        return {
+            return1: type,
+            return2: type,
+            return3: type
+        }
+        """
+        return_values = []
+        for return_value in self.w3_function.abi['outputs']:
+            return_values.append(f"{return_value['name']}: {return_value['type']}")
+        return ",\n".join(return_values)
+    
+    @property
+    def function_name(self):
+        """
+        Return the function name.
+        """
+        return self.w3_function.abi['name']
+    
+    @property
+    def function_signature(self):
+        """
+        Return the function signature.
+        """
+        return self.w3_function.abi['signature']
+
 
 
 @contextmanager
@@ -231,7 +381,8 @@ class ContractScaffolder:
 
         if contract.path.exists():
             raise ValueError(f"Contract {contract.name} already exists.")
-        contract.path.parent.mkdir(parents=True)
+        if not contract.path.parent.exists():
+            contract.path.parent.mkdir(parents=True)
 
         init_cmd = f"aea init --author {self.author} --reset --ipfs --remote".split(" ")
         if not CommandExecutor(init_cmd).execute(verbose=verbose):
@@ -248,6 +399,7 @@ class ContractScaffolder:
                 contract.path,
             )
         return contract.path
+    
 
 
 # we have a new command group called scaffold.
@@ -259,20 +411,41 @@ def scaffold():
 
 
 @scaffold.command()
-@click.argument("address")
-@click.argument("name")
+@click.argument("address", default=None, required=False)
+@click.argument("name", default=None, required=False)
+@click.option("--from-file", default=None, help="Ingest a file containing a list of addresses and names.")
 @click.option("--block-explorer-url", default="https://api.etherscan.io/api")
-@click.option("--block-explorer-api-key", default=None)
+@click.option("--block-explorer-api-key", required=True)
 @click.option("--read-functions", default=None, help="Comma separated list of read functions to scaffold.")
 @click.option("--write-functions", default=None, help="Comma separated list of write functions to scaffold.")
 @click.pass_context
-def contract(ctx, address, name, block_explorer_url, block_explorer_api_key, read_functions, write_functions):
+def contract(
+    ctx, address, name, block_explorer_url, block_explorer_api_key, read_functions, write_functions, from_file
+):
     """
     Scaffold a contract.
     """
     logger = ctx.obj["LOGGER"]
-    logger.info(f"Scaffolding contract at address: {address} with name: {name}")
+    if address is None and name is None and from_file is None:
+        logger.error("Must provide either an address and name or a file containing a list of addresses and names.")
+        return
+    if from_file is not None:
+        with open(from_file, "r") as file_pointer:
+            yaml_dict = yaml.safe_load(file_pointer)
+        for name, address in yaml_dict["contracts"].items():
+            ctx.invoke(
+                contract,
+                address=str(address),
+                name=name,
+                block_explorer_url=yaml_dict["block_explorer_url"],
+                block_explorer_api_key=block_explorer_api_key,
+                read_functions=read_functions,
+                write_functions=write_functions,
+            )
+
+        return
     logger.info(f"Using block explorer url: {block_explorer_url}")
+    logger.info(f"Scaffolding contract at address: {address} with name: {name}")
     block_explorer = BlockExplorer(block_explorer_url, block_explorer_api_key)
     scaffolder = ContractScaffolder()
 
@@ -287,21 +460,37 @@ def contract(ctx, address, name, block_explorer_url, block_explorer_api_key, rea
     logger.info("Parsing functions.")
     new_contract.parse_functions()
 
+    functions = []
     if read_functions:
         for read_function in read_functions.split(","):
             if read_function not in [f.fn_name for f in new_contract.read_functions]:
                 raise ValueError(f"Read function {read_function} not in new_contract.")
+            functions.append(read_function)
+    else:
+        functions = [f.fn_name for f in new_contract.read_functions]
+
+    for read_function in functions:
+        logger.info(f"Scaffolding function {read_function}.")
+        new_contract.scaffold_read_function(read_function)
 
     if write_functions:
         for write_function in write_functions.split(","):
             if write_function not in [f.fn_name for f in new_contract.write_functions]:
                 raise ValueError(f"Write function {write_function} not in new_contract.")
+            
+    
+
+    for func in new_contract.read_functions:
+        # we need to check if the function is in the list of functions to scaffold.
+
+
 
     logger.info(f"Read Functions: {new_contract.read_functions}")
     logger.info(f"Write Functions: {new_contract.write_functions}")
 
     logger.info(f"New contract scaffolded at {contract_path}")
 
+def
 
 if __name__ == "__main__":
     cli()  # pylint: disable=no-value-for-parameter
