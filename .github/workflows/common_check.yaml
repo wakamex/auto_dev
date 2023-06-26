@@ -46,7 +46,7 @@ jobs:
 
       - name: Lint
         run: |
-          poetry run adev lint -p .
+          poetry -v run adev lint -p .
 
       - name: Tests
         run: |
