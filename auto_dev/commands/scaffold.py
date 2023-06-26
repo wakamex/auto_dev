@@ -24,7 +24,7 @@ from web3 import Web3
 
 from auto_dev.base import build_cli
 from auto_dev.cli_executor import CommandExecutor
-from auto_dev.constants import DEFAULT_ENCODING
+from auto_dev.constants import DEFAULT_ENCODING, DEFAULT_TIMEOUT
 
 cli = build_cli()
 
@@ -51,6 +51,7 @@ class BlockExplorer:
         return requests.get(
             url,
             params=params,
+            timeout=DEFAULT_TIMEOUT,
         )
 
     def get_abi(self, address: str):
@@ -179,7 +180,7 @@ class ContractScaffolder:
         - create a new directory for the contract in the original directory.
         - copy the contract to the new directory.
         """
-        verbose = False
+        verbose = True
 
         if contract.path.exists():
             raise ValueError(f"Contract {contract.name} already exists.")
@@ -201,7 +202,7 @@ class ContractScaffolder:
 
 # we have a new command group called scaffold.
 @cli.group()
-def scaffold():  
+def scaffold():
     """
     Scaffold a contract.
     """

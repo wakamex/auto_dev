@@ -63,6 +63,9 @@ def build_cli(plugins=False):
         ctx.obj = {}
         ctx.obj["VERBOSE"] = verbose
         ctx.obj["LOGGER"] = get_logger(log_level=log_level)
+        if num_processes == 0:
+            # we use all available cores
+            num_processes = os.cpu_count()
         ctx.obj["NUM_PROCESSES"] = num_processes
         ctx.obj["LOGGER"].info("Starting Auto Dev...")
         if verbose:

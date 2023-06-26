@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 
 DEFAULT_ENCODING = "utf-8"
+DEFAULT_TIMEOUT = 10
 # package directory
 PACKAGE_DIR = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_PYLAMA_CONFIG = Path(PACKAGE_DIR) / "data" / "pylama.ini"
