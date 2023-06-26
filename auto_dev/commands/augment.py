@@ -102,7 +102,7 @@ class LoggingScaffolder:
         path = "aea-config.yaml"
         if not Path(path).exists():
             raise FileNotFoundError(f"File {path} not found")
-        aea_config = yaml.safe_load(Path(path).read_text(encoding=DEFAULT_ENCODING))
+        aea_config = list(yaml.safe_load_all(Path(path).read_text(encoding=DEFAULT_ENCODING))).pop(0)
         logging_config = self.generate(handlers)
         aea_config.update(logging_config)
         write(path, aea_config)
