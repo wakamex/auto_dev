@@ -42,11 +42,11 @@ jobs:
 
       - name: Format
         run: |
-          poetry run adev fmt -p .
+          poetry run adev -n 0 -v fmt -p .
 
       - name: Lint
         run: |
-          poetry run adev lint -p .
+          poetry run adev -n 0 -v lint -p .
 
       - name: Tests
         run: |
