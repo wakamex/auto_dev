@@ -231,7 +231,7 @@ class ContractScaffolder:
 
         if contract.path.exists():
             raise ValueError(f"Contract {contract.name} already exists.")
-        contract.path.mkdir(parents=True)
+        contract.path.parent.mkdir(parents=True)
 
         init_cmd = f"aea init --author {self.author} --reset --ipfs --remote".split(" ")
         if not CommandExecutor(init_cmd).execute(verbose=verbose):
@@ -243,7 +243,10 @@ class ContractScaffolder:
             os.chdir("myagent")
             if not CommandExecutor(f"aea scaffold contract {contract.name}".split(" ")).execute(verbose=verbose):
                 raise ValueError("Failed to scaffold contract.")
-            shutil.copytree(f"contracts/{contract.name}", contract.path, dirs_exist_ok=True)
+            shutil.copytree(
+                f"contracts/{contract.name}",
+                contract.path,
+            )
         return contract.path
 
 

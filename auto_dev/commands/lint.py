@@ -45,6 +45,10 @@ def lint(ctx, path):
     failed = len(results) - passed
     logger.info(f"Linting completed with {passed} passed and {failed} failed")
     if failed > 0:
+        for file_path, result in results.items():
+            if not result:
+                logger.error(f"Linting failed for {paths[file_path]}")
+    if failed > 0:
         raise click.ClickException("Linting failed!")
 
 
