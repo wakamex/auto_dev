@@ -65,6 +65,13 @@ class BlockExplorer:
         return json.loads(json.loads(response.text)['result'])
 
 
+def from_snake_case(string: str):
+    """
+    Convert a string from snake case to camel case.
+    """
+    return "".join(word.capitalize() for word in string.split("_"))
+
+
 class Contract:
     """
     Class to scaffold a contract.
@@ -117,7 +124,6 @@ class Contract:
         with build_path.open("w", encoding=DEFAULT_ENCODING) as file_pointer:
             output = {
                 "abi": self.abi,
-                "contractName": self.name,
                 "_format": "",
                 "bytecode": "",
                 "sourceName": "",
@@ -126,7 +132,7 @@ class Contract:
             }
             json.dump(output, file_pointer, indent=4)
 
-    def update_contract_yaml_with_build_path(self):
+    def update_contract_yaml(self):
         """
         Perform an update for the contract,yaml to specify the
         """
@@ -136,8 +142,49 @@ class Contract:
         with contract_yaml_path.open("r", encoding=DEFAULT_ENCODING) as file_pointer:
             contract_yaml = yaml.safe_load(file_pointer)
         contract_yaml["contract_interface_paths"]["ethereum"] = f"build/{self.name}.json"
+        contract_yaml["class_name"] = from_snake_case(self.name)
         with contract_yaml_path.open("w", encoding=DEFAULT_ENCODING) as file_pointer:
             yaml.dump(contract_yaml, file_pointer, sort_keys=False)
+
+    def update_contract_py(self):
+        """
+        Update the contract.py file.
+        - update the class name.
+        - update the contract_id     contract_id = PublicId.from_str("open_aea/scaffold:0.1.0")
+
+        """
+        contract_py_path = self.path / "contract.py"
+        with contract_py_path.open("r", encoding=DEFAULT_ENCODING) as file_pointer:
+            contract_py = file_pointer.read()
+        contract_py = contract_py.replace("class MyScaffoldContract", f"class {from_snake_case(self.name)}")
+        contract_py = contract_py.replace(
+            'contract_id = PublicId.from_str("open_aea/scaffold:0.1.0")',
+            "contract_id = PUBLIC_ID",
+        )
+        contract_py = contract_py.replace(
+            "from aea.configurations.base import PublicId",
+            f"from packages.{self.author}.contracts,{self.name} import PUBLIC_ID",
+        )
+        with contract_py_path.open("w", encoding=DEFAULT_ENCODING) as file_pointer:
+            file_pointer.write(contract_py)
+
+    def update_contract_init__(self):
+        """
+        Append the Public
+        """
+        init_py_path = self.path / "__init__.py"
+        public_id = f"PublicId.from_str('{self.author}/{self.name}:0.1.0')"
+        with init_py_path.open("a", encoding=DEFAULT_ENCODING) as file_pointer:
+            file_pointer.write("\nfrom aea.configurations.base import PublicId\n")
+            file_pointer.write(f"\nPUBLIC_ID = {public_id}\n")
+
+    def update_all(self):
+        """
+        Scaffold the contract.
+        """
+        self.update_contract_yaml()
+        self.update_contract_py()
+        self.update_contract_init__()
 
 
 @contextmanager
@@ -180,7 +227,7 @@ class ContractScaffolder:
         - create a new directory for the contract in the original directory.
         - copy the contract to the new directory.
         """
-        verbose = True
+        verbose = False
 
         if contract.path.exists():
             raise ValueError(f"Contract {contract.name} already exists.")
@@ -233,7 +280,7 @@ def contract(ctx, address, name, block_explorer_url, block_explorer_api_key, rea
     logger.info("Writing abi to file.")
     new_contract.write_abi_to_file()
     logger.info("Updating contract.yaml with build path.")
-    new_contract.update_contract_yaml_with_build_path()
+    new_contract.update_all()
     logger.info("Parsing functions.")
     new_contract.parse_functions()
 
