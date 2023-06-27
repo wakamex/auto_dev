@@ -121,8 +121,8 @@ class Contract:
                 self.write_functions.append(function)
             else:
                 raise ValueError(f"Function {function} has unknown state mutability.")
-            
-    
+
+
 
     def __init__(self, author: str, name: str, abi: dict, address: str):
         """
@@ -208,7 +208,7 @@ class Contract:
         self.update_contract_py()
         self.update_contract_init__()
 
-    def scaffold_read_function(self, function: underlyingAsset):
+    def scaffold_read_function(self, function):
         """
         Scaffold a read function.
         """
@@ -238,12 +238,10 @@ READ_FUNCTION_TEMPLATE = """
         return result
 
 """
-from web3._utils.datatypes import underlyingAsset
 
 
 @dataclass
 class ReadContractFunction:
-    w3_function: underlyingAsset
 
     def __str__(self) -> str:
         return READ_FUNCTION_TEMPLATE.format(
@@ -253,7 +251,7 @@ class ReadContractFunction:
             function_description=self.function_description,
             function_return_values=self.function_return_values,
         )
-    
+
     @property
     def function_arguments(self):
         """
@@ -264,11 +262,11 @@ class ReadContractFunction:
         for argument in self.w3_function.abi['inputs']:
             arguments.append(argument['name'])
         return ", ".join(arguments)
-    
+
     @property
     def function_arguments_with_types(self):
         """
-        Parse the w3 function arguments into a string. 
+        Parse the w3 function arguments into a string.
         We need to map the types to python types.
         expected format: "
         arg1: type,
@@ -286,14 +284,14 @@ class ReadContractFunction:
         arguments = []
         for argument in self.w3_function.abi['inputs']:
             arguments.append(f"{argument['name']}: {SOLIDITY_TO_PYTHON_TYPES[argument['type']]}")
-        
+
         return ",\n".join(arguments)
-    
+
     @property
     def function_description(self):
         """
-        Parse the w3 function description into a string. 
-        ensure to use the input and return variables 
+        Parse the w3 function description into a string.
+        ensure to use the input and return variables
         expected format: "
             arg1: type,
             arg2: type,
@@ -304,7 +302,7 @@ class ReadContractFunction:
         """
         return f"{self.w3_function.abi['name']}({self.function_arguments_with_types}) -> ({self.function_return_values})"
 
-    
+
     @property
     def function_return_values(self):
         """
@@ -320,14 +318,14 @@ class ReadContractFunction:
         for return_value in self.w3_function.abi['outputs']:
             return_values.append(f"{return_value['name']}: {return_value['type']}")
         return ",\n".join(return_values)
-    
+
     @property
     def function_name(self):
         """
         Return the function name.
         """
         return self.w3_function.abi['name']
-    
+
     @property
     def function_signature(self):
         """
@@ -399,7 +397,7 @@ class ContractScaffolder:
                 contract.path,
             )
         return contract.path
-    
+
 
 
 # we have a new command group called scaffold.
@@ -477,11 +475,14 @@ def contract(
         for write_function in write_functions.split(","):
             if write_function not in [f.fn_name for f in new_contract.write_functions]:
                 raise ValueError(f"Write function {write_function} not in new_contract.")
-            
-    
+
+
 
     for func in new_contract.read_functions:
         # we need to check if the function is in the list of functions to scaffold.
+        from rich import print_json
+        breakpoint()
+        print_json(data=func.input)
 
 
 
@@ -490,7 +491,6 @@ def contract(
 
     logger.info(f"New contract scaffolded at {contract_path}")
 
-def
 
 if __name__ == "__main__":
     cli()  # pylint: disable=no-value-for-parameter
