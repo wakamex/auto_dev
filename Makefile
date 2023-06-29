@@ -1,8 +1,8 @@
 lint:
-	adev -v -n 0 lint -p .
+	poetry run adev -v -n 0 lint -p .
 
 fmt: 
-	adev -n 0 fmt -p .
+	poetry run adev -n 0 fmt -p .
 
 test:
-	adev -v test -p .
+	poetry run adev -v test -p .
