@@ -50,4 +50,4 @@ jobs:
 
       - name: Tests
         run: |
-          poetry run adev test -p .
+          poetry run adev -v test -p .
