@@ -2,8 +2,9 @@
 Conftest for testing command-line interfaces.
 """
 
-from auto_dev.utils import isolated_filesystem
 import pytest
+
+from auto_dev.utils import isolated_filesystem
 
 
 @pytest.fixture

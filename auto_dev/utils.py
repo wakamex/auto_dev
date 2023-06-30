@@ -1,14 +1,14 @@
 """
 Utilities for auto_dev.
 """
-from contextlib import contextmanager
 import json
 import logging
+import os
+import shutil
+from contextlib import contextmanager
 from functools import reduce
 from glob import glob
-import os
 from pathlib import Path
-import shutil
 from tempfile import TemporaryDirectory
 from typing import Optional
 
@@ -52,6 +52,7 @@ def get_paths(path=Optional[str]):
         raise FileNotFoundError("No path was provided and no default packages file found")
     packages = get_packages() if not path else [path]
     return reduce(lambda x, y: x + y, [glob(f"{package}/**/*py", recursive=True) for package in packages])
+
 
 @contextmanager
 def isolated_filesystem(copy_cwd: bool = False):

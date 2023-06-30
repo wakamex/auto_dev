@@ -2,11 +2,10 @@
 Module to interact with the blockchain explorer.
 """
 
-from dataclasses import dataclass
 import json
+from dataclasses import dataclass
 
 import requests
-
 
 from auto_dev.constants import DEFAULT_TIMEOUT
 
@@ -43,4 +42,3 @@ class BlockExplorer:
         if response.status_code != 200:
             raise ValueError(f"Failed to get abi for address {address} with status code {response.status_code}")
         return json.loads(response.json()['result'])
-

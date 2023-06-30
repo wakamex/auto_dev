@@ -1,5 +1,9 @@
+"""
 
-imports = """
+Constants for the contract generation.
+
+"""
+IMPORTS = """
 import logging
 from typing import Any, Optional, cast
 
@@ -11,7 +15,7 @@ from aea_ledger_ethereum import EthereumApi
 from eth_abi import encode_abi
 """
 
-header = """
+HEADER = """
 # -*- coding: utf-8 -*-
 # ------------------------------------------------------------------------------
 #
