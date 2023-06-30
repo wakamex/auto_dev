@@ -415,7 +415,7 @@ def scaffold():
 @click.option("--read-functions", default=None, help="Comma separated list of read functions to scaffold.")
 @click.option("--write-functions", default=None, help="Comma separated list of write functions to scaffold.")
 @click.pass_context
-def contract(    # pylint: disable=R0914
+def contract(  # pylint: disable=R0914
     ctx, address, name, block_explorer_url, block_explorer_api_key, read_functions, write_functions, from_file
 ):
     """
