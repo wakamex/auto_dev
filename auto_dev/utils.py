@@ -64,6 +64,14 @@ def isolated_filesystem(copy_cwd: bool = False):
     with TemporaryDirectory() as temp_dir:
         os.chdir(temp_dir)
         if copy_cwd:
-            shutil.copytree(original_path, temp_dir)
-        yield Path(temp_dir)
+            # we copy the content of the original directory into the temporary one
+            for file_name in os.listdir(original_path):
+                if file_name == "__pycache__":
+                    continue
+                file_path = Path(original_path, file_name)
+                if file_path.is_file():
+                    shutil.copy(file_path, temp_dir)
+                elif file_path.is_dir():
+                    shutil.copytree(file_path, Path(temp_dir, file_name))
+        yield str(Path(temp_dir))
     os.chdir(original_path)
