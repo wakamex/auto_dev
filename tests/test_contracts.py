@@ -46,14 +46,14 @@ def scaffolder(block_explorer):
 
 
 @responses.activate
-def test_scaffolder_generate(scaffolder, block_explorer):
+def test_scaffolder_generate(scaffolder):
     """Test the scaffolder."""
     responses.add(
         responses.GET,
         f"{BLOCK_EXPLORER_URL}/api?module=contract&action=getabi&address={KNOWN_ADDRESS}",
         json={"status": "1", "message": "OK", "result": '{"abi": "some_abi"}'},
     )
-    new_contract = scaffolder.from_block_explorer(block_explorer, KNOWN_ADDRESS, "new_contract")
+    new_contract = scaffolder.from_block_explorer(KNOWN_ADDRESS, "new_contract")
     assert new_contract
     assert new_contract.abi
     assert new_contract.address == KNOWN_ADDRESS
@@ -62,7 +62,7 @@ def test_scaffolder_generate(scaffolder, block_explorer):
 
 
 @responses.activate
-def test_scaffolder_generate_openaea_contract(scaffolder, block_explorer, test_filesystem):
+def test_scaffolder_generate_openaea_contract(scaffolder, test_filesystem):
     """
     Test the scaffolder.
     """
@@ -72,7 +72,7 @@ def test_scaffolder_generate_openaea_contract(scaffolder, block_explorer, test_f
         f"{BLOCK_EXPLORER_URL}/api?module=contract&action=getabi&address={KNOWN_ADDRESS}",
         json={"status": "1", "message": "OK", "result": '{"abi": "some_abi"}'},
     )
-    new_contract = scaffolder.from_block_explorer(block_explorer, KNOWN_ADDRESS, "new_contract")
+    new_contract = scaffolder.from_block_explorer(KNOWN_ADDRESS, "new_contract")
     contract_path = scaffolder.generate_openaea_contract(new_contract)
     assert contract_path
     assert contract_path.exists()
