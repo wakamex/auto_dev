@@ -38,11 +38,11 @@ def test_block_explorer(block_explorer):
 
 # we now test the scaffolder
 @pytest.fixture
-def scaffolder():
+def scaffolder(block_explorer):
     """
     Scaffolder fixture.
     """
-    return ContractScaffolder()
+    return ContractScaffolder(block_explorer, "eightballer")
 
 
 @responses.activate
