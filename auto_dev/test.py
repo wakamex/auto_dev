@@ -15,7 +15,8 @@ def test_path(path: str, verbose: bool = False) -> bool:
             "run",
             "pytest",
             str(path),
+            "-vv",
         ]
     )
-    result = command.execute(verbose=verbose)
+    result = command.execute(verbose=verbose, stream=True)
     return result
