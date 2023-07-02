@@ -62,11 +62,11 @@ def test_scaffolder_generate(scaffolder, block_explorer):
 
 
 @responses.activate
-def test_scaffolder_generate_openaea_contract(scaffolder, block_explorer, isolated_filesystem):
+def test_scaffolder_generate_openaea_contract(scaffolder, block_explorer, test_filesystem):
     """
     Test the scaffolder.
     """
-    del isolated_filesystem
+    del test_filesystem
     responses.add(
         responses.GET,
         f"{BLOCK_EXPLORER_URL}/api?module=contract&action=getabi&address={KNOWN_ADDRESS}",

@@ -71,7 +71,7 @@ HANDLERS = {
 def write(path: str, content: dict):
     """Safe write the contents to the path using yaml."""
     with open(path, "w", encoding=DEFAULT_ENCODING) as file:
-        yaml.dump(content, file, default_flow_style=False)
+        yaml.dump(content, file, default_flow_style=False, sort_keys=False)
 
 
 class LoggingScaffolder:
@@ -102,7 +102,12 @@ class LoggingScaffolder:
         path = "aea-config.yaml"
         if not Path(path).exists():
             raise FileNotFoundError(f"File {path} not found")
-        aea_config = list(yaml.safe_load_all(Path(path).read_text(encoding=DEFAULT_ENCODING))).pop(0)
+
+        config = yaml.safe_load(Path(path).read_text(encoding=DEFAULT_ENCODING))
+        if isinstance(config, dict):
+            aea_config = config
+        else:
+            aea_config = list(config)[0]
         logging_config = self.generate(handlers)
         aea_config.update(logging_config)
         write(path, aea_config)
