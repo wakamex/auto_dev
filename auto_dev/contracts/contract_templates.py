@@ -1,11 +1,8 @@
 """
 Contains the necessary templates for the contracts
 """
-from dataclasses import dataclass
 from string import Template
-from typing import Any, Dict
 
-from auto_dev.contracts.variable import Variable
 from auto_dev.data.contracts.header import HEADER as CONTRACT_HEADER
 from auto_dev.data.contracts.header import IMPORTS as CONTRACT_IMPORTS
 

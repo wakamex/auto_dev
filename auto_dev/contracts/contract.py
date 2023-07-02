@@ -36,9 +36,7 @@ class Contract:
             raise ValueError(f"Abi file {abi_path} does not exist.")
         with abi_path.open("r", encoding=DEFAULT_ENCODING) as file_pointer:
             abi = json.load(file_pointer)['abi']
-        w3_contract = self.web3.eth.contract(
-            address=self.address,
-            abi=abi)
+        w3_contract = self.web3.eth.contract(address=self.address, abi=abi)
         for function in w3_contract.all_functions():
             mutability = function.abi['stateMutability']
             if mutability in ['view', "pure"]:

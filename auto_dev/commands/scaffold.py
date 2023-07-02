@@ -21,7 +21,6 @@ from auto_dev.contracts.utils import from_camel_case_to_snake_case
 cli = build_cli()
 
 
-
 # we have a new command group called scaffold.
 @cli.group()
 def scaffold():

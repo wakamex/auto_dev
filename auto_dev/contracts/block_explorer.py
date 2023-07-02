@@ -40,8 +40,8 @@ class BlockExplorer:
         Get the abi for the contract at the address.
         """
 
-        w3 = Web3(Web3.HTTPProvider('http://127.0.0.1:8545'))
-        check_address = w3.toChecksumAddress(address)
+        web3 = Web3(Web3.HTTPProvider('http://127.0.0.1:8545'))
+        check_address = web3.toChecksumAddress(address)
         url = self.url + "/api?module=contract&action=getabi&address=" + str(check_address)
         response = self._authenticated_request(url)
         if response.json()['status'] != '1':

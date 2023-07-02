@@ -2,6 +2,7 @@
 Contract functions.
 """
 from dataclasses import dataclass
+from string import Template
 from typing import Any
 
 from auto_dev.contracts.contract_templates import READ_FUNCTION_TEMPLATE
@@ -14,9 +15,9 @@ class ReadContractFunction:
 
     w3_function: Any
 
-    def __str__(self) -> str:
+    def __str__(self) -> Template:
         """String representation."""
-        return READ_FUNCTION_TEMPLATE.format(  # type: ignore
+        return READ_FUNCTION_TEMPLATE.format(  # noqa: E1101
             function_name=self.function_name,
             function_arguments_with_types=self.function_arguments_with_types,
             function_arguments=self.function_arguments,
