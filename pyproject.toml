@@ -1,7 +1,7 @@
 [tool]
 [tool.poetry]
 name = "autonomy_dev"
-version = "0.2.0"
+version = "0.2.2"
 homepage = "https://github.com/8ball030/auto_dev"
 description = "A collection of tooling to enable open source development of autonomy tools"
 authors = ["8Baller <8ball030@gmail.com>"]
@@ -52,11 +52,11 @@ pylint = "~2"
 open-aea = "^1.35.0"
 open-aea-cli-ipfs = "^1.35.0"
 web3 = "~5"
-responses = "^0.23.1"
-open-autonomy = "^0.10.7"
+open-autonomy = "^0.10"
 docker = "~6.1"
 
 [tool.poetry.dev-dependencies]
+responses = "^0.23.1"
 
 
 [tool.poetry.extras]
