@@ -37,6 +37,33 @@ transition_func:
   (SelectKeeperRound, ROUND_TIMEOUT): RegistrationRound
 """
 
+SAMPLE_MERMAID_2 = """
+stateDiagram-v2
+   [*] --> CheckExpiredPositions: Start
+   CheckExpiredPositions --> CloseExpiredPosition: NewExpiredPositionFound
+   CheckExpiredPositions --> CheckPositions: Done
+
+   CloseExpiredPosition --> CheckExpiredPositions: Done
+   CloseExpiredPosition --> FailedTransaction: FailedToCloseExpiredPosition
+
+   CheckPositions --> CheckBalances: Done
+   CheckPositions --> CheckExpiredPositions: Failed
+   CheckBalances --> CheckExpiredPositions: Failed
+   CheckBalances --> CheckTickers: Done
+
+   CheckTickers --> ExecuteArbitrumSide: ArbitrageExists
+   CheckTickers --> CheckPositions: NoAction
+
+   ExecuteArbitrumSide --> ExecuteDeribitSide: Done
+   ExecuteArbitrumSide --> FailedTransaction: FailedToTransactOnArbitrum
+
+   ExecuteDeribitSide --> Profit: SuccessfullyCapturedArbitrage
+   ExecuteDeribitSide --> FailedTransaction: FailedToTransactOnDeribit
+
+   Profit --> CheckExpiredPositions: Done
+   FailedTransaction --> StopStategy: SendAlert
+"""
+
 
 def test_from_fsm_spec():
     """Test that we can create a FsmSpec from a yaml string."""
@@ -102,3 +129,16 @@ def test_to_string():
     assert fsm_spec.states == new_fsm_spec.states
     assert fsm_spec.alphabet_in == new_fsm_spec.alphabet_in
     assert fsm_spec.transition_func == new_fsm_spec.transition_func
+
+
+def test_from_mermaid_fsm():
+    """Test that we can create a FsmSpec from a mermaid string."""
+    fsm_spec = FsmSpec.from_mermaid(SAMPLE_MERMAID_2)
+    mermaid = fsm_spec.to_mermaid()
+    fsm_spec_from_mermaid = FsmSpec.from_mermaid(mermaid)
+
+    # we check the atrtibutes
+    assert fsm_spec_from_mermaid.default_start_state == fsm_spec.default_start_state
+    assert fsm_spec_from_mermaid.states == fsm_spec.states
+    assert fsm_spec_from_mermaid.alphabet_in == fsm_spec.alphabet_in
+    assert fsm_spec_from_mermaid.transition_func == fsm_spec.transition_func
