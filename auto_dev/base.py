@@ -4,6 +4,7 @@ Base CLI for auto_dev.
 import os
 from dataclasses import dataclass
 
+import pkg_resources
 import rich_click as click
 
 from auto_dev.constants import DEFAULT_ENCODING, PLUGIN_FOLDER
@@ -67,7 +68,9 @@ def build_cli(plugins=False):
             # we use all available cores
             num_processes = os.cpu_count()
         ctx.obj["NUM_PROCESSES"] = num_processes
-        ctx.obj["LOGGER"].info("Starting Auto Dev...")
+        version = pkg_resources.require("autonomy_dev")[0].version
+        ctx.obj["LOGGER"].info(f"Starting Auto Dev v{version} ...")
+        # we get the version from the package
         if verbose:
             ctx.obj["LOGGER"].info("Verbose mode enabled")
         if num_processes > 1:
