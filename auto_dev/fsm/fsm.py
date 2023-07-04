@@ -98,10 +98,7 @@ class FsmSpec:
         # we join on new line
         transitions = "\n  ".join(transitions)
 
-        return BASE_MERMAID_TEMPLATE.substitute(
-            start_state=start_state,
-            states=states,
-            transitions=transitions)
+        return BASE_MERMAID_TEMPLATE.substitute(start_state=start_state, states=states, transitions=transitions)
 
     @classmethod
     def from_mermaid(cls, mermaid_str: str):
@@ -236,7 +233,6 @@ class FsmSpec:
         for transition, end_state in transitions:
             key = f"({transition[0]}, {transition[1]})"
             transition_func[key] = end_state
-
 
         # we can do this by using our transition_func to find the start states
 
