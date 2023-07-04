@@ -25,7 +25,9 @@ def fsm():
 
 @fsm.command()
 @click.argument("fsm-spec", type=click.File("r", encoding=DEFAULT_ENCODING))
-def from_file(fsm_spec: str):
+@click.option("--in-type", type=click.Choice(["mermaid", "fsm-spec"], case_sensitive=False))
+@click.option("--output", type=click.Choice(["mermaid", "fsm-spec"], case_sensitive=False))
+def from_file(fsm_spec: str, in_type: str, output: str):
     """We template from a file."""
     # we need perform the following steps:
     # 1. load the yaml file
@@ -37,6 +39,13 @@ def from_file(fsm_spec: str):
     # 5b. clean the payloads
     # 6. perform updates of the generated files
 
-    fsm = FsmSpec.from_yaml(fsm_spec)
+    if in_type == "mermaid":
+        _fsm_spec = fsm_spec.read()
+        fsm = FsmSpec.from_mermaid(_fsm_spec)
+    else:
+        fsm = FsmSpec.from_yaml(fsm_spec)
 
-    print(fsm.to_mermaid())
+    if output == "mermaid":
+        print(fsm.to_mermaid())
+    else:
+        print(fsm.to_string())
