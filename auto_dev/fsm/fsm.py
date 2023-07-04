@@ -1,6 +1,7 @@
 """
 Tools to parse fsm specs.
 """
+import collections
 from dataclasses import dataclass
 from pathlib import Path
 from string import Template
@@ -97,7 +98,10 @@ class FsmSpec:
         # we join on new line
         transitions = "\n  ".join(transitions)
 
-        return BASE_MERMAID_TEMPLATE.substitute(start_state=start_state, states=states, transitions=transitions)
+        return BASE_MERMAID_TEMPLATE.substitute(
+            start_state=start_state,
+            states=states,
+            transitions=transitions)
 
     @classmethod
     def from_mermaid(cls, mermaid_str: str):
@@ -168,12 +172,21 @@ class FsmSpec:
                 if end_state not in final_states:
                     final_states.append(end_state)
 
-        start_states = list(set(f[0] for f in start_states))
+        if len(start_states) > 1:
+            raise ValueError("We do not support multiple start states!")
+
+        if not start_states:
+            # we need to determine the start state by using a counter
+            Counter = collections.Counter
+            counter = Counter(states)
+            start_states = [counter.most_common(1)[0][0]]
+        else:
+            start_states = list(set(f[0] for f in start_states))
         initial_state = start_states[0]
         states = list(set(states))
 
         return cls(
-            alphabet_in=alphabet_in,
+            alphabet_in=list(set(alphabet_in)),
             default_start_state=initial_state,
             final_states=list(set(final_states)),
             label="HelloWorldAbciApp",
@@ -223,7 +236,8 @@ class FsmSpec:
         for transition, end_state in transitions:
             key = f"({transition[0]}, {transition[1]})"
             transition_func[key] = end_state
-        # we need to create the start_states
+
+
         # we can do this by using our transition_func to find the start states
 
         return cls(

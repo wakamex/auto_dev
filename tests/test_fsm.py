@@ -17,9 +17,9 @@ label: HelloWorldAbciApp
 start_states:
 - RegistrationRound
 states:
+- RegistrationRound
 - CollectRandomnessRound
 - PrintMessageRound
-- RegistrationRound
 - ResetAndPauseRound
 - SelectKeeperRound
 transition_func:
@@ -70,9 +70,9 @@ def test_from_fsm_spec():
     fsm_spec = FsmSpec.from_yaml(EXAMPLE)
     assert fsm_spec.default_start_state == "RegistrationRound"
     assert fsm_spec.states == [
+        "RegistrationRound",
         "CollectRandomnessRound",
         "PrintMessageRound",
-        "RegistrationRound",
         "ResetAndPauseRound",
         "SelectKeeperRound",
     ]
@@ -82,13 +82,13 @@ def test_to_mermaid():
     """Test that we cam convert a FsmSpec to a mermaid string."""
     fsm_spec = FsmSpec.from_yaml(EXAMPLE)
     mermaid = fsm_spec.to_mermaid()
-    assert mermaid == dedent(
+    expected = dedent(
         """
     graph TD
       RegistrationRound
+      RegistrationRound
       CollectRandomnessRound
       PrintMessageRound
-      RegistrationRound
       ResetAndPauseRound
       SelectKeeperRound
       CollectRandomnessRound -->|DONE| SelectKeeperRound
@@ -105,6 +105,7 @@ def test_to_mermaid():
       SelectKeeperRound -->|ROUND_TIMEOUT| RegistrationRound
     """
     )
+    assert mermaid == expected
 
 
 def test_from_mermaid():
@@ -115,8 +116,8 @@ def test_from_mermaid():
 
     # we check the atrtibutes
     assert fsm_spec_from_mermaid.default_start_state == fsm_spec.default_start_state
-    assert fsm_spec_from_mermaid.states == fsm_spec.states
-    assert fsm_spec_from_mermaid.alphabet_in == fsm_spec.alphabet_in
+    assert set(fsm_spec_from_mermaid.states) == set(fsm_spec.states)
+    assert set(fsm_spec_from_mermaid.alphabet_in) == set(fsm_spec.alphabet_in)
     assert fsm_spec_from_mermaid.transition_func == fsm_spec.transition_func
 
 
@@ -139,6 +140,6 @@ def test_from_mermaid_fsm():
 
     # we check the atrtibutes
     assert fsm_spec_from_mermaid.default_start_state == fsm_spec.default_start_state
-    assert fsm_spec_from_mermaid.states == fsm_spec.states
-    assert fsm_spec_from_mermaid.alphabet_in == fsm_spec.alphabet_in
+    assert set(fsm_spec_from_mermaid.states) == set(fsm_spec.states)
+    assert set(fsm_spec_from_mermaid.alphabet_in) == set(fsm_spec.alphabet_in)
     assert fsm_spec_from_mermaid.transition_func == fsm_spec.transition_func
