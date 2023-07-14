@@ -75,6 +75,7 @@ class Releaser:
             self.logger.error("Post release failed. 😭")
             return False
         self.logger.info(f"New version is {new_version} 🎉")
+        return True
 
     def pre_release(self):
         """
@@ -119,7 +120,7 @@ def release(
     releaser = Releaser(dep_path=dep_path, verbose=verbose, logger=logger)
     if not releaser.release():
         logger.error("Release failed. 😭")
-        return click.Abort()
+        raise click.Abort()
     logger.info("Done. 😎")
 
 
