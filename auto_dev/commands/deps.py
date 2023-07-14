@@ -128,8 +128,6 @@ def remove_old_package(repo: Path, proposed_dependency_updates: Dict[str, str]) 
         path = repo / path
         if path.exists():
             shutil.rmtree(path, ignore_errors=True)
-        else:
-            raise FileNotFoundError(f"{path} does not exist.")
 
 
 def main(
@@ -166,13 +164,14 @@ cli = build_cli()
     default=PARENT,
     help="The parent repo.",
     type=Path,
+    required=True,
 )
 @click.option(
     "-c",
     "--child-repo",
-    default=CHILD,
     help="The child repo.",
     type=Path,
+    required=True,
 )
 @click.option(
     "--auto-confirm",
@@ -182,8 +181,8 @@ cli = build_cli()
 @click.pass_context
 def deps(
     ctx: click.Context,
-    parent_repo: Path = PARENT,
-    child_repo: Path = CHILD,
+    parent_repo: Path,
+    child_repo: Path,
     auto_confirm: bool = False,
 ) -> None:
     """
