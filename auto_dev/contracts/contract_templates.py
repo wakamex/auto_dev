@@ -84,7 +84,7 @@ READ_FUNCTION_TEMPLATE: Template = Template(
         ) -> JSONLike:
         \"\"\"Handler method for the '$name' requests.\"\"\"
         instance = cls.get_instance(ledger_api, contract_address)
-        result = instance.$name($args).call()
+        result = instance.functions.$camel_name($args).call()
         return {
             $returns
         }
