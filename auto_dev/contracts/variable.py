@@ -16,6 +16,7 @@ class Variable:
     type: ParamType
     name: str
     components: Optional[Any] = None
+    index: Optional[int] = None
 
     def to_str_params(self):
         """Parse the variable to string to be passed as a parameter to a function."""
@@ -23,7 +24,9 @@ class Variable:
 
     def to_str_arg(self):
         """Parse the variable to string to be passed as an argument to a function."""
-        return f"{self._name}={self.name}"
+        if self.name == "":
+            return f"{self._name}"
+        return f"{self._name}={self._name}"
 
     def to_str_return(self):
         """Parse the variable to string to be returned by a function."""
@@ -34,7 +37,7 @@ class Variable:
     def _name(self):
         """Return the name of the variable."""
         if self.name == "":
-            return "constructor"
+            return f"var_{self.index}"
         return self.name
 
     @property

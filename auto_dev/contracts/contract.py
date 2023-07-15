@@ -113,6 +113,11 @@ class Contract:
             f"from packages.{self.author}.contracts.{self.name} import PUBLIC_ID",
         )
 
+        contract_py = contract_py.replace(
+            "from aea.crypto.base import LedgerApi",
+            "from aea.crypto.base import LedgerApi, Address",
+        )
+
         read_functions = "\n".join([function.to_string() for function in self.read_functions])
         contract_py += read_functions
 
