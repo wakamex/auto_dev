@@ -26,3 +26,8 @@ class ParamType(Enum):
     ADDRESS_ARRAY = "address[]"
     STRING = "string"
     TUPLE_ARRAY = "tuple[]"
+    UINT32_ARRAY = "uint32[]"
+    INT24 = "int24"
+    INT16 = "int16"
+    BYTES4 = "bytes4"
+    BYTES = "bytes"
