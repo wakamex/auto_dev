@@ -151,6 +151,13 @@ def main(
     update_package_json(repo=child_repo, proposed_dependency_updates=proposed)
     logger.info("Removing the old packages directories... 🗑")
     remove_old_package(repo=child_repo, proposed_dependency_updates=proposed)
+    # we now copy the new packages over.
+    logger.info("Copying the new packages over... 📝")
+    for package_name, _ in proposed.items():
+        path = from_key_to_path(package_name)
+        parent_path = parent_repo / path
+        child_path = child_repo / path
+        shutil.copytree(parent_path, child_path)
     logger.info("Done. 😎")
 
 
