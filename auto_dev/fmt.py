@@ -24,6 +24,7 @@ class Formatter:
 
         results = all(
             [
+                self.run_autoflake8(path, verbose=verbose),
                 self.run_isort(path, verbose=verbose),
                 self.run_black(path, verbose=verbose),
             ]
@@ -52,6 +53,23 @@ class Formatter:
                 "poetry",
                 "run",
                 "isort",
+                str(path),
+            ]
+        )
+        result = command.execute(verbose=verbose)
+        return result
+
+    @staticmethod
+    def run_autoflake8(path, verbose=False):
+        """Run autoflake8 on the path."""
+        command = CommandExecutor(
+            [
+                "poetry",
+                "run",
+                "autoflake8",
+                "--remove-unused-variables",
+                "--in-place",
+                "--recursive",
                 str(path),
             ]
         )

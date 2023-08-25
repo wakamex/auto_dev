@@ -42,7 +42,6 @@ SOLIDITY_TO_PYTHON_TYPES = {
     "int8": "int",
     "tuple": "tuple",
     "int16": "int",
-
 }
 
 

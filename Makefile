@@ -6,3 +6,5 @@ fmt:
 
 test:
 	poetry run adev -v test -p .
+
+all: fmt lint test
