@@ -197,6 +197,21 @@ tests = ["attrs[tests-no-zope]", "zope-interface"]
 tests-no-zope = ["cloudpickle", "hypothesis", "mypy (>=1.1.1)", "pympler", "pytest (>=4.3.0)", "pytest-mypy-plugins", "pytest-xdist[psutil]"]
 
 [[package]]
+name = "autoflake8"
+version = "0.4.1"
+description = "Tool to automatically fix some issues reported by flake8 (forked from autoflake)."
+category = "main"
+optional = false
+python-versions = ">=3.7,<4.0"
+files = [
+    {file = "autoflake8-0.4.1-py3-none-any.whl", hash = "sha256:fdf663b627993ac38e5b55b7d742c388fb2a4f34798a052f43eecc5e8d629e9d"},
+    {file = "autoflake8-0.4.1.tar.gz", hash = "sha256:c17da499bd2b71ba02fb11fe53ff1ad83d7dae6efb0f115fd1344f467797c679"},
+]
+
+[package.dependencies]
+pyflakes = ">=2.3.0"
+
+[[package]]
 name = "base58"
 version = "2.1.1"
 description = "Base58 and Base58Check implementation."
@@ -4106,4 +4121,4 @@ doc = ["mkdocs", "mkdocs-include-markdown-plugin", "mkdocs-material", "mkdocs-au
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.7.2,<=3.11"
-content-hash = "6911502af64ef25b59cd3b11317d78514c92a15e05492d19a90100a0ba85fd53"
+content-hash = "45dd7bd207211362a4b262be96179cc46f2f0f0e05b9d7766d3e19f794735344"
