@@ -169,9 +169,6 @@ class FsmSpec:
                 if end_state not in final_states:
                     final_states.append(end_state)
 
-        if len(start_states) > 1:
-            raise ValueError("We do not support multiple start states!")
-
         if not start_states:
             # we need to determine the start state by using a counter
             Counter = collections.Counter
@@ -187,7 +184,7 @@ class FsmSpec:
             default_start_state=initial_state,
             final_states=list(set(final_states)),
             label="HelloWorldAbciApp",
-            start_states=[initial_state],
+            start_states=start_states,
             states=states,
             transition_func=transition_func,
         )

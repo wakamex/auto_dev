@@ -4147,4 +4147,4 @@ doc = ["mkdocs", "mkdocs-include-markdown-plugin", "mkdocs-material", "mkdocs-au
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.7.2,<=3.11"
-content-hash = "6710980903de108f25b0ef8466a0a783b19ffce8862f4442ac2b1ba383e439fe"
+content-hash = "b5451ba6d2d7c5ec68308be1316a3b524f4d314222dbc552998b67e3479d6fa2"
