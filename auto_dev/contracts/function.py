@@ -32,7 +32,7 @@ class Function:
             camel_name=self.camel_case_name if self.name != "" else "constructor",
             params=params,
             args=args,
-            returns=returns
+            returns=returns,
         )
 
     @property
