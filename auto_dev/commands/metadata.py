@@ -4,6 +4,7 @@ This script is used to generate metadata for aea packages.
 - print metadata: we read in a meta data file and print it in a way that can be copy pasted into the frontend.
 """
 import json
+import sys
 from typing import List
 
 import rich_click as click
@@ -24,7 +25,10 @@ from aea.helpers.cid import to_v1
 from aea_cli_ipfs.ipfs_utils import IPFSTool
 from rich import print_json
 
+from auto_dev.base import build_cli
 from auto_dev.constants import DEFAULT_ENCODING
+
+cli = build_cli()
 
 
 def read_yaml_file(file_path):
@@ -84,15 +88,22 @@ def get_metadata(root, name, hash_, target_id):
     }
 
 
-@click.group()
-def cli():
-    """Meta data generation tool for aea packages"""
+# we make a command group called metadata
 
 
+@cli.group()
+def metadata():
+    """Commands for generating and printing metadata"""
+
+
+# we make a command called generate
+# we take in the root folder, the target name and the target id.
+# we read in the packages.json file and get the hash for the target name.
 @cli.command()
 @click.argument(
     "root",
     type=click.Path(exists=True),
+    default=".",
 )
 @click.argument(
     "target_name",
@@ -102,22 +113,47 @@ def cli():
     "target_id",
     type=str,
 )
-def generate(root, target_name, target_id):
+@click.option(
+    "strict",
+    "--strict",
+    is_flag=True,
+    default=False,
+)
+@click.option(
+    "all",
+    "--all",
+    is_flag=True,
+    default=False,
+)
+def generate(root, target_name, target_id, strict, all):  # pylint: disable=redefined-builtin
     """Generate metadata for a package
 
     example usage:
          python ./metadata.py generate . contract/eightballer/cool_skill/0.1.0 01
 
     """
+    if not target_id and not all:
+        click.echo("Please provide a target id or use --all to generate all metadata.")
+        sys.exit(1)
     data = read_json_file(root + "/packages/packages.json")
+    id_to_metadata = {}
     for name, hash_ in data['dev'].items():
-        if name != target_name:
+        if name != target_name and not all:
             continue
         metadata = get_metadata(root, name, hash_, target_id)
-        break
-    write_json_file(root + f"/mints/{target_id}.json", metadata)
-    click.echo(f"Metadata generated successfully! Saved to: {root}/mints/{target_id}.json")
-    render_metadata(metadata)
+        id_to_metadata[target_id] = metadata
+
+    for _, target_metadata in id_to_metadata.items():
+        target_metadata = id_to_metadata.get(target_id, None)
+        if not target_metadata:
+            click.echo(f"Package {target_name} not found in packages.json Do you have the correct name?")
+            if strict:
+                sys.exit(1)
+        if strict and not render_metadata(target_metadata):
+            click.echo("Metadata generation failed. Please fix the errors above and try again.")
+            sys.exit(1)
+        write_json_file(root + f"/mints/{target_id}.json", metadata)
+        click.echo(f"Metadata generated successfully! Saved to: {root}/mints/{target_id}.json")
 
 
 # we will be minting compoenents sequentially as some components depend on others.
@@ -195,54 +231,62 @@ def build_dependency_tree_for_component(component) -> List[str]:
     "metadata_file",
     type=click.Path(exists=True),
 )
-def print_metadata(metadata_file):
+@click.pass_context
+def validate(ctx, metadata_file):
     """Print metadata for a package"""
+    verbose = ctx.obj['VERBOSE']
     metadata = read_json_file(metadata_file)
-    render_metadata(metadata)
+    valid = render_metadata(metadata, verbose=verbose)
+    if not valid:
+        click.echo("Metadata validation failed. Please fix the above errors retry.")
+        sys.exit(1)
 
 
-def render_metadata(metadata):
+def render_metadata(metadata, verbose=False):
     """Render metadata for a package"""
-    click.echo("Raw Data:")
-    print_json(data=metadata)
-    click.echo(
-        "\nName:",
-    )
-    click.echo(metadata["name"])
     self_component = Dependency.from_str("/".join(metadata["name"].split("/")[1:]))
     self_component.component_type = metadata["name"].split("/")[0]
-    click.echo(f"\nType: \n{self_component.component_type}")
     self_component_status, self_component_id = check_component_status(self_component)
-    click.echo(
-        "\nDescription:",
-    )
-    click.echo(f"\"{metadata['description']}\"")
-
-    click.echo(
-        "\nVersion:",
-    )
-    click.echo(metadata["attributes"][0]["value"])
-
-    click.echo(
-        "\nPackage Hash:",
-    )
-    click.echo(metadata["code_uri"][14:])
-    click.echo(
-        "\nNFT Image URL:",
-    )
-    click.echo(metadata["image"])
-
     dependencies = build_dependency_tree_for_component(metadata["name"])
-    click.echo(
-        "\nDependencies:",
-    )
+
+    if verbose:
+        click.echo("Raw Data:")
+        print_json(data=metadata)
+        click.echo(
+            "\nName:",
+        )
+        click.echo(metadata["name"])
+        click.echo(f"\nType: \n{self_component.component_type}")
+        click.echo(
+            "\nDescription:",
+        )
+        click.echo(f"\"{metadata['description']}\"")
+
+        click.echo(
+            "\nVersion:",
+        )
+        click.echo(metadata["attributes"][0]["value"])
+
+        click.echo(
+            "\nPackage Hash:",
+        )
+        click.echo(metadata["code_uri"][14:])
+        click.echo(
+            "\nNFT Image URL:",
+        )
+        click.echo(metadata["image"])
+
+        click.echo(
+            "\nDependencies:",
+        )
     mint_status = {}
     for dependency, path in dependencies.items():
         component_status, component_id = check_component_status(dependency)
         mint_status[component_id] = component_status
         # we use a sexy emjoji to show the status of the minting.
         status_emjoji = "✅" if component_status == "MINTED" else "❌"
-        click.echo(f"Status: {status_emjoji} {component_id if component_id else ''} {component_status} - {path}")
+        if verbose:
+            click.echo(f"Status: {status_emjoji} {component_id if component_id else ''} {component_status} - {path}")
 
     # we print the self mint status
     # we first check that all the dependencies are minted.
@@ -253,20 +297,25 @@ def render_metadata(metadata):
     for component_id, component_status in mint_status.items():
         if component_status == "NOT MINTED":
             click.echo(f"\n{component_id} is not minted. Please mint it first.")
-            return
+            return False
     click.echo("\nAll dependencies are minted. You can mint this component now.")
 
     deps_ids_numeric = sorted(map(int, mint_status.keys()))
 
-    click.echo(f"\nDependencies: \n{list(deps_ids_numeric)}")
+    if verbose:
+        click.echo(f"\nDependencies: \n{list(deps_ids_numeric)}")
 
-    click.echo(
-        "\nSelf Mint Status:",
-    )
-    status_emjoji = "✅" if self_component_status == "MINTED" else "❌"
-    click.echo(
-        f"{status_emjoji} {self_component_id if self_component_id else ''} {self_component_status} - {self_component} "
-    )
+        click.echo(
+            "\nSelf Mint Status:",
+        )
+        status_emjoji = "✅" if self_component_status == "MINTED" else "❌"
+        click.echo(
+            f"{status_emjoji} {self_component_id if self_component_id else ''} "
+            + f"{self_component_status} - {self_component} "
+        )
+    if self_component_status == "MINTED":
+        return True
+    return False
 
 
 def check_component_status(component_id):
@@ -277,36 +326,14 @@ def check_component_status(component_id):
     # deps
     1-"protocol/valory/abci/0.1.0"
     2-"protocol/valory/acn/1.1.0"
-    3-"protocol/valory/contract_api/1.0.0"
-    4-"protocol/valory/http/1.0.0"
-    5-"protocol/valory/ledger_api/1.0.0"
-    6-"protocol/valory/tendermint/0.1.0"
-    7-"protocol/open_aea/signing/1.0.0"
-    8-"connection/valory/abci/0.1.0"
-    9-"connection/valory/http_client/0.23.0"
-    10-"connection/valory/ledger/0.19.0"
-    11-"connection/valory/p2p_libp2p_client/0.1.0"
-    12-"contract/valory/service_registry/0.1.0"
-    13-"skill/valory/abstract_abci/0.1.0"
-    14-"skill/valory/abstract_round_abci/0.1.0"
-    16-"skill/valory/registration_abci/0.1.0"
-    17-"skill/valory/reset_pause_abci/0.1.0"
-    18-"contract/valory/gnosis_safe_proxy_factory/0.1.0"
-    19-"contract/valory/gnosis_safe/0.1.0"
-    20-"contract/valory/multisend/0.1.0"
-    22-"skill/valory/transaction_settlement_abci/0.1.0"
-    39-"protocol/valory/ipfs/0.1.0"
-    50-"connection/valory/ipfs/0.1.0"
+    ...
     51-"contract/valory/multicall2/0.1.0"
     # dev
     97-contract/zarathustra/grow_registry:0.1.0
     ?-skill/zarathustra/plantation_abci/0.1.0
-    ?-skill/zarathustra/plantation_station_abci/0.1.0
-    ?-agent/zarathustra/plantation/0.1.0
-    ?-service/eightballer/plantation_station/0.1.0
 
-    NOTES: if the component is NOT present in the mapping.txt file, then it is not minted.
-    if the component is present in the mapping.txt file, and the token_id is a number, then it is minted.
+    NOTES: if the component is NOT present in the mapping.txt file, it is NOT minted.
+    if the component is present in the
     we always return the token_id, even if it is not minted.
 
     """
@@ -323,5 +350,13 @@ def check_component_status(component_id):
     return status, token_id
 
 
+# we have an additional command for generate-all that will generate all the metadata for the packages.
+# we will need to read in the packages.json file and then generate the metadata for each package.
+# we will need to check if the package is already minted.
+
+
+metadata.add_command(generate)
+metadata.add_command(validate)
+
 if __name__ == '__main__':
-    cli()
+    cli()  # pylint: disable=no-value-for-parameter
