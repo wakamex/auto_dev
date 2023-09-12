@@ -10,14 +10,16 @@ contains the following commands;
 
 """
 import importlib
+import sys
 from dataclasses import dataclass
 from glob import glob
 from pathlib import Path
-from typing import Dict, List
+from typing import Any, Dict, List
 
 import rich_click as click
 
 from auto_dev.base import build_cli
+from auto_dev.cli_executor import CommandExecutor
 from auto_dev.constants import DEFAULT_ENCODING, TEMPLATE_FOLDER
 
 cli = build_cli()
@@ -39,6 +41,7 @@ class ScaffoldFile:
     """Class to store a file to scaffold."""
 
     content: str
+    render_args: Any
     path: Path = None
 
     @property
@@ -58,9 +61,10 @@ class RepoType:
 class RepoScaffolder:
     """Class to scaffold a new repo."""
 
-    def __init__(self, verbose, logger):
+    def __init__(self, verbose, logger, values):
         self.verbose = verbose
         self.logger = logger
+        self.scaffold_kwargs = values
 
     def scaffold(self, type_of_repo, files: List[str]):
         """Scaffold files for a new repo."""
@@ -75,17 +79,23 @@ class RepoScaffolder:
                     f"Files must be one of: `{list(repo_type.files.keys())}`. Howerver, `{filen}` was given."
                 )
             new_file_generator = repo_type.files[filen]
-            new_file_name = new_file_generator.name
+            new_file_name = new_file_generator.path
             new_file_content = new_file_generator.content
             self.check_and_write_file(new_file_name, new_file_content)
 
     def check_and_write_file(self, path, content):
         """Check if a file exists and write it if it doesn't."""
         path = Path(path)
+
         if path.exists():
             raise FileExistsError(f"File already exists: {path}")
+
+        # we create the directory if necessary;
+        if not path.absolute().parent.exists():
+            path.absolute().parent.mkdir(parents=True)
         if self.verbose:
             self.logger.info(f"Writing file: {path}")
+
         path.write_text(content, encoding=DEFAULT_ENCODING)
 
 
@@ -99,7 +109,6 @@ def get_supported_repo_types(render_args) -> dict:
     Get the supported repo types from the templates folder.
     We will do this by reading in from the libraries folders;
     """
-    del render_args
 
     supported_repos = {}
 
@@ -117,10 +126,12 @@ def get_supported_repo_types(render_args) -> dict:
             template_path = Path(filep)
             import_path = f"auto_dev.data.repo.templates.{template_path.parent.name}.{template_path.stem}"
             template = importlib.import_module(import_path)
-            file_output = template.TEMPLATE
+            file_output = template.TEMPLATE.format(**render_args)
             output_path = Path(template_path.stem + template.EXTENSION)
-            scaffold_file = ScaffoldFile(path=output_path.name, content=file_output)
+            dir_path = f"{template.DIR.format(**render_args)}{output_path.name}"
+            scaffold_file = ScaffoldFile(path=dir_path, content=file_output, render_args=render_args)
             scaffold_files[template_path.stem] = scaffold_file
+
         supported_repos[template_folder.name] = RepoType(name=template_folder, files=scaffold_files)
     return supported_repos
 
@@ -161,7 +172,52 @@ def scaffold(ctx, type_of_repo, files):
     repo_type = SUPPORTED_REPO_TYPES[type_of_repo]
     if files == ():
         raise ValueError(f"No files provided. Must be one of: {list(repo_type.files.keys())}")
-    scaffolder = RepoScaffolder(verbose, logger)
+    scaffolder = RepoScaffolder(verbose, logger, render_args)
+    scaffolder.scaffold(type_of_repo=type_of_repo, files=files)
+    logger.info("Done.")
+
+
+# we have a command to create a new repo.
+# we will need to create a new repo and then scaffold the files
+@repo.command()
+@click.option(
+    "-t",
+    "--type-of-repo",
+    help="Type of repo to scaffold",
+    type=click.Choice(SUPPORTED_REPO_TYPES.keys()),
+    required=True,
+)
+@click.option("--files", help="Files to scaffold", multiple=True, default=["all"])
+@click.pass_context
+def new(ctx, type_of_repo, files):
+    """Create a new repo and scaffold necessary files."""
+    logger = ctx.obj["LOGGER"]
+    verbose = ctx.obj["VERBOSE"]
+    logger.info(f"Creating a new {type_of_repo} repo.")
+    if Path(".git").exists():
+        logger.error("Already in a git repo.")
+        sys.exit(1)
+    logger.info("Creating a new git repo.")
+    # we need to run the git init command and checkout to the main branch
+    # we will then scaffold the files
+    commands = ["git init", "git checkout -b main", "autonomy packages init"]
+    for command in commands:
+        cli_executor = CommandExecutor(command=command.split(" "))
+        result = cli_executor.execute(verbose=verbose)
+        if not result:
+            logger.error(f"Command failed: {command}")
+            sys.exit(1)
+
+    # now we need to scaffold the files
+    repo_type = SUPPORTED_REPO_TYPES[type_of_repo]
+    if files == ():
+        logger.error(f"No files provided. Must be one of: {list(repo_type.files.keys())}")
+        sys.exit(1)
+
+    if files == ("all",):
+        files = list(repo_type.files.keys())
+
+    scaffolder = RepoScaffolder(verbose, logger, render_args)
     scaffolder.scaffold(type_of_repo=type_of_repo, files=files)
     logger.info("Done.")
 

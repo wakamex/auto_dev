@@ -2,25 +2,27 @@
 Contains the template for the README.md file
 """
 
-TEMPLATE = """# {repo_name}
-{repo_description}
+DIR = "./"
+
+TEMPLATE = """# {project_name}
+{description}
 
 ## Installation
 ```bash
-pip install {repo_name}
+pip install {project_name}
 ```
 
 ## Usage
 ```python
-import {repo_name}
+import {project_name}
 ```
 
 ## Contributing
 
 ### Setup
 ```bash
-git clone {repo_url}
-cd {repo_name}
+git clone https://github.com/{author}/{project_name}
+cd {project_name}
 poetry install
 ```
 
@@ -47,6 +49,12 @@ make release
 ## License
 This project is licensed under the terms of the MIT license.
 """
+
+
+REQUIRED_KEYS = [
+    "project_name",
+    "description",
+]
 
 
 EXTENSION = ".md"
