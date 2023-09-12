@@ -21,7 +21,7 @@ class DockerFork:
     host: str = "http://localhost"
     port: int = 8546
     container: Optional[Container] = None
-    run_command: str = "--fork-url {fork_url} --fork-block-number {fork_block_number} --host 0.0.0.0 --port {port}"
+    run_command: str = "--fork-url '{fork_url}' --fork-block-number {fork_block_number} --host 0.0.0.0 --port {port}"
 
     def stop(self):
         """Stop the docker container."""
@@ -53,13 +53,14 @@ class DockerFork:
     def run(self):
         """Run the docker container in a background process."""
         client = DockerClient.from_env()
+        cmd = self.run_command.format(fork_url=self.fork_url, fork_block_number=self.fork_block_number, port=self.port)
+
         self.container = client.containers.run(
             image="ghcr.io/foundry-rs/foundry:latest",
             entrypoint="/usr/local/bin/anvil",
-            command=self.run_command.format(
-                fork_url=self.fork_url, fork_block_number=self.fork_block_number, port=self.port
-            ),
+            command=cmd,
             ports={f"{self.port}/tcp": self.port},
+            environment={"RUST_BACKTRACE": "1"},
             detach=True,
         )
         wait = 0
