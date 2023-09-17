@@ -42,7 +42,11 @@ def lint(ctx, path, changed_only):
     verbose = ctx.obj["VERBOSE"]
     num_processes = ctx.obj["NUM_PROCESSES"]
     logger.info("Linting Open Autonomy Packages")
-    paths = get_paths(path, changed_only)
+    if changed_only:
+        logger.info("Checking for changed files...")
+    paths = get_paths(path=path,
+                      changed_only=changed_only)
+
     logger.info(f"Linting {len(paths)} files...")
     if num_processes > 1:
         results = multi_thread_lint(paths, verbose, num_processes)

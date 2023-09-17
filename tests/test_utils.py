@@ -3,26 +3,28 @@ We test the functions from utils
 """
 
 import json
-from pathlib import Path
 import shutil
-from tempfile import TemporaryDirectory
+from pathlib import Path
 
 import pytest
 
 from auto_dev.constants import DEFAULT_ENCODING
 from auto_dev.utils import get_logger, get_packages, get_paths, has_package_code_changed
 
-TEST_PACKAGES_JSON = {"packages/packages.json": """
+TEST_PACKAGES_JSON = {
+    "packages/packages.json": """
 {
     "dev": {
-        "agent/eightballer/tmp/0.1.0": "bafybeiaa3jynk3bx4uged6wye7pddkpbyr2t7avzze475vkyu2bbjeddrm"
+        "agent/eightballer/tmp/aea-config.yaml": "bafybeiaa3jynk3bx4uged6wye7pddkpbyr2t7avzze475vkyu2bbjeddrm"
     },
     "third_party": {
     }
 }
-"""}
+"""
+}
 
-TEST_PACKAGE_FILE = {"packages/eightballer/agent/tmp/aea-config.yaml": """
+TEST_PACKAGE_FILE = {
+    "packages/eightballer/agents/tmp/aea-config.yaml": """
 agent_name: tmp
 author: eightballer
 version: 0.1.0
@@ -48,8 +50,8 @@ logging_config:
   version: 1
 dependencies:
   open-aea-ledger-ethereum: {}
-"""}
-
+"""
+}
 
 
 def test_get_logger():
@@ -70,22 +72,14 @@ def test_has_package_code_changed_true(test_filesystem):
     """
     with open(Path(test_filesystem) / Path("packages/test_file.txt"), "w", encoding=DEFAULT_ENCODING) as file:
         file.write("test")
-    assert has_package_code_changed(Path("packages")) is True
+    assert has_package_code_changed(Path("packages"))
 
 
 def test_has_package_code_changed_false(test_filesystem):
     """
     Test has_package_code_changed.
     """
-    assert has_package_code_changed(Path(test_filesystem) / Path("packages")) is False
-
-
-def test_get_paths(test_filesystem):
-    """
-    Test get_paths.
-    """
-    assert test_filesystem == str(Path.cwd())
-    assert len(get_paths()) == 0
+    assert not has_package_code_changed(Path(test_filesystem) / Path("packages"))
 
 
 @pytest.fixture
@@ -94,30 +88,39 @@ def autonomy_fs(test_filesystem):
     Test get_paths.
     """
     Path(list(TEST_PACKAGES_JSON.keys()).pop())
-    for key in TEST_PACKAGES_JSON.keys():
+    for key, value in TEST_PACKAGES_JSON.items():
         key_path = Path(test_filesystem) / Path(key)
         if key_path.exists():
             shutil.rmtree(key_path, ignore_errors=True)
         if not key_path.parent.exists():
             key_path.parent.mkdir(parents=True)
-        with open(key_path, "w", encoding=DEFAULT_ENCODING) as fp:
-            fp.write(TEST_PACKAGES_JSON[key])
+        with open(key_path, "w", encoding=DEFAULT_ENCODING) as path:
+            path.write(value)
 
-    for file in [
+    for data_file in [
         TEST_PACKAGE_FILE,
     ]:
-        for fn, data in file.items():
-            file_path = Path(test_filesystem) / Path(fn)
-        if not file_path.parent.exists():
-            file_path.parent.mkdir(parents=True)
-        with open(file_path, "w", encoding=DEFAULT_ENCODING) as fp:
-            fp.write(json.dumps(data))
+        for file_name, data in data_file.items():
+            file_path = Path(test_filesystem) / Path(file_name)
+            if not file_path.parent.exists():
+                file_path.parent.mkdir(parents=True)
+            with open(file_path, "w", encoding=DEFAULT_ENCODING) as path:
+                path.write(json.dumps(data))
     yield test_filesystem
+
 
 def test_get_paths_changed_only(autonomy_fs):
     """
     Test get_paths.
     """
-    assert autonomy_fs== str(Path.cwd())
+    assert autonomy_fs == str(Path.cwd())
 
     assert len(get_paths(changed_only=True)) == 0
+
+
+def test_get_paths(test_filesystem):
+    """
+    Test get_paths.
+    """
+    assert test_filesystem == str(Path.cwd())
+    assert len(get_paths()) == 0
