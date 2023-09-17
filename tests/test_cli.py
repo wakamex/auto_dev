@@ -19,10 +19,10 @@ def runner():
 def test_lint_fails(runner, test_filesystem):
     """Test the lint command fails with no packages."""
     assert os.getcwd() == test_filesystem
-    result = runner.invoke(cli, ["lint"])
-    assert result.exit_code == 1, result.output
+    result = runner.invoke(cli, ["lint", "-p", "packages/fake"])
+    assert result.exit_code == 2, result.output
     assert result.exception is not None
-    assert isinstance(result.exception, FileNotFoundError)
+    assert isinstance(SystemExit(2), type(result.exception))
 
 
 def test_lints_self(runner, test_filesystem):

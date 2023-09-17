@@ -46,11 +46,36 @@ def get_packages():
     return results
 
 
-def get_paths(path=Optional[str]):
+def has_package_code_changed(package_path: Path):
+    """
+    We use git to effectively check if the code has changed.
+    We filter out any files that are ;
+    - not tracked by git
+    - have no changes to the code in;
+      - the package itself
+      - the tests for the package
+
+    """
+    if not package_path.exists():
+        raise FileNotFoundError(f"Package {package_path} does not exist")
+    with isolated_filesystem(copy_cwd=True) as temp_dir:
+        os.chdir(temp_dir)
+        # we copy the content of the original directory into the temporary one
+        # we then run git diff to see if there are any changes
+        command = f"git diff --name-only {package_path}"
+        result = os.system(command)
+        return result == 0
+
+
+def get_paths(path=Optional[str], changed_only: bool = False):
     """Get the paths."""
     if not path and not Path(AUTONOMY_PACKAGES_FILE).exists():
         raise FileNotFoundError("No path was provided and no default packages file found")
     packages = get_packages() if not path else [path]
+
+    if changed_only:
+        packages = map(has_package_code_changed, packages)
+
     return reduce(lambda x, y: x + y, [glob(f"{package}/**/*py", recursive=True) for package in packages])
 
 
