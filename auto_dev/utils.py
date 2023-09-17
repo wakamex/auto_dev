@@ -85,7 +85,10 @@ def get_paths(path: Optional[str] = None, changed_only: bool = False):
                 all_changed_files += changed_files
         packages = all_changed_files
     else:
-        packages = reduce(lambda x, y: x + y, [glob(f"{package}/**/*py", recursive=True) for package in packages])
+        python_files = [glob(f"{package}/**/*py", recursive=True) for package in packages]
+        if not python_files:
+            return []
+        packages = reduce(lambda x, y: x + y, python_files)
     if not packages:
         return []
     return packages
