@@ -64,7 +64,7 @@ def has_package_code_changed(package_path: Path):
         # we copy the content of the original directory into the temporary one
         # we then run git diff to see if there are any changes
         command = f"git status --short {package_path}"
-        result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+        result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
         changed_files = [f for f in result.stdout.decode().split("\n") if f != '']
         changed_files = [f.replace(" M ", "") for f in changed_files]
         changed_files = [f.replace("?? ", "") for f in changed_files]

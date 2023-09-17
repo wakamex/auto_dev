@@ -109,12 +109,11 @@ def autonomy_fs(test_filesystem):
     yield test_filesystem
 
 
-def test_get_paths_changed_only(autonomy_fs):
+def test_get_paths_changed_only(test_filesystem):
     """
     Test get_paths.
     """
-    assert autonomy_fs == str(Path.cwd())
-
+    assert test_filesystem == str(Path.cwd())
     assert len(get_paths(changed_only=True)) == 0
 
 
