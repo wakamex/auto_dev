@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import shutil
+import subprocess
 from contextlib import contextmanager
 from functools import reduce
 from glob import glob
@@ -41,17 +42,53 @@ def get_packages():
         component_type, author, component_name, _ = package.split("/")
         package_path = Path(f"packages/{author}/{component_type}s/{component_name}")
         if not package_path.exists():
-            raise FileNotFoundError(f"Package {package} does not exist")
+            raise FileNotFoundError(f"Package {package} not found at: {package_path} does not exist")
         results.append(package_path)
     return results
 
 
-def get_paths(path=Optional[str]):
+def has_package_code_changed(package_path: Path):
+    """
+    We use git to effectively check if the code has changed.
+    We filter out any files that are ;
+    - not tracked by git
+    - have no changes to the code in;
+      - the package itself
+      - the tests for the package
+
+    """
+    if not package_path.exists():
+        raise FileNotFoundError(f"Package {package_path} does not exist")
+    command = f"git status --short {package_path}"
+    result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+    changed_files = [f for f in result.stdout.decode().split("\n") if f != '']
+    changed_files = [f.replace(" M ", "") for f in changed_files]
+    changed_files = [f.replace("?? ", "") for f in changed_files]
+    return changed_files
+
+
+def get_paths(path: Optional[str] = None, changed_only: bool = False):
     """Get the paths."""
     if not path and not Path(AUTONOMY_PACKAGES_FILE).exists():
         raise FileNotFoundError("No path was provided and no default packages file found")
-    packages = get_packages() if not path else [path]
-    return reduce(lambda x, y: x + y, [glob(f"{package}/**/*py", recursive=True) for package in packages])
+    packages = get_packages() if not path else [Path(path)]
+
+    if changed_only:
+        all_changed_files = []
+        for package in packages:
+            changed_files = has_package_code_changed(package)
+            if changed_files:
+                all_changed_files += changed_files
+        packages = all_changed_files
+    else:
+        python_files = [glob(f"{package}/**/*py", recursive=True) for package in packages]
+        if not python_files:
+            return []
+        packages = reduce(lambda x, y: x + y, python_files)
+    if not packages:
+        return []
+    python_files = [f for f in packages if "__pycache__" not in f and f.endswith(".py")]
+    return python_files
 
 
 @contextmanager

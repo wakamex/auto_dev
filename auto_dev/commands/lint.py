@@ -26,8 +26,15 @@ cli = build_cli()
     type=click.Path(exists=True, file_okay=False),
     default=None,
 )
+@click.option(
+    "-co",
+    "--changed-only",
+    help="Only lint the files that have changed.",
+    is_flag=True,
+    default=False,
+)
 @click.pass_context
-def lint(ctx, path):
+def lint(ctx, path, changed_only):
     """
     Runs the linting tooling
     """
@@ -35,7 +42,10 @@ def lint(ctx, path):
     verbose = ctx.obj["VERBOSE"]
     num_processes = ctx.obj["NUM_PROCESSES"]
     logger.info("Linting Open Autonomy Packages")
-    paths = get_paths(path)
+    if changed_only:
+        logger.info("Checking for changed files...")
+    paths = get_paths(path=path, changed_only=changed_only)
+
     logger.info(f"Linting {len(paths)} files...")
     if num_processes > 1:
         results = multi_thread_lint(paths, verbose, num_processes)
@@ -60,7 +70,7 @@ def single_thread_lint(paths, verbose, logger):
         if verbose:
             logger.info(f"Linting: {path}")
         result = check_path(path, verbose=verbose)
-        results[package] = result
+        results[path] = result
     return results
 
 
