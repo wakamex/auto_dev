@@ -71,7 +71,7 @@ def has_package_code_changed(package_path: Path):
         return changed_files
 
 
-def get_paths(path: Optional[str]=None, changed_only: bool = False):
+def get_paths(path: Optional[str] = None, changed_only: bool = False):
     """Get the paths."""
     if not path and not Path(AUTONOMY_PACKAGES_FILE).exists():
         raise FileNotFoundError("No path was provided and no default packages file found")

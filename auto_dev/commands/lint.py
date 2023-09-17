@@ -44,8 +44,7 @@ def lint(ctx, path, changed_only):
     logger.info("Linting Open Autonomy Packages")
     if changed_only:
         logger.info("Checking for changed files...")
-    paths = get_paths(path=path,
-                      changed_only=changed_only)
+    paths = get_paths(path=path, changed_only=changed_only)
 
     logger.info(f"Linting {len(paths)} files...")
     if num_processes > 1:
