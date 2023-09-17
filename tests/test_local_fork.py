@@ -8,8 +8,8 @@ import requests
 
 from auto_dev.local_fork import DockerFork
 
-TESTNET_RPC_URL = "https://arbitrum-goerli.rpc.thirdweb.com"
-DEFAULT_FORK_BLOCK_NUMBER = 27433769
+TESTNET_RPC_URL = "https://rpc.ankr.com/eth"
+DEFAULT_FORK_BLOCK_NUMBER = 18120809
 
 
 @pytest.fixture
