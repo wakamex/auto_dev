@@ -59,16 +59,16 @@ def has_package_code_changed(package_path: Path):
     """
     if not package_path.exists():
         raise FileNotFoundError(f"Package {package_path} does not exist")
-    with isolated_filesystem(copy_cwd=True) as temp_dir:
-        os.chdir(temp_dir)
+    # with isolated_filesystem(copy_cwd=True) as temp_dir:
+    #     os.chdir(temp_dir)
         # we copy the content of the original directory into the temporary one
         # we then run git diff to see if there are any changes
-        command = f"git status --short {package_path}"
-        result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
-        changed_files = [f for f in result.stdout.decode().split("\n") if f != '']
-        changed_files = [f.replace(" M ", "") for f in changed_files]
-        changed_files = [f.replace("?? ", "") for f in changed_files]
-        return changed_files
+    command = f"git status --short {package_path}"
+    result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+    changed_files = [f for f in result.stdout.decode().split("\n") if f != '']
+    changed_files = [f.replace(" M ", "") for f in changed_files]
+    changed_files = [f.replace("?? ", "") for f in changed_files]
+    return changed_files
 
 
 def get_paths(path: Optional[str] = None, changed_only: bool = False):
@@ -91,7 +91,8 @@ def get_paths(path: Optional[str] = None, changed_only: bool = False):
         packages = reduce(lambda x, y: x + y, python_files)
     if not packages:
         return []
-    return packages
+    python_files = [f for f in packages if "__pycache__" not in f and f.endswith(".py")]
+    return python_files
 
 
 @contextmanager
