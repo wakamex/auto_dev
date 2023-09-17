@@ -70,7 +70,7 @@ def single_thread_lint(paths, verbose, logger):
         if verbose:
             logger.info(f"Linting: {path}")
         result = check_path(path, verbose=verbose)
-        results[package] = result
+        results[path] = result
     return results
 
 
