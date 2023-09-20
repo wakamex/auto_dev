@@ -38,3 +38,8 @@ class TestE2E:
         assert result.exit_code == 0, result.output
         result = runner.invoke(cli, ["test", "-p", "."])
         assert result.exit_code == 0, result.output
+
+    def test_makefile(self, runner, test_clean_filesystem):
+        """Test scaffolding of Makefile"""
+        result = runner.invoke(cli, ["repo", "new", "-t", "python"])
+        assert result.exit_code == 0, result.output
