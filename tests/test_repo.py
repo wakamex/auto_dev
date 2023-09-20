@@ -3,8 +3,9 @@ Tests for the click cli.
 """
 
 import os
-from pathlib import Path
 import subprocess
+from pathlib import Path
+
 import pytest
 from click.testing import CliRunner
 
@@ -50,7 +51,14 @@ class TestE2E:
         # test that the actual make command works
         error_messages = {}
         for command in ("fmt", "test"):  # lint still failing
-            result = subprocess.run(f"make {command}", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            result = subprocess.run(
+                f"make {command}",
+                shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                check=False,
+            )
             if not result.returncode == 0:
                 error_messages[command] = result.stderr
         assert not error_messages
