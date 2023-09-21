@@ -136,12 +136,18 @@ def get_supported_repo_types(render_args) -> dict:
     return supported_repos
 
 
+def format_versions(versions: list[str]) -> str:
+    version_prefix = " " * 8 + "- "
+    return f"\n{version_prefix}".join(versions)
+
+
 render_args = {
     "project_name": "test",
     "author": "8ball030",
     "email": "8ball030@gmail.com",
     "description": "test",
     "version": "0.1.0",
+    "python_versions": format_versions(["3.7", "3.8", "3.9", "3.10"]),
 }
 
 SUPPORTED_REPO_TYPES = get_supported_repo_types(render_args)
