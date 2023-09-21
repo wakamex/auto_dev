@@ -3,6 +3,7 @@ Tests for the click cli.
 """
 
 import os
+from pathlib import Path
 
 import pytest
 from click.testing import CliRunner
@@ -38,3 +39,11 @@ class TestE2E:
         assert result.exit_code == 0, result.output
         result = runner.invoke(cli, ["test", "-p", "."])
         assert result.exit_code == 0, result.output
+
+    def test_run_single_agent(self, runner, test_clean_filesystem):
+        """Test the scripts/run_single_agent.sh is generated"""
+        assert os.getcwd() == test_clean_filesystem
+        result = runner.invoke(cli, ["repo", "new", "-t", "python"])
+        assert result.exit_code == 0, result.output
+        expected_path = Path.cwd() / "scripts" / "run_single_agent.sh"
+        assert expected_path.exists()
