@@ -4,6 +4,7 @@ Tests for the click cli.
 
 import os
 
+from pathlib import Path
 import pytest
 from click.testing import CliRunner
 
@@ -38,3 +39,13 @@ class TestE2E:
         assert result.exit_code == 0, result.output
         result = runner.invoke(cli, ["test", "-p", "."])
         assert result.exit_code == 0, result.output
+
+    def test_repo_workflow(self, runner, test_clean_filesystem):
+        """Test github workflow scaffolding"""
+        result = runner.invoke(cli, ["repo", "new", "-t", "python"])
+        assert result.exit_code == 0, result.output
+        dev = Path.cwd() / ".github/workflows/dev.yml"
+        assert dev.exists()
+        content = dev.read_text()
+        assert "3.7" in content
+        assert "3.10" in content
