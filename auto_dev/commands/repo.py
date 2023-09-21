@@ -136,7 +136,8 @@ def get_supported_repo_types(render_args) -> dict:
     return supported_repos
 
 
-def format_versions(versions: list[str]) -> str:
+def format_versions(versions: List[str]) -> str:
+    """format python versions to yaml list for workflows"""
     version_prefix = " " * 8 + "- "
     return f"\n{version_prefix}".join(versions)
 

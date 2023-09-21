@@ -3,8 +3,8 @@ Tests for the click cli.
 """
 
 import os
-
 from pathlib import Path
+
 import pytest
 from click.testing import CliRunner
 
@@ -42,6 +42,7 @@ class TestE2E:
 
     def test_repo_workflow(self, runner, test_clean_filesystem):
         """Test github workflow scaffolding"""
+        assert os.getcwd() == test_clean_filesystem
         result = runner.invoke(cli, ["repo", "new", "-t", "python"])
         assert result.exit_code == 0, result.output
         dev = Path.cwd() / ".github/workflows/dev.yml"
