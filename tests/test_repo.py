@@ -46,7 +46,7 @@ class TestE2E:
         result = runner.invoke(cli, ["repo", "new", "-t", "python"])
         makefile = Path(test_clean_filesystem) / "Makefile"
         assert result.exit_code == 0, result.output
-        assert makefile.read_text()
+        assert makefile.read_text(encoding="utf-8")
 
         # test that the actual make command works
         error_messages = {}
