@@ -47,6 +47,6 @@ class TestE2E:
         assert result.exit_code == 0, result.output
         dev = Path.cwd() / ".github/workflows/dev.yml"
         assert dev.exists()
-        content = dev.read_text()
+        content = dev.read_text(encoding="utf-8")
         assert "3.7" in content
         assert "3.10" in content
