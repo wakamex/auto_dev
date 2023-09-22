@@ -3,6 +3,7 @@ Tests for the click cli.
 """
 
 import os
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -39,6 +40,28 @@ class TestE2E:
         assert result.exit_code == 0, result.output
         result = runner.invoke(cli, ["test", "-p", "."])
         assert result.exit_code == 0, result.output
+
+    def test_makefile(self, runner, test_clean_filesystem):
+        """Test scaffolding of Makefile"""
+        result = runner.invoke(cli, ["repo", "new", "-t", "python"])
+        makefile = Path(test_clean_filesystem) / "Makefile"
+        assert result.exit_code == 0, result.output
+        assert makefile.read_text(encoding="utf-8")
+
+        # test that the actual make command works
+        error_messages = {}
+        for command in ("fmt", "test"):  # lint still failing
+            result = subprocess.run(
+                f"make {command}",
+                shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                check=False,
+            )
+            if not result.returncode == 0:
+                error_messages[command] = result.stderr
+        assert not error_messages
 
     def test_run_single_agent(self, runner, test_clean_filesystem):
         """Test the scripts/run_single_agent.sh is generated"""
