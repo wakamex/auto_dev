@@ -50,3 +50,11 @@ class TestE2E:
         content = dev.read_text(encoding="utf-8")
         assert "3.7" in content
         assert "3.10" in content
+
+    def test_run_single_agent(self, runner, test_clean_filesystem):
+        """Test the scripts/run_single_agent.sh is generated"""
+        assert os.getcwd() == test_clean_filesystem
+        result = runner.invoke(cli, ["repo", "new", "-t", "python"])
+        assert result.exit_code == 0, result.output
+        expected_path = Path.cwd() / "scripts" / "run_single_agent.sh"
+        assert expected_path.exists()
