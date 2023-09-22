@@ -41,6 +41,17 @@ class TestE2E:
         result = runner.invoke(cli, ["test", "-p", "."])
         assert result.exit_code == 0, result.output
 
+    def test_repo_workflow(self, runner, test_clean_filesystem):
+        """Test github workflow scaffolding"""
+        assert os.getcwd() == test_clean_filesystem
+        result = runner.invoke(cli, ["repo", "new", "-t", "python"])
+        assert result.exit_code == 0, result.output
+        dev = Path.cwd() / ".github/workflows/dev.yml"
+        assert dev.exists()
+        content = dev.read_text(encoding="utf-8")
+        assert "3.7" in content
+        assert "3.10" in content
+
     def test_makefile(self, runner, test_clean_filesystem):
         """Test scaffolding of Makefile"""
         result = runner.invoke(cli, ["repo", "new", "-t", "python"])
