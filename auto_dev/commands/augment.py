@@ -35,6 +35,32 @@ logging_config:
 """
 )
 
+LEDGER_CONNECTION_CONFIG = yaml.safe_load(
+    """
+public_id: valory/ledger:0.19.0
+type: connection
+config:
+  ledger_apis:
+    ethereum:
+      address: ${str}
+      chain_id: ${int}
+      poa_chain: ${bool:false}
+      default_gas_price_strategy: ${str:eip1559}
+"""
+)
+
+ABCI_CONNECTION_CONFIG = yaml.safe_load(
+    """
+public_id: valory/abci:0.1.0
+type: connection
+config:
+  host: ${str:localhost}
+  port: ${int:26658}
+  use_tendermint: ${bool:false}
+  target_skill_id: ${str}
+"""
+)
+
 CONSOLE_HANDLER = yaml.safe_load(
     """
 class: rich.logging.RichHandler
@@ -52,6 +78,7 @@ url: /log/
 method: POST
 """
 )
+
 LOGFILE_HANDLER = yaml.safe_load(
     """
 class: logging.FileHandler
@@ -61,10 +88,19 @@ level: INFO
 """
 )
 
+
 HANDLERS = {
     "console": CONSOLE_HANDLER,
     "http": HTTP_HANDLER,
     "logfile": LOGFILE_HANDLER,
+}
+
+CONNECTIONS = {
+    "ledger": (
+        "valory/ledger:0.19.0:bafybeicgfupeudtmvehbwziqfxiz6ztsxr5rxzvalzvsdsspzz73o5fzfi",
+        LEDGER_CONNECTION_CONFIG,
+    ),
+    "abci": ("valory/abci:0.1.0:bafybeigtjiag4a2h6msnlojahtc5pae7jrphjegjb3mlk2l54igc4jwnxe", ABCI_CONNECTION_CONFIG),
 }
 
 
@@ -127,6 +163,53 @@ def logging(handlers):
     logging_scaffolder = LoggingScaffolder()
     logging_scaffolder.scaffold(handlers)
     logger.info("Logging scaffolded.")
+
+
+class ConnectionScaffolder:
+    """ConnectionScaffolder"""
+
+    def __init__(self):
+        """Init scaffolder."""
+        self.logger = get_logger()
+
+    def generate(self, connections: list) -> list[tuple[str, str]]:
+        """Scaffold connections."""
+        self.logger.info(f"Generating connection config for: {connections}")
+        if not connections:
+            raise ValueError("No connections provided")
+        if connections == ["all"]:
+            connections = CONNECTIONS
+        for connection in connections:
+            if connection not in CONNECTIONS:
+                raise ValueError(f"Connection '{connection}' not found")
+        connections = [CONNECTIONS[c] for c in connections]
+        return connections
+
+    def scaffold(self, connections: list) -> None:
+        """Scaffold connection."""
+
+        path = "aea-config.yaml"
+        if not Path(path).exists():
+            raise FileNotFoundError(f"File {path} not found")
+        aea_config = list(yaml.safe_load_all(Path(path).read_text(encoding=DEFAULT_ENCODING)))
+
+        connections = self.generate(connections)
+        for connection, config in connections:
+            aea_config[0]["connections"].append(connection)
+            aea_config.append(config)
+
+        with open(path, "w", encoding=DEFAULT_ENCODING) as file:
+            yaml.dump_all(aea_config, file, default_flow_style=False, sort_keys=False)
+
+
+@augment.command()
+@click.argument("connections", nargs=-1, type=click.Choice(CONNECTIONS), required=True)
+def connection(connections):
+    """Augment an AEA configuration with connections."""
+    logger.info(f"Augmenting agent connections: {connections}")
+    connection_scaffolder = ConnectionScaffolder()
+    connection_scaffolder.scaffold(connections)
+    logger.info("Connections scaffolded.")
 
 
 if __name__ == "__main__":
