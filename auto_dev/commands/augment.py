@@ -4,6 +4,7 @@ Implement scaffolding tooling
 
 from copy import deepcopy
 from pathlib import Path
+from typing import List, Tuple
 
 import rich_click as click
 import yaml
@@ -111,8 +112,9 @@ class BaseScaffolder:
     """BaseScaffolder"""
 
     def load(self):
+        """Load"""
         if not Path(AEA_CONFIG).exists():
-            raise FileNotFoundError(f"File {path} not found")
+            raise FileNotFoundError(f"File {AEA_CONFIG} not found")
         content = Path(AEA_CONFIG).read_text(encoding=DEFAULT_ENCODING)
         self.aea_config = list(yaml.safe_load_all(content))
 
@@ -122,6 +124,7 @@ class BaseScaffolder:
         self.load()
 
     def write(self):
+        """Write"""
         with open(AEA_CONFIG, "w", encoding=DEFAULT_ENCODING) as file:
             yaml.dump_all(self.aea_config, file, default_flow_style=False, sort_keys=False)
         self.load()
@@ -173,8 +176,8 @@ def logging(handlers):
 class ConnectionScaffolder(BaseScaffolder):
     """ConnectionScaffolder"""
 
-    def generate(self, connections: list) -> list[tuple[str, str]]:
-        """Scaffold connections."""
+    def generate(self, connections: list) -> List[Tuple[str, str]]:
+        """Generate connections."""
         self.logger.info(f"Generating connection config for: {connections}")
         if not connections:
             raise ValueError("No connections provided")
