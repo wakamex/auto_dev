@@ -3,12 +3,21 @@ Test the augmenter.
 """
 import os
 import shutil
+import subprocess
 import tempfile
 from pathlib import Path
 
 import pytest
+import yaml
 
-from auto_dev.commands.augment import LoggingScaffolder
+from auto_dev.commands.augment import ConnectionScaffolder, LoggingScaffolder
+
+
+def read_aea_config() -> list:
+    """Small helper to load local aea-config.yaml"""
+    content = Path("aea-config.yaml").read_text(encoding="utf-8")
+    aea_config = list(yaml.safe_load_all(content))
+    return aea_config
 
 
 @pytest.fixture
@@ -19,7 +28,8 @@ def isolated_filesystem():
         test_dir = f"{tmpdir}/dir"
         shutil.copytree(Path(cwd), test_dir)
         os.chdir(test_dir)
-        Path("aea-config.yaml").write_text("author: aea-config.yaml\nversion: 1.0.0\n", encoding="utf-8")
+        subprocess.run(["aea", "create", "tmp_agent"], capture_output=True)
+        os.chdir("tmp_agent")
         yield test_dir
     os.chdir(cwd)
 
@@ -29,6 +39,13 @@ def logging_scaffolder(isolated_filesystem):
     """Logging scaffolder fixture."""
     del isolated_filesystem
     return LoggingScaffolder()
+
+
+@pytest.fixture
+def connection_scaffolder(isolated_filesystem):
+    """Logging scaffolder fixture."""
+    del isolated_filesystem
+    return ConnectionScaffolder()
 
 
 def test_logging_scaffolder_scaffold_all(logging_scaffolder):
@@ -51,3 +68,12 @@ def test_logging_scaffolder_scaffold_bad_handler(logging_scaffolder):
     """test the logging scaffolder."""
     with pytest.raises(ValueError):
         logging_scaffolder.scaffold(["bad"])
+
+
+def test_scaffold_connection(connection_scaffolder):
+    """Test scaffold connection"""
+    aea_config = read_aea_config()
+    assert len(aea_config) == 1
+    connection_scaffolder.scaffold(("abci", "ledger"))
+    aea_config = aea_config = read_aea_config()
+    assert len(aea_config) == 3

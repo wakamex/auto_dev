@@ -1,6 +1,7 @@
 """
 Implement scaffolding tooling
 """
+
 from copy import deepcopy
 from pathlib import Path
 
@@ -103,19 +104,31 @@ CONNECTIONS = {
     "abci": ("valory/abci:0.1.0:bafybeigtjiag4a2h6msnlojahtc5pae7jrphjegjb3mlk2l54igc4jwnxe", ABCI_CONNECTION_CONFIG),
 }
 
-
-def write(path: str, content: dict):
-    """Safe write the contents to the path using yaml."""
-    with open(path, "w", encoding=DEFAULT_ENCODING) as file:
-        yaml.dump(content, file, default_flow_style=False, sort_keys=False)
+AEA_CONFIG = "aea-config.yaml"
 
 
-class LoggingScaffolder:
-    """Logging scaffolder."""
+class BaseScaffolder:
+    """BaseScaffolder"""
+
+    def load(self):
+        if not Path(AEA_CONFIG).exists():
+            raise FileNotFoundError(f"File {path} not found")
+        content = Path(AEA_CONFIG).read_text(encoding=DEFAULT_ENCODING)
+        self.aea_config = list(yaml.safe_load_all(content))
 
     def __init__(self):
         """Init scaffolder."""
         self.logger = get_logger()
+        self.load()
+
+    def write(self):
+        with open(AEA_CONFIG, "w", encoding=DEFAULT_ENCODING) as file:
+            yaml.dump_all(self.aea_config, file, default_flow_style=False, sort_keys=False)
+        self.load()
+
+
+class LoggingScaffolder(BaseScaffolder):
+    """Logging scaffolder."""
 
     def generate(self, handlers: list):
         """Scaffold logging."""
@@ -135,18 +148,10 @@ class LoggingScaffolder:
 
     def scaffold(self, handlers: list):
         """Scaffold logging."""
-        path = "aea-config.yaml"
-        if not Path(path).exists():
-            raise FileNotFoundError(f"File {path} not found")
 
-        config = yaml.safe_load(Path(path).read_text(encoding=DEFAULT_ENCODING))
-        if isinstance(config, dict):
-            aea_config = config
-        else:
-            aea_config = list(config)[0]
         logging_config = self.generate(handlers)
-        aea_config.update(logging_config)
-        write(path, aea_config)
+        self.aea_config[0].update(logging_config)
+        self.write()
         return logging_config
 
 
@@ -165,12 +170,8 @@ def logging(handlers):
     logger.info("Logging scaffolded.")
 
 
-class ConnectionScaffolder:
+class ConnectionScaffolder(BaseScaffolder):
     """ConnectionScaffolder"""
-
-    def __init__(self):
-        """Init scaffolder."""
-        self.logger = get_logger()
 
     def generate(self, connections: list) -> list[tuple[str, str]]:
         """Scaffold connections."""
@@ -188,18 +189,12 @@ class ConnectionScaffolder:
     def scaffold(self, connections: list) -> None:
         """Scaffold connection."""
 
-        path = "aea-config.yaml"
-        if not Path(path).exists():
-            raise FileNotFoundError(f"File {path} not found")
-        aea_config = list(yaml.safe_load_all(Path(path).read_text(encoding=DEFAULT_ENCODING)))
-
         connections = self.generate(connections)
         for connection, config in connections:
-            aea_config[0]["connections"].append(connection)
-            aea_config.append(config)
+            self.aea_config[0]["connections"].append(connection)
+            self.aea_config.append(config)
 
-        with open(path, "w", encoding=DEFAULT_ENCODING) as file:
-            yaml.dump_all(aea_config, file, default_flow_style=False, sort_keys=False)
+        self.write()
 
 
 @augment.command()
