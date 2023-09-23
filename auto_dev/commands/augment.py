@@ -51,6 +51,15 @@ config:
 """
 )
 
+IPFS_CONNECTION_CONFIG = yaml.safe_load(
+    """
+public_id: valory/ipfs:0.1.0
+type: connection
+config:
+  ipfs_domain: /dns/registry.autonolas.tech/tcp/443/https
+"""
+)
+
 ABCI_CONNECTION_CONFIG = yaml.safe_load(
     """
 public_id: valory/abci:0.1.0
@@ -103,6 +112,8 @@ CONNECTIONS = {
         LEDGER_CONNECTION_CONFIG,
     ),
     "abci": ("valory/abci:0.1.0:bafybeigtjiag4a2h6msnlojahtc5pae7jrphjegjb3mlk2l54igc4jwnxe", ABCI_CONNECTION_CONFIG),
+    "ipfs": ("valory/ipfs:0.1.0:bafybeieymwm2o7qp3aybimpsw75qwrqsdqeq764sqlhggookgitncituwa", IPFS_CONNECTION_CONFIG),
+    "p2p_libp2p_client": ("valory/p2p_libp2p_client:0.1.0:bafybeidfm65eece533hfvg2xyn4icpmvz4lmvbemstrlo3iuffb7e72ycq", {}),
 }
 
 AEA_CONFIG = "aea-config.yaml"
@@ -195,7 +206,8 @@ class ConnectionScaffolder(BaseScaffolder):
         connections = self.generate(connections)
         for connection, config in connections:
             self.aea_config[0]["connections"].append(connection)
-            self.aea_config.append(config)
+            if config:
+                self.aea_config.append(config)
 
         self.write()
 
