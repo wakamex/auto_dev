@@ -3,7 +3,6 @@ Test the augmenter.
 """
 import os
 import shutil
-import subprocess
 import tempfile
 from pathlib import Path
 
@@ -27,9 +26,9 @@ def isolated_filesystem():
     with tempfile.TemporaryDirectory() as tmpdir:
         test_dir = f"{tmpdir}/dir"
         shutil.copytree(Path(cwd), test_dir)
+        template = Path(cwd) / "auto_dev" / "data" / "aea-config.yaml"
+        shutil.copyfile(str(template), str(Path(test_dir) / "aea-config.yaml"))
         os.chdir(test_dir)
-        subprocess.run(["aea", "create", "tmp_agent"], capture_output=True, check=False)
-        os.chdir("tmp_agent")
         yield test_dir
     os.chdir(cwd)
 
