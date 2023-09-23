@@ -73,6 +73,7 @@ def test_scaffold_connection(connection_scaffolder):
     """Test scaffold connection"""
     aea_config = read_aea_config()
     assert len(aea_config) == 1
-    connection_scaffolder.scaffold(("abci", "ledger"))
+    connections = ("abci", "ledger", "ipfs", "http_client", "http_server", "websocket_server", "prometheus")
+    connection_scaffolder.scaffold(connections)
     aea_config = aea_config = read_aea_config()
-    assert len(aea_config) == 3
+    assert len(aea_config) == len(connections)
