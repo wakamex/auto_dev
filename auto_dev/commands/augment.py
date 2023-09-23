@@ -131,7 +131,6 @@ level: INFO
 """
 )
 
-
 HANDLERS = {
     "console": CONSOLE_HANDLER,
     "http": HTTP_HANDLER,
@@ -145,11 +144,23 @@ CONNECTIONS = {
     ),
     "abci": ("valory/abci:0.1.0:bafybeigtjiag4a2h6msnlojahtc5pae7jrphjegjb3mlk2l54igc4jwnxe", ABCI_CONNECTION_CONFIG),
     "ipfs": ("valory/ipfs:0.1.0:bafybeieymwm2o7qp3aybimpsw75qwrqsdqeq764sqlhggookgitncituwa", IPFS_CONNECTION_CONFIG),
-    "p2p_libp2p_client": ("valory/p2p_libp2p_client:0.1.0:bafybeidfm65eece533hfvg2xyn4icpmvz4lmvbemstrlo3iuffb7e72ycq", {}),
+    "p2p_libp2p_client": (
+        "valory/p2p_libp2p_client:0.1.0:bafybeidfm65eece533hfvg2xyn4icpmvz4lmvbemstrlo3iuffb7e72ycq",
+        {},
+    ),
     "http_client": ("valory/http_client:0.23.0:bafybeidykl4elwbcjkqn32wt5h4h7tlpeqovrcq3c5bcplt6nhpznhgczi", {}),
-    "http_server": ("eightballer/http_server:0.1.0:bafybeic5m2px4wanaqjc6jc3ileqmc76k2loitjrsmlffqvafx7bznwrba", HTTP_SERVER_CONNECTION_CONFIG),
-    "websocket_server": ("eightballer/websocket_server:0.1.0:bafybeifop5szl2ikmesdax7mhjsbtzklfqlkxacm3jvk4hxnl32fhxedwy", WEBSOCKET_SERVER_CONNECTION_CONFIG),
-    "prometheus": ("fetchai/prometheus:0.8.0:bafybeid3gtvpl2rjo2bccjg27mye3ckyimbn42xtbjqnajjmfkmajnfjeu", PROMETHEUS_CONNECTION_CONFIG),
+    "http_server": (
+        "eightballer/http_server:0.1.0:bafybeic5m2px4wanaqjc6jc3ileqmc76k2loitjrsmlffqvafx7bznwrba",
+        HTTP_SERVER_CONNECTION_CONFIG,
+    ),
+    "websocket_server": (
+        "eightballer/websocket_server:0.1.0:bafybeifop5szl2ikmesdax7mhjsbtzklfqlkxacm3jvk4hxnl32fhxedwy",
+        WEBSOCKET_SERVER_CONNECTION_CONFIG,
+    ),
+    "prometheus": (
+        "fetchai/prometheus:0.8.0:bafybeid3gtvpl2rjo2bccjg27mye3ckyimbn42xtbjqnajjmfkmajnfjeu",
+        PROMETHEUS_CONNECTION_CONFIG,
+    ),
 }
 
 AEA_CONFIG = "aea-config.yaml"
