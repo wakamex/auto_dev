@@ -1,9 +1,17 @@
 """
 This module contains tests for the fsm module.
 """
+
+import os
+from pathlib import Path
+import pytest
+from auto_dev.cli_executor import CommandExecutor
+from click.testing import CliRunner
 from textwrap import dedent
 
 from auto_dev.fsm.fsm import FsmSpec
+
+from auto_dev.cli import cli
 
 EXAMPLE = """
 alphabet_in:
@@ -63,6 +71,12 @@ stateDiagram-v2
    Profit --> CheckExpiredPositions: Done
    FailedTransaction --> StopStategy: SendAlert
 """
+
+
+@pytest.fixture
+def runner():
+    """Fixture for invoking command-line interfaces."""
+    return CliRunner()
 
 
 def test_from_fsm_spec():
@@ -143,3 +157,22 @@ def test_from_mermaid_fsm():
     assert set(fsm_spec_from_mermaid.states) == set(fsm_spec.states)
     assert set(fsm_spec_from_mermaid.alphabet_in) == set(fsm_spec.alphabet_in)
     assert fsm_spec_from_mermaid.transition_func == fsm_spec.transition_func
+
+def test_fsm_base(runner, test_filesystem):
+    """Test scaffold dummy FSM."""
+    assert os.getcwd() == test_filesystem
+    command = CommandExecutor(["aea", "create", "tim"])
+    result = command.execute(verbose=True)
+    if not result:
+        raise ValueError("Failed to create dummy agent tim")
+
+    path = Path.cwd() / "tim"
+    assert path.exists()
+    config = "aea-config.yaml"
+    assert (path / config).exists()
+
+    os.chdir(str(path))
+    result = runner.invoke(cli, ["fsm", "base"])
+    assert result.exit_code == 0, files
+    assert (path / "skills" / "dummy_fsm").exists()
+
