@@ -3,6 +3,7 @@ Implement fsm tooling
 """
 
 from pathlib import Path
+
 import rich_click as click
 
 from auto_dev.base import build_cli

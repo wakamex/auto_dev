@@ -4,14 +4,14 @@ This module contains tests for the fsm module.
 
 import os
 from pathlib import Path
-import pytest
-from auto_dev.cli_executor import CommandExecutor
-from click.testing import CliRunner
 from textwrap import dedent
 
-from auto_dev.fsm.fsm import FsmSpec
+import pytest
+from click.testing import CliRunner
 
 from auto_dev.cli import cli
+from auto_dev.cli_executor import CommandExecutor
+from auto_dev.fsm.fsm import FsmSpec
 
 EXAMPLE = """
 alphabet_in:
@@ -158,6 +158,7 @@ def test_from_mermaid_fsm():
     assert set(fsm_spec_from_mermaid.alphabet_in) == set(fsm_spec.alphabet_in)
     assert fsm_spec_from_mermaid.transition_func == fsm_spec.transition_func
 
+
 def test_fsm_base(runner, test_filesystem):
     """Test scaffold dummy FSM."""
     assert os.getcwd() == test_filesystem
@@ -173,6 +174,5 @@ def test_fsm_base(runner, test_filesystem):
 
     os.chdir(str(path))
     result = runner.invoke(cli, ["fsm", "base"])
-    assert result.exit_code == 0, files
+    assert result.exit_code == 0, result.output
     assert (path / "skills" / "dummy_fsm").exists()
-
