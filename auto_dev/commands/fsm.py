@@ -2,10 +2,12 @@
 Implement fsm tooling
 """
 
+from pathlib import Path
 import rich_click as click
 
 from auto_dev.base import build_cli
-from auto_dev.constants import DEFAULT_ENCODING
+from auto_dev.cli_executor import CommandExecutor
+from auto_dev.constants import DEFAULT_ENCODING, PACKAGE_DIR
 from auto_dev.fsm.fsm import FsmSpec
 from auto_dev.utils import get_logger
 
@@ -21,6 +23,18 @@ def fsm():
     """
     Implement fsm tooling
     """
+
+
+@fsm.command()
+def base():
+    """We scaffold a dummy FSM."""
+    path = Path(PACKAGE_DIR) / "data" / "fsm" / "fsm_specification.yaml"
+    if not path.exists():
+        raise FileNotFoundError(path)
+    command = CommandExecutor(["autonomy", "scaffold", "fsm", "dummy_fsm", "--spec", str(path)])
+    result = command.execute(verbose=True)
+    if not result:
+        raise ValueError(f"FSM scaffolding failed for spec: {path}")
 
 
 @fsm.command()
