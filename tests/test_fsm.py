@@ -150,14 +150,6 @@ def test_from_mermaid_fsm():
     assert fsm_spec_from_mermaid.transition_func == fsm_spec.transition_func
 
 
-def execute(cmd: str) -> None:
-    """Execute"""
-    command = CommandExecutor(cmd.split(" "))
-    result = command.execute(verbose=True)
-    if not result:
-        raise ValueError(f"Command failed: {cmd}")
-
-
 def test_dummy_fsm(runner, test_filesystem):
     """Test scaffold dummy FSM."""
     assert os.getcwd() == test_filesystem
@@ -197,7 +189,6 @@ def test_base_fsm(runner, test_filesystem):
     result = runner.invoke(cli, ["fsm", "base"])
     assert result.exit_code == 0, result.output
 
-    execute("adev fsm base")
     assert (Path.cwd() / "vendor" / "valory" / "skills" / "abstract_abci").exists()
     assert (Path.cwd() / "vendor" / "valory" / "skills" / "abstract_round_abci").exists()
     assert (Path.cwd() / "vendor" / "valory" / "skills" / "registration_abci").exists()
