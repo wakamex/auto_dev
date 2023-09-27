@@ -2,13 +2,12 @@
 Implement fsm tooling
 """
 
-from pathlib import Path
 
 import rich_click as click
 
 from auto_dev.base import build_cli
 from auto_dev.cli_executor import CommandExecutor
-from auto_dev.constants import DEFAULT_ENCODING, PACKAGE_DIR
+from auto_dev.constants import DEFAULT_ENCODING
 from auto_dev.fsm.fsm import FsmSpec
 from auto_dev.utils import get_logger
 
@@ -32,19 +31,13 @@ def fsm():
 
 
 @fsm.command()
-@click.argument("name", type=str, required=False)
-@click.argument("path", type=click.Path(exists=True, file_okay=True), required=False)
+@click.argument("name", type=str, default=None, required=False)
+@click.argument("path", type=click.Path(exists=True, file_okay=True), default=None, required=False)
 def base(name, path):
     """
     Scaffold a base FSM.
 
-    The base FSM will contains the following skills:
-    - abstract_abci
-    - abstract_round_abci
-    - registration_abci
-    - reset_pause_abci
-    
-    usage: `adev fsm base [fsm_specification.yaml]`
+    usage: `adev fsm base [name] [fsm_specification.yaml]`
     """
     if not bool(name) == bool(path):
         raise ValueError("Either both or neither the name and fsm spec need to be provided")
@@ -61,7 +54,7 @@ def base(name, path):
     command = CommandExecutor(["autonomy", "scaffold", "fsm", name, "--spec", str(path)])
     result = command.execute(verbose=True)
     if not result:
-        raise ValueError(f"FSM scaffolding failed for spec: {path}")    
+        raise ValueError(f"FSM scaffolding failed for spec: {path}")
 
 
 @fsm.command()
