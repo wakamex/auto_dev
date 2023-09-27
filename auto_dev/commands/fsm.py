@@ -18,6 +18,11 @@ cli = build_cli(plugins=False)
 
 # we have a fsm command group
 
+SKILLS = {
+    "registration_abci": "bafybeig3jo3fhcxz7xgwpxnmf74ann2bwlqyaq2466wrkg5mbc33wmpk6y",
+    "reset_pause_abci": "bafybeicuma62mkfb36ygsycufhjqt6jqffi7zhhuxdlgdvmq6kcjl2ebm4",
+}
+
 
 @cli.group()
 def fsm():
@@ -27,7 +32,7 @@ def fsm():
 
 
 @fsm.command()
-def base():
+def dummy():
     """We scaffold a dummy FSM."""
     path = Path(PACKAGE_DIR) / "data" / "fsm" / "fsm_specification.yaml"
     if not path.exists():
@@ -36,6 +41,17 @@ def base():
     result = command.execute(verbose=True)
     if not result:
         raise ValueError(f"FSM scaffolding failed for spec: {path}")
+
+
+@fsm.command()
+def base():
+    """Scaffold a base FSM."""
+    skills = "registration_abci", "reset_pause_abci"
+    for skill in skills:
+        command = CommandExecutor(["autonomy", "add", "skill", SKILLS[skill]])
+        result = command.execute(verbose=True)
+        if not result:
+            raise ValueError(f"Adding failed for skill: {skill}")
 
 
 @fsm.command()
