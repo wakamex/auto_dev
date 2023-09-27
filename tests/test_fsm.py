@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 from textwrap import dedent
 
+from auto_dev.constants import DEFAULT_ENCODING, PACKAGE_DIR
 from auto_dev.cli import cli
 from auto_dev.cli_executor import CommandExecutor
 from auto_dev.fsm.fsm import FsmSpec
@@ -150,42 +151,9 @@ def test_from_mermaid_fsm():
     assert fsm_spec_from_mermaid.transition_func == fsm_spec.transition_func
 
 
-def test_dummy_fsm(runner, test_filesystem):
-    """Test scaffold dummy FSM."""
-    assert os.getcwd() == test_filesystem
-
-    command = CommandExecutor(["aea", "create", "tim"])
-    result = command.execute(verbose=True)
-    if not result:
-        raise ValueError("Failed to create dummy agent tim")
-
-    path = Path.cwd() / "tim"
-    assert path.exists()
-    config = "aea-config.yaml"
-    assert (path / config).exists()
-
-    os.chdir(str(path))
-    result = runner.invoke(cli, ["fsm", "dummy"])
-    assert result.exit_code == 0, result.output
-    assert (path / "skills" / "dummy_fsm").exists()
-
-
-def test_base_fsm(runner, test_filesystem):
+def test_base_fsm(runner, dummy_agent_tim):
     """Test scaffold base FSM."""
 
-    assert os.getcwd() == test_filesystem
-
-    command = CommandExecutor(["aea", "create", "tim"])
-    result = command.execute(verbose=True)
-    if not result:
-        raise ValueError("Failed to create dummy agent tim")
-
-    path = Path.cwd() / "tim"
-    assert path.exists()
-    config = "aea-config.yaml"
-    assert (path / config).exists()
-
-    os.chdir(str(path))
     result = runner.invoke(cli, ["fsm", "base"])
     assert result.exit_code == 0, result.output
 
@@ -193,3 +161,21 @@ def test_base_fsm(runner, test_filesystem):
     assert (Path.cwd() / "vendor" / "valory" / "skills" / "abstract_round_abci").exists()
     assert (Path.cwd() / "vendor" / "valory" / "skills" / "registration_abci").exists()
     assert (Path.cwd() / "vendor" / "valory" / "skills" / "reset_pause_abci").exists()
+
+
+def test_base_fsm_with_spec(runner, dummy_agent_tim):
+    """Test scaffold base FSM."""
+
+    name = "dummy"
+    path = Path(PACKAGE_DIR) / "data" / "fsm" / "fsm_specification.yaml"
+    result = runner.invoke(cli, ["fsm", "base", name, str(path)])
+    assert result.exit_code == 0, result.output
+
+    assert (Path.cwd() / "vendor" / "valory" / "skills" / "abstract_abci").exists()
+    assert (Path.cwd() / "vendor" / "valory" / "skills" / "abstract_round_abci").exists()
+    assert (Path.cwd() / "vendor" / "valory" / "skills" / "registration_abci").exists()
+    assert (Path.cwd() / "vendor" / "valory" / "skills" / "reset_pause_abci").exists()
+    
+    new_skill_path = Path.cwd() / "skills" / name / "fsm_specification.yaml"
+    assert new_skill_path.exists()
+    assert new_skill_path.read_text(encoding=DEFAULT_ENCODING) == path.read_text(encoding=DEFAULT_ENCODING)
