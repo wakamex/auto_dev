@@ -32,26 +32,36 @@ def fsm():
 
 
 @fsm.command()
-def dummy():
-    """We scaffold a dummy FSM."""
-    path = Path(PACKAGE_DIR) / "data" / "fsm" / "fsm_specification.yaml"
-    if not path.exists():
-        raise FileNotFoundError(path)
-    command = CommandExecutor(["autonomy", "scaffold", "fsm", "dummy_fsm", "--spec", str(path)])
-    result = command.execute(verbose=True)
-    if not result:
-        raise ValueError(f"FSM scaffolding failed for spec: {path}")
+@click.argument("name", type=str, required=False)
+@click.argument("path", type=click.Path(exists=True, file_okay=True), required=False)
+def base(name, path):
+    """
+    Scaffold a base FSM.
 
+    The base FSM will contains the following skills:
+    - abstract_abci
+    - abstract_round_abci
+    - registration_abci
+    - reset_pause_abci
+    
+    usage: `adev fsm base [fsm_specification.yaml]`
+    """
+    if not bool(name) == bool(path):
+        raise ValueError("Either both or neither the name and fsm spec need to be provided")
 
-@fsm.command()
-def base():
-    """Scaffold a base FSM."""
     skills = "registration_abci", "reset_pause_abci"
     for skill in skills:
         command = CommandExecutor(["autonomy", "add", "skill", SKILLS[skill]])
         result = command.execute(verbose=True)
         if not result:
             raise ValueError(f"Adding failed for skill: {skill}")
+    if not name and not path:
+        return
+
+    command = CommandExecutor(["autonomy", "scaffold", "fsm", name, "--spec", str(path)])
+    result = command.execute(verbose=True)
+    if not result:
+        raise ValueError(f"FSM scaffolding failed for spec: {path}")    
 
 
 @fsm.command()
