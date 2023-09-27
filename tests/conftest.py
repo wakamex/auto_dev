@@ -33,7 +33,7 @@ def test_clean_filesystem():
 
 
 @pytest.fixture
-def dummy_agent_tim(test_clean_filesystem) -> None:
+def dummy_agent_tim(test_clean_filesystem) -> Path:
     """Fixture for dummy agent tim."""
     assert Path.cwd() == Path(test_clean_filesystem)
 
@@ -43,3 +43,4 @@ def dummy_agent_tim(test_clean_filesystem) -> None:
         raise ValueError("Failed to create dummy agent tim")
 
     os.chdir(str(Path.cwd() / "tim"))
+    return Path.cwd()

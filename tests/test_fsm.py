@@ -2,13 +2,11 @@
 This module contains tests for the fsm module.
 """
 
-import os
 from pathlib import Path
 from textwrap import dedent
 
-from auto_dev.constants import DEFAULT_ENCODING, PACKAGE_DIR
 from auto_dev.cli import cli
-from auto_dev.cli_executor import CommandExecutor
+from auto_dev.constants import DEFAULT_ENCODING, PACKAGE_DIR
 from auto_dev.fsm.fsm import FsmSpec
 
 EXAMPLE = """
@@ -154,6 +152,7 @@ def test_from_mermaid_fsm():
 def test_base_fsm(runner, dummy_agent_tim):
     """Test scaffold base FSM."""
 
+    dummy_agent_tim.exists()
     result = runner.invoke(cli, ["fsm", "base"])
     assert result.exit_code == 0, result.output
 
@@ -166,6 +165,8 @@ def test_base_fsm(runner, dummy_agent_tim):
 def test_base_fsm_with_spec(runner, dummy_agent_tim):
     """Test scaffold base FSM."""
 
+    dummy_agent_tim.exists()
+
     name = "dummy"
     path = Path(PACKAGE_DIR) / "data" / "fsm" / "fsm_specification.yaml"
     result = runner.invoke(cli, ["fsm", "base", name, str(path)])
@@ -175,7 +176,7 @@ def test_base_fsm_with_spec(runner, dummy_agent_tim):
     assert (Path.cwd() / "vendor" / "valory" / "skills" / "abstract_round_abci").exists()
     assert (Path.cwd() / "vendor" / "valory" / "skills" / "registration_abci").exists()
     assert (Path.cwd() / "vendor" / "valory" / "skills" / "reset_pause_abci").exists()
-    
+
     new_skill_path = Path.cwd() / "skills" / name / "fsm_specification.yaml"
     assert new_skill_path.exists()
     assert new_skill_path.read_text(encoding=DEFAULT_ENCODING) == path.read_text(encoding=DEFAULT_ENCODING)
