@@ -6,9 +6,6 @@ import os
 from pathlib import Path
 from textwrap import dedent
 
-import pytest
-from click.testing import CliRunner
-
 from auto_dev.cli import cli
 from auto_dev.cli_executor import CommandExecutor
 from auto_dev.fsm.fsm import FsmSpec
@@ -71,12 +68,6 @@ stateDiagram-v2
    Profit --> CheckExpiredPositions: Done
    FailedTransaction --> StopStategy: SendAlert
 """
-
-
-@pytest.fixture
-def runner():
-    """Fixture for invoking command-line interfaces."""
-    return CliRunner()
 
 
 def test_from_fsm_spec():
@@ -159,9 +150,39 @@ def test_from_mermaid_fsm():
     assert fsm_spec_from_mermaid.transition_func == fsm_spec.transition_func
 
 
-def test_fsm_base(runner, test_filesystem):
+def execute(cmd: str) -> None:
+    """Execute"""
+    command = CommandExecutor(cmd.split(" "))
+    result = command.execute(verbose=True)
+    if not result:
+        raise ValueError(f"Command failed: {cmd}")
+
+
+def test_dummy_fsm(runner, test_filesystem):
     """Test scaffold dummy FSM."""
     assert os.getcwd() == test_filesystem
+
+    command = CommandExecutor(["aea", "create", "tim"])
+    result = command.execute(verbose=True)
+    if not result:
+        raise ValueError("Failed to create dummy agent tim")
+
+    path = Path.cwd() / "tim"
+    assert path.exists()
+    config = "aea-config.yaml"
+    assert (path / config).exists()
+
+    os.chdir(str(path))
+    result = runner.invoke(cli, ["fsm", "dummy"])
+    assert result.exit_code == 0, result.output
+    assert (path / "skills" / "dummy_fsm").exists()
+
+
+def test_base_fsm(runner, test_filesystem):
+    """Test scaffold base FSM."""
+
+    assert os.getcwd() == test_filesystem
+
     command = CommandExecutor(["aea", "create", "tim"])
     result = command.execute(verbose=True)
     if not result:
@@ -175,4 +196,9 @@ def test_fsm_base(runner, test_filesystem):
     os.chdir(str(path))
     result = runner.invoke(cli, ["fsm", "base"])
     assert result.exit_code == 0, result.output
-    assert (path / "skills" / "dummy_fsm").exists()
+
+    execute("adev fsm base")
+    assert (Path.cwd() / "vendor" / "valory" / "skills" / "abstract_abci").exists()
+    assert (Path.cwd() / "vendor" / "valory" / "skills" / "abstract_round_abci").exists()
+    assert (Path.cwd() / "vendor" / "valory" / "skills" / "registration_abci").exists()
+    assert (Path.cwd() / "vendor" / "valory" / "skills" / "reset_pause_abci").exists()

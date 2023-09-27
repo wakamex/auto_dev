@@ -4,16 +4,7 @@ Tests for the click cli.
 
 import os
 
-import pytest
-from click.testing import CliRunner
-
 from auto_dev.cli import cli
-
-
-@pytest.fixture
-def runner():
-    """Fixture for invoking command-line interfaces."""
-    return CliRunner()
 
 
 def test_lint_fails(runner, test_filesystem):

@@ -3,8 +3,15 @@ Conftest for testing command-line interfaces.
 """
 
 import pytest
+from click.testing import CliRunner
 
 from auto_dev.utils import isolated_filesystem
+
+
+@pytest.fixture
+def runner():
+    """Fixture for invoking command-line interfaces."""
+    return CliRunner()
 
 
 @pytest.fixture
