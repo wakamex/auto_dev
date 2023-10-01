@@ -5,7 +5,7 @@ Template file for the Makefile
 """
 EXTENSION = ""
 DIR = "./"
-TEMPLATE = """
+TEMPLATE = r"""
 .PHONY: clean
 clean: clean-build clean-pyc clean-test clean-docs
 
