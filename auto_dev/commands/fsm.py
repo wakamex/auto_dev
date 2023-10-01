@@ -2,8 +2,10 @@
 Implement fsm tooling
 """
 
+from pathlib import Path
 
 import rich_click as click
+from aea.configurations.constants import DEFAULT_AEA_CONFIG_FILE
 
 from auto_dev.base import build_cli
 from auto_dev.cli_executor import CommandExecutor
@@ -39,6 +41,9 @@ def base(name, path):
 
     usage: `adev fsm base [name] [fsm_specification.yaml]`
     """
+    if not Path(DEFAULT_AEA_CONFIG_FILE).exists():
+        raise ValueError(f"No {DEFAULT_AEA_CONFIG_FILE} found in current directory")
+
     if not bool(name) == bool(path):
         raise ValueError("Either both or neither the name and fsm spec need to be provided")
 
