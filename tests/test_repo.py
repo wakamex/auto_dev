@@ -61,7 +61,7 @@ class TestE2E:
 
         # test that the actual make command works
         error_messages = {}
-        for command in ("fmt", "test"):  # lint still failing
+        for command in ("fmt", "test", "lint", "hashes"):
             result = subprocess.run(
                 f"make {command}",
                 shell=True,
