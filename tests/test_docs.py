@@ -1,16 +1,20 @@
 """
 Tests for the documentation.
 """
-from logging import getLogger
 import os
+from logging import getLogger
 from pathlib import Path
-from auto_dev.cli_executor import CommandExecutor
+
 import pytest
+
+from auto_dev.cli_executor import CommandExecutor
+from auto_dev.constants import DEFAULT_ENCODING
+
 
 def extract_code_blocks(doc):
     """Extract the code blocks from the documentation."""
-    with open(doc, "r") as f:
-        lines = f.readlines()
+    with open(doc, "r", encoding=DEFAULT_ENCODING) as file_path:
+        lines = file_path.readlines()
     code_blocks = []
     code_block = []
     in_code_block = False
@@ -31,17 +35,18 @@ def extract_code_blocks(doc):
 
 # we test the documents works.
 
-documenation = [
-    "docs/fsm.md"
-]
+documenation = ["docs/fsm.md"]
 logger = getLogger()
+
 
 @pytest.mark.parametrize("doc", documenation)
 def test_documentation(doc):
     """Test the documentation."""
     assert Path(doc).exists()
 
+
 # extract the code blocks from the documentation.
+
 
 @pytest.mark.parametrize("doc", documenation)
 def test_doc_code_execution(doc):
@@ -56,4 +61,4 @@ def test_doc_code_execution(doc):
             os.chdir(command.split(" ")[1])
         else:
             executor = CommandExecutor(command)
-            assert executor.execute(stream=True, shell=True), f"Command failed: {command}"
+            assert executor.execute(stream=True, shell=True, verbose=False), f"Command failed: {command}"
