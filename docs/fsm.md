@@ -51,6 +51,6 @@ aea add-key ethereum
 ```
 
 ```bash
-aea run
+echo run the agent with `aea run`
 ```
 
