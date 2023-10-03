@@ -10,9 +10,8 @@ from contextlib import contextmanager
 from functools import reduce
 from glob import glob
 from pathlib import Path
-from tempfile import TemporaryDirectory
-from typing import Optional
-
+import tempfile
+from typing import Optional, Union
 from rich.logging import RichHandler
 
 from .constants import AUTONOMY_PACKAGES_FILE, DEFAULT_ENCODING
@@ -98,7 +97,7 @@ def isolated_filesystem(copy_cwd: bool = False):
     And to navigate to it and then to clean it up.
     """
     original_path = Path.cwd()
-    with TemporaryDirectory() as temp_dir:
+    with tempfile.TemporaryDirectory() as temp_dir:
         os.chdir(temp_dir)
         if copy_cwd:
             # we copy the content of the original directory into the temporary one
@@ -125,3 +124,25 @@ def change_dir(target_path):
         yield
     finally:
         os.chdir(original_path)
+
+
+@contextmanager
+def folder_swapper(source_folder: Union[str, Path], destination_folder: Union[str, Path]):
+    """
+    A custom context manager that swaps two folders, allows the execution of logic within the context,
+    and ensures the original folder state is restored on exit, whether due to success or failure.
+    """
+    source_folder = Path(source_folder)
+    destination_folder = Path(destination_folder)
+
+    temp_dir = tempfile.TemporaryDirectory()
+    temp_destination = Path(tempfile.mkdtemp(dir=temp_dir.name))
+    try:
+        shutil.move(destination_folder, temp_destination)
+        shutil.move(source_folder, destination_folder.parent)
+        yield
+    finally:
+        # Always restore the original state when exiting the context
+        shutil.move(destination_folder, source_folder.parent)
+        shutil.move(temp_destination / source_folder.name, destination_folder.parent)
+        temp_dir.cleanup()
