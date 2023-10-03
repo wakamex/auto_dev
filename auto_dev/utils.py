@@ -127,22 +127,47 @@ def change_dir(target_path):
 
 
 @contextmanager
-def folder_swapper(source_folder: Union[str, Path], destination_folder: Union[str, Path]):
+def change_dir(target_path):
     """
-    A custom context manager that swaps two folders, allows the execution of logic within the context,
-    and ensures the original folder state is restored on exit, whether due to success or failure.
+    Temporarily change the working directory.
     """
-    source_folder = Path(source_folder)
-    destination_folder = Path(destination_folder)
-
-    temp_dir = tempfile.TemporaryDirectory()
-    temp_destination = Path(tempfile.mkdtemp(dir=temp_dir.name))
+    original_path = str(Path.cwd())
     try:
-        shutil.move(destination_folder, temp_destination)
-        shutil.move(source_folder, destination_folder.parent)
+        os.chdir(target_path)
         yield
     finally:
-        # Always restore the original state when exiting the context
-        shutil.move(destination_folder, source_folder.parent)
-        shutil.move(temp_destination / source_folder.name, destination_folder.parent)
-        temp_dir.cleanup()
+        os.chdir(original_path)
+
+
+@contextmanager
+def folder_swapper(dir_a: Union[str, Path], dir_b: Union[str, Path]):
+    """
+    A custom context manager that swaps the contents of two folders, allows the execution of logic 
+    within the context, and ensures the original folder contents are restored on exit, whether due 
+    to success or failure.
+    """
+
+    dir_a = Path(dir_a)
+    dir_b = Path(dir_b)
+
+    if not dir_a.exists() or not dir_b.exists():
+        raise FileNotFoundError("One or both of the provided directories do not exist.")
+
+    dir_a_backup = Path(tempfile.mkdtemp()) / "backup_a"
+    dir_b_backup = Path(tempfile.mkdtemp()) / "backup_b"
+    shutil.copytree(dir_a, dir_a_backup)
+    shutil.copytree(dir_b, dir_b_backup)
+
+    def overwrite(x: Path, y: Path) -> None:
+        shutil.rmtree(dir_a)
+        shutil.rmtree(dir_b)
+        shutil.copytree(x, dir_a)
+        shutil.copytree(y, dir_b)
+
+    try:
+        overwrite(dir_b_backup, dir_a_backup)
+        yield
+    finally:
+        overwrite(dir_a_backup, dir_b_backup)
+        shutil.rmtree(dir_a_backup.parent)
+        shutil.rmtree(dir_b_backup.parent)
