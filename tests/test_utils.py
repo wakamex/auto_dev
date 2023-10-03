@@ -5,11 +5,12 @@ We test the functions from utils
 import json
 import shutil
 from pathlib import Path
+import tempfile
 
 import pytest
 
 from auto_dev.constants import DEFAULT_ENCODING
-from auto_dev.utils import get_logger, get_packages, get_paths, has_package_code_changed
+from auto_dev.utils import get_logger, get_packages, get_paths, has_package_code_changed, folder_swapper
 
 TEST_PACKAGES_JSON = {
     "packages/packages.json": """
@@ -117,3 +118,52 @@ def test_get_paths(test_packages_filesystem):
     """
     assert test_packages_filesystem == str(Path.cwd())
     assert len(get_paths()) == 0
+
+
+class TestFolderSwapper:
+    """TestFolderSwapper"""
+
+    @classmethod
+    def setup_class(cls):
+        """Setup class"""
+        cls.temp_dir = tempfile.TemporaryDirectory()
+
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        """Setup"""
+
+        self.a_dir = Path(tempfile.mkdtemp(dir=self.temp_dir.name))
+        self.b_dir = Path(tempfile.mkdtemp(dir=self.temp_dir.name))
+        self.a_file_path = self.a_dir / "test_file.txt"
+        self.a_file_path.write_text("dummy data")
+        assert self.a_file_path.exists()
+        self.b_file_path = self.b_dir / "test_file.txt"
+
+    def test_folder_swapper(self):
+        """
+        Test the folder_swapper custom context manager.
+        """
+        assert self.a_file_path.is_file()
+        assert not self.b_file_path.exists()
+
+        with folder_swapper(self.a_dir, self.b_dir):
+            assert self.b_file_path.is_file()
+
+        assert self.a_file_path.is_file()
+        assert not self.b_file_path.exists()
+
+    def test_folder_swapper_execution_raises(self):
+        """
+        Test the folder_swapper custom context manager restores on raise.
+        """
+        assert self.a_file_path.is_file()
+        assert not self.b_file_path.exists()
+
+        try:
+            with folder_swapper(self.a_dir, self.b_dir):
+                1 / 0
+        except ZeroDivisionError:
+            pass
+
+        assert self.a_file_path.is_file()
+        assert not self.b_file_path.exists()
