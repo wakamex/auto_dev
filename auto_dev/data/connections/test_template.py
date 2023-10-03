@@ -33,11 +33,10 @@ import logging
 import pytest
 from unittest.mock import MagicMock, Mock, patch
 
-
 from aea.common import Address
-from aea.mail.base import Envelope, Message
 from aea.configurations.base import ConnectionConfig
 from aea.identity.base import Identity
+from aea.mail.base import Envelope, Message
 from aea.protocols.dialogue.base import Dialogue as BaseDialogue
 
 from packages.{protocol_author}.protocols.{protocol_name}.dialogues import {protocol_name_camelcase}Dialogues as Base{protocol_name_camelcase}Dialogues
@@ -95,7 +94,7 @@ class Test{name_camelcase}Connection():
         self.target_skill_id = "dummy_author/dummy_skill:0.1.0"
 
         # TODO: define custom kwargs for connection
-        kwargs = {}
+        kwargs = {{}}
 
         self.configuration = ConnectionConfig(
             target_skill_id=self.target_skill_id,
@@ -134,10 +133,9 @@ class Test{name_camelcase}Connection():
 
         msg, dialogue = self._dialogues.create(
             counterparty=str(CONNECTION_PUBLIC_ID),
+            # TODO: set correct performative and message fields
             performative={protocol_name_camelcase}Message.Performative.{PERFORMATIVE},
-            table_name="test_table",
-            query="SELECT * FROM test_table",
-            params={{}},
+            # ...
         )
 
         await self.{name}_connection.send(msg)

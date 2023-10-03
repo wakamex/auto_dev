@@ -7,7 +7,6 @@ A dummy protocol for testing purposes
 ## Specification
 
 ```yaml
----
 name: dummy_protocol
 author: your_name
 version: 1.0.0
@@ -17,10 +16,10 @@ aea_version: '>=1.0.0, <2.0.0'
 protocol_specification_id: your_name/dummy_protocol:1.0.0
 speech_acts:
   request:
-    param1: pt:str
-    param2: pt:int
+    template: pt:str
+    params: pt:dict[pt:str, pt:str]
   response:
-    result: pt:str
+    result: pt:dict[pt:str, pt:str]
   error:
     error_code: ct:ErrorCode
     error_msg: pt:str
@@ -44,7 +43,6 @@ termination: [ response, error ]
 roles: { client, server }
 end_states: [ response, error ]
 keep_terminal_state_dialogues: true
-...
 ```
 
 ## Links
