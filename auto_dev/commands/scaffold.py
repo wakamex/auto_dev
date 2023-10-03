@@ -9,6 +9,7 @@ Also contains a Contract, which we will use to allow the user to;
 
 """
 
+from pathlib import Path
 import rich_click as click
 import yaml
 
@@ -17,6 +18,8 @@ from auto_dev.constants import DEFAULT_ENCODING
 from auto_dev.contracts.block_explorer import BlockExplorer
 from auto_dev.contracts.contract_scafolder import ContractScaffolder
 from auto_dev.contracts.utils import from_camel_case_to_snake_case
+
+from auto_dev.connections.scaffolder import ConnectionScaffolder
 
 cli = build_cli()
 
@@ -82,6 +85,26 @@ def contract(  # pylint: disable=R0914
         logger.info(f"    {function.name}")
 
     logger.info(f"New contract scaffolded at {contract_path}")
+
+
+@scaffold.command()
+@click.argument("name", default=None, required=True)
+@click.option("--protocol", default=None, required=False, help="a text file containing a protocol specification.")
+@click.pass_context
+def connection(  # pylint: disable=R0914
+    ctx, name, protocol,
+):
+    """
+    Scaffold a connection.
+    """
+    logger = ctx.obj["LOGGER"]
+    verbose = ctx.obj["VERBOSE"]
+
+    scaffolder = ConnectionScaffolder(name, protocol, logger=logger, verbose=verbose)
+    scaffolder.generate()
+
+    connection_path = Path.cwd() / "connections" / name
+    logger.info(f"New connection scaffolded at {connection_path}")
 
 
 if __name__ == "__main__":
