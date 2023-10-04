@@ -45,7 +45,6 @@ render_args = {
     "email": "8ball030@gmail.com",
     "description": "",
     "version": "0.1.0",
-    "python_versions": format_versions(["3.7", "3.8", "3.9", "3.10"]),
 }
 
 TEMPLATES = {f.name: f for f in Path(TEMPLATE_FOLDER).glob("*")}
@@ -68,6 +67,7 @@ class RepoScaffolder:
         for file in template_folder.rglob("*"):
             if not file.is_file():
                 continue
+
             rel_path = file.relative_to(template_folder)
             content = file.read_text(encoding=DEFAULT_ENCODING)
             updated_content = content.format(**self.scaffold_kwargs)
@@ -75,6 +75,7 @@ class RepoScaffolder:
             target_file_path = new_repo_dir / rel_path.with_suffix("")
             target_file_path.parent.mkdir(parents=True, exist_ok=True)
             target_file_path.write_text(updated_content)
+
 
 
 @cli.command()
@@ -100,8 +101,6 @@ def repo(ctx, name, type_of_repo):
     Path(name).mkdir(exist_ok=False)
 
     with change_dir(name):
-        Path(name).mkdir()
-        (Path(name) / "__init__.py").touch()
 
         execute_commands("git init", "git checkout -b main", verbose=verbose, logger=logger)
         assert (Path.cwd() / ".git").exists()

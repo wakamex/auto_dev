@@ -1,12 +1,9 @@
 [tool.poetry]
-packages = [
-    {{ include = "{project_name}" }},
-]
 name = "{project_name}"
 version = "0.1.0"
 description = ""
 authors = ["{author}"]
-readme = "readme.md"
+readme = "README.md"
 license = "Apache-2.0"
 classifiers = [
     'License :: OSI Approved :: Apache Software License',
@@ -19,7 +16,7 @@ classifiers = [
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.8,<=3.11"
+python = ">=3.7,<=3.11"
 
 [tool.poetry.dev-dependencies]
 
