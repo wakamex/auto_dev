@@ -40,7 +40,6 @@ class BaseTestRepo:
         """Test the format command works with the current package."""
 
         assert test_clean_filesystem
-
         result = runner.invoke(cli, self.cli_args)
         assert result.exit_code == 0, result.output
         assert (self.repo_path / ".git").exists()
