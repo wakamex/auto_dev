@@ -103,7 +103,7 @@ class LoggingScaffolder:
         if not Path(path).exists():
             raise FileNotFoundError(f"File {path} not found")
 
-        config = yaml.safe_load(Path(path).read_text(encoding=DEFAULT_ENCODING))
+        config = yaml.safe_load_all(Path(path).read_text(encoding=DEFAULT_ENCODING))
         if isinstance(config, dict):
             aea_config = config
         else:
