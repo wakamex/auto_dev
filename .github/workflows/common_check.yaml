@@ -32,8 +32,6 @@ jobs:
         with:
           version: ${{ matrix.poetry-version }}
           virtualenvs-create: true
-          virtualenvs-in-project: false
-          virtualenvs-path: ~/my-custom-path
           installer-parallel: true
 
       - name: Install Adev
