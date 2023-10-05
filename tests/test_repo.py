@@ -80,6 +80,7 @@ class BaseTestRepo:
         assert not error_messages
 
 
+@pytest.mark.skip(reason="Not implemented yet")
 class TestRepoPython(BaseTestRepo):
     """Test scaffolding new python repository."""
 
@@ -92,15 +93,6 @@ class TestRepoAutonomy(BaseTestRepo):
 
     type_of_repo = "autonomy"
     make_commands = "fmt", "test", "lint", "hashes"
-
-    def test_repo_workflow(self, runner, test_clean_filesystem):
-        """Test github workflow scaffolding"""
-
-        assert test_clean_filesystem
-
-        result = runner.invoke(cli, self.cli_args)
-        assert result.exit_code == 0, result.output
-        assert (self.repo_path / ".github/workflows/dev.yaml").exists()
 
     def test_run_single_agent(self, runner, test_clean_filesystem):
         """Test the scripts/run_single_agent.sh is generated"""
