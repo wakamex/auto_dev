@@ -38,7 +38,7 @@ jobs:
 
       - name: Install Adev
         run: |
-          poetry install -v
+          bash auto_dev/data/repo/templates/autonomy/install.sh
 
       - name: Format
         run: |
