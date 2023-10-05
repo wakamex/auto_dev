@@ -11,7 +11,6 @@ contains the following commands;
 
 import sys
 from pathlib import Path
-from typing import List
 
 import rich_click as click
 
@@ -19,12 +18,6 @@ from auto_dev.base import build_cli
 from auto_dev.cli_executor import CommandExecutor
 from auto_dev.constants import DEFAULT_ENCODING, TEMPLATE_FOLDER
 from auto_dev.utils import change_dir
-
-
-def format_versions(versions: List[str]) -> str:
-    """format python versions to yaml list for workflows"""
-    version_prefix = " " * 8 + "- "
-    return f"\n{version_prefix}".join(versions)
 
 
 def execute_commands(*commands: str, verbose: bool, logger, shell: bool = False) -> None:

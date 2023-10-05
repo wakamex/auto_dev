@@ -25,7 +25,7 @@ packages = [
 
 
 [tool.poetry.dependencies]
-python = ">=3.7.2,<=3.11"
+python = ">=3.7.2,<=3.11.4"
 click = "8.0.2"
 black = "^22.6.0"
 mypy = "^0.971"

@@ -7,16 +7,9 @@ from pathlib import Path
 from typing import Tuple
 
 import pytest
-from click.testing import CliRunner
 
 from auto_dev.cli import cli
 from auto_dev.utils import change_dir
-
-
-@pytest.fixture
-def runner():
-    """Fixture for invoking command-line interfaces."""
-    return CliRunner()
 
 
 class BaseTestRepo:
@@ -36,29 +29,29 @@ class BaseTestRepo:
         """Path of newly scaffolded repo."""
         return Path.cwd() / self.repo_name
 
-    def test_repo_new(self, runner, test_clean_filesystem):
+    def test_repo_new(self, cli_runner, test_clean_filesystem):
         """Test the format command works with the current package."""
 
         assert test_clean_filesystem
-        result = runner.invoke(cli, self.cli_args)
+        result = cli_runner.invoke(cli, self.cli_args)
         assert result.exit_code == 0, result.output
         assert (self.repo_path / ".git").exists()
 
-    def test_repo_new_fail(self, runner, test_filesystem):
+    def test_repo_new_fail(self, cli_runner, test_filesystem):
         """Test the format command works with the current package."""
 
         assert test_filesystem
 
         self.repo_path.mkdir()
-        result = runner.invoke(cli, self.cli_args)
+        result = cli_runner.invoke(cli, self.cli_args)
         assert result.exit_code == 1, result.output
 
-    def test_makefile(self, runner, test_clean_filesystem):
+    def test_makefile(self, cli_runner, test_clean_filesystem):
         """Test scaffolding of Makefile"""
 
         assert test_clean_filesystem
 
-        result = runner.invoke(cli, self.cli_args)
+        result = cli_runner.invoke(cli, self.cli_args)
         makefile = self.repo_path / "Makefile"
         assert result.exit_code == 0, result.output
         assert makefile.read_text(encoding="utf-8")
@@ -93,12 +86,12 @@ class TestRepoAutonomy(BaseTestRepo):
     type_of_repo = "autonomy"
     make_commands = "fmt", "test", "lint", "hashes"
 
-    def test_run_single_agent(self, runner, test_clean_filesystem):
+    def test_run_single_agent(self, cli_runner, test_clean_filesystem):
         """Test the scripts/run_single_agent.sh is generated"""
 
         assert test_clean_filesystem
 
-        result = runner.invoke(cli, self.cli_args)
+        result = cli_runner.invoke(cli, self.cli_args)
         assert result.exit_code == 0, result.output
         expected_path = self.repo_path / "scripts" / "run_single_agent.sh"
         assert expected_path.exists()
