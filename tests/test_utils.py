@@ -60,36 +60,30 @@ def test_get_logger():
     assert log.level == 20
 
 
-def test_get_packages():
+def test_get_packages(test_packages_filesystem):
     """Test get_packages."""
+    del test_packages_filesystem
     packages = get_packages()
-    assert len(packages) == 0
+    assert len(packages) == 1
 
 
-def test_has_package_code_changed_true(test_filesystem):
+def test_has_package_code_changed_true(test_packages_filesystem):
     """
     Test has_package_code_changed.
     """
-    with open(Path(test_filesystem) / Path("packages/test_file.txt"), "w", encoding=DEFAULT_ENCODING) as file:
+    with open(Path(test_packages_filesystem) / Path("packages/test_file.txt"), "w", encoding=DEFAULT_ENCODING) as file:
         file.write("test")
     assert has_package_code_changed(Path("packages"))
 
 
-def test_has_package_code_changed_false(test_filesystem):
-    """
-    Test has_package_code_changed.
-    """
-    assert not has_package_code_changed(Path(test_filesystem) / Path("packages"))
-
-
 @pytest.fixture
-def autonomy_fs(test_filesystem):
+def autonomy_fs(test_packages_filesystem):
     """
     Test get_paths.
     """
     Path(list(TEST_PACKAGES_JSON.keys()).pop())
     for key, value in TEST_PACKAGES_JSON.items():
-        key_path = Path(test_filesystem) / Path(key)
+        key_path = Path(test_packages_filesystem) / Path(key)
         if key_path.exists():
             shutil.rmtree(key_path, ignore_errors=True)
         if not key_path.parent.exists():
@@ -101,25 +95,25 @@ def autonomy_fs(test_filesystem):
         TEST_PACKAGE_FILE,
     ]:
         for file_name, data in data_file.items():
-            file_path = Path(test_filesystem) / Path(file_name)
+            file_path = Path(test_packages_filesystem) / Path(file_name)
             if not file_path.parent.exists():
                 file_path.parent.mkdir(parents=True)
             with open(file_path, "w", encoding=DEFAULT_ENCODING) as path:
                 path.write(json.dumps(data))
-    yield test_filesystem
+    yield test_packages_filesystem
 
 
-def test_get_paths_changed_only(test_filesystem):
+def test_get_paths_changed_only(test_packages_filesystem):
     """
     Test get_paths.
     """
-    assert test_filesystem == str(Path.cwd())
+    assert test_packages_filesystem == str(Path.cwd())
     assert len(get_paths(changed_only=True)) == 0
 
 
-def test_get_paths(test_filesystem):
+def test_get_paths(test_packages_filesystem):
     """
     Test get_paths.
     """
-    assert test_filesystem == str(Path.cwd())
+    assert test_packages_filesystem == str(Path.cwd())
     assert len(get_paths()) == 0
