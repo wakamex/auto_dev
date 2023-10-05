@@ -1,6 +1,8 @@
 #! /bin/bash
 set -e
-unset VIRTUAL_ENV && poetry -v run echo "Installing dependencies"
+unset VIRTUALENVS_PATH
+unset VIRTUAL_ENV 
+poetry -v run echo "Installing dependencies"
 executable=$(echo $(echo /home/$(whoami)/.cache/pypoetry/virtualenvs/$(poetry env list |head -n 1| awk '{print $1}'))/bin/pip)
 echo "Executing using :${executable}"
 echo "Installing host dependencies"
