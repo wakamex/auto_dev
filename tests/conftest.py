@@ -55,10 +55,23 @@ def dummy_agent_tim(test_clean_filesystem) -> Path:
     """Fixture for dummy agent tim."""
     assert Path.cwd() == Path(test_clean_filesystem)
 
-    command = CommandExecutor(["aea", "create", "tim"])
-    result = command.execute(verbose=True)
+    command = "aea create tim"
+
+    command_executor = CommandExecutor(command.split())
+    result = command_executor.execute(verbose=True)
     if not result:
-        raise ValueError("Failed to create dummy agent tim")
+        raise ValueError(f"CLI command execution failed: `{command}`")
 
     os.chdir(str(Path.cwd() / "tim"))
+
+    commands = (
+        "aea generate-key ethereum",
+        "aea add-key ethereum",
+    )
+    for command in commands:
+        command_executor = CommandExecutor(command.split())
+        result = command_executor.execute(verbose=True)
+        if not result:
+            raise ValueError(f"CLI command execution failed: `{command}`")
+
     return Path.cwd()
