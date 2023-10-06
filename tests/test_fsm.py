@@ -4,7 +4,9 @@ This module contains tests for the fsm module.
 
 from pathlib import Path
 from textwrap import dedent
+import pytest
 
+from aea.cli import cli as aea_cli
 from auto_dev.cli import cli
 from auto_dev.constants import DEFAULT_ENCODING, PACKAGE_DIR
 from auto_dev.fsm.fsm import FsmSpec
@@ -180,3 +182,15 @@ def test_base_fsm_with_spec(runner, dummy_agent_tim):
     new_skill_path = Path.cwd() / "skills" / name / "fsm_specification.yaml"
     assert new_skill_path.exists()
     assert new_skill_path.read_text(encoding=DEFAULT_ENCODING) == path.read_text(encoding=DEFAULT_ENCODING)
+
+
+def test_base_fsm_aea_run_missing_overwrites(runner, dummy_agent_tim):
+    """Test scaffold base FSM upto `aea run`."""
+
+    dummy_agent_tim.exists()
+    result = runner.invoke(cli, ["fsm", "base"])
+    assert result.exit_code == 0, result.output
+
+    result = runner.invoke(aea_cli, ["run",])
+    assert result.exit_code == 1
+    assert "An error occurred during instantiation of connection valory" in result.output
