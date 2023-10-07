@@ -27,7 +27,8 @@ class CommandExecutor:
         """Execute the command."""
         if stream:
             return self._execute_stream(verbose, shell)
-        logger.debug(f"Executing command:\n\"\"\n{' '.join(self.command)}\n\"\"")
+        if verbose:
+            logger.debug(f"Executing command:\n\"\"\n{' '.join(self.command)}\n\"\"")
         try:
             result = subprocess.run(
                 self.command,
