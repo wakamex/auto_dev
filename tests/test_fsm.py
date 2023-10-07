@@ -4,9 +4,9 @@ This module contains tests for the fsm module.
 
 from pathlib import Path
 from textwrap import dedent
-import pytest
 
 from aea.cli import cli as aea_cli
+
 from auto_dev.cli import cli
 from auto_dev.constants import DEFAULT_ENCODING, PACKAGE_DIR
 from auto_dev.fsm.fsm import FsmSpec
@@ -144,7 +144,7 @@ def test_from_mermaid_fsm():
     mermaid = fsm_spec.to_mermaid()
     fsm_spec_from_mermaid = FsmSpec.from_mermaid(mermaid)
 
-    # we check the atrtibutes
+    # we check the attributes
     assert fsm_spec_from_mermaid.default_start_state == fsm_spec.default_start_state
     assert set(fsm_spec_from_mermaid.states) == set(fsm_spec.states)
     assert set(fsm_spec_from_mermaid.alphabet_in) == set(fsm_spec.alphabet_in)
@@ -191,6 +191,6 @@ def test_base_fsm_aea_run_missing_overwrites(runner, dummy_agent_tim):
     result = runner.invoke(cli, ["fsm", "base"])
     assert result.exit_code == 0, result.output
 
-    result = runner.invoke(aea_cli, ["run",])
+    result = runner.invoke(aea_cli, ["run"])
     assert result.exit_code == 1
     assert "An error occurred during instantiation of connection valory" in result.output
