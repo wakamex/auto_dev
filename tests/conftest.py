@@ -53,16 +53,17 @@ def runner():
 @pytest.fixture
 def dummy_agent_tim(test_clean_filesystem) -> Path:
     """Fixture for dummy agent tim."""
-    assert Path.cwd() == Path(test_clean_filesystem)
 
-    command = "aea create tim"
+    assert test_clean_filesystem
 
-    command_executor = CommandExecutor(command.split())
-    result = command_executor.execute(verbose=True)
+    agent = "tim"
+    command = f"aea create {agent}"
+    command_executor = CommandExecutor(command)
+    result = command_executor.execute(verbose=True, shell=True)
     if not result:
         raise ValueError(f"CLI command execution failed: `{command}`")
 
-    os.chdir(str(Path.cwd() / "tim"))
+    os.chdir(str(Path.cwd() / agent))
 
     commands = (
         "aea generate-key ethereum",
