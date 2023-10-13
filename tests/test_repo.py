@@ -6,8 +6,6 @@ import subprocess
 from pathlib import Path
 from typing import Tuple
 
-import pytest
-
 from auto_dev.cli import cli
 from auto_dev.utils import change_dir
 
