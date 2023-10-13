@@ -13,7 +13,7 @@ cat auto_dev/data/fsm/fsm_specification.yaml
 We now scaffold the agent.
 
 ```bash
-aea create new_agent 
+aea create new_agent
 ```
 We now have a new agent.
 
@@ -28,7 +28,7 @@ Once we have a new agent, we can first scaffold the skill using the CORE autonom
 This reduces the amount of code we need to write to get a skill up and means that we have no need to write any code to re-implement the wheel.
 
 ```bash
-autonomy scaffold fsm new_fsm --spec ../auto_dev/data/fsm/fsm_specification.yaml
+adev scaffold fsm --spec ../auto_dev/data/fsm/fsm_specification.yaml
 ```
 
 We now have an agent with a new skill, HOWEVER
