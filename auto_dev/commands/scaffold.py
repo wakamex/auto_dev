@@ -16,7 +16,7 @@ from auto_dev.base import build_cli
 from auto_dev.constants import DEFAULT_ENCODING
 from auto_dev.contracts.block_explorer import BlockExplorer
 from auto_dev.contracts.contract_scafolder import ContractScaffolder
-from auto_dev.contracts.utils import from_camel_case_to_snake_case
+from auto_dev.utils import camel_to_snake
 
 cli = build_cli()
 
@@ -55,7 +55,7 @@ def contract(  # pylint: disable=R0914
             ctx.invoke(
                 contract,
                 address=str(contract_address),
-                name=from_camel_case_to_snake_case(contract_name),
+                name=camel_to_snake(contract_name),
                 block_explorer_url=yaml_dict["block_explorer_url"],
                 block_explorer_api_key=block_explorer_api_key,
                 read_functions=read_functions,

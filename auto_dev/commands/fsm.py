@@ -5,13 +5,14 @@ Implement fsm tooling
 from pathlib import Path
 
 import rich_click as click
+import yaml
 from aea.configurations.constants import DEFAULT_AEA_CONFIG_FILE
 
 from auto_dev.base import build_cli
 from auto_dev.cli_executor import CommandExecutor
 from auto_dev.constants import DEFAULT_ENCODING
 from auto_dev.fsm.fsm import FsmSpec
-from auto_dev.utils import get_logger
+from auto_dev.utils import camel_to_snake, get_logger, remove_suffix
 
 logger = get_logger()
 
@@ -33,9 +34,9 @@ def fsm():
 
 
 @fsm.command()
-@click.argument("name", type=str, default=None, required=False)
+# @click.argument("name", type=str, default=None, required=False)
 @click.argument("path", type=click.Path(exists=True, file_okay=True), default=None, required=False)
-def base(name, path):
+def base(path):
     """
     Scaffold a base FSM.
 
@@ -44,8 +45,8 @@ def base(name, path):
     if not Path(DEFAULT_AEA_CONFIG_FILE).exists():
         raise ValueError(f"No {DEFAULT_AEA_CONFIG_FILE} found in current directory")
 
-    if not bool(name) == bool(path):
-        raise ValueError("Either both or neither the name and fsm spec need to be provided")
+    # if not bool(name) == bool(path):
+    #     raise ValueError("Either both or neither the name and fsm spec need to be provided")
 
     skills = "registration_abci", "reset_pause_abci"
     for skill in skills:
@@ -53,8 +54,12 @@ def base(name, path):
         result = command.execute(verbose=True)
         if not result:
             raise ValueError(f"Adding failed for skill: {skill}")
-    if not name and not path:
+
+    if not path:
         return
+
+    fsm_spec = yaml.safe_load(path.read_text(encoding=DEFAULT_ENCODING))
+    name = camel_to_snake(remove_suffix(fsm_spec["label"], "App"))
 
     command = CommandExecutor(["autonomy", "scaffold", "fsm", name, "--spec", str(path)])
     result = command.execute(verbose=True)

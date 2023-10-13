@@ -11,7 +11,7 @@ from web3 import Web3
 from auto_dev.constants import DEFAULT_ENCODING
 from auto_dev.contracts.contract_functions import ReadContractFunction
 from auto_dev.contracts.function import Function
-from auto_dev.contracts.utils import from_snake_case_to_camel_case
+from auto_dev.utils import snake_to_camel
 
 
 class Contract:
@@ -87,7 +87,7 @@ class Contract:
         with contract_yaml_path.open("r", encoding=DEFAULT_ENCODING) as file_pointer:
             contract_yaml = yaml.safe_load(file_pointer)
         contract_yaml["contract_interface_paths"]["ethereum"] = f"build/{self.name}.json"
-        contract_yaml["class_name"] = from_snake_case_to_camel_case(self.name)
+        contract_yaml["class_name"] = snake_to_camel(self.name)
         with contract_yaml_path.open("w", encoding=DEFAULT_ENCODING) as file_pointer:
             yaml.dump(contract_yaml, file_pointer, sort_keys=False)
 
@@ -101,9 +101,7 @@ class Contract:
         contract_py_path = self.path / "contract.py"
         with contract_py_path.open("r", encoding=DEFAULT_ENCODING) as file_pointer:
             contract_py = file_pointer.read()
-        contract_py = contract_py.replace(
-            "class MyScaffoldContract", f"class {from_snake_case_to_camel_case(self.name)}"
-        )
+        contract_py = contract_py.replace("class MyScaffoldContract", f"class {snake_to_camel(self.name)}")
         contract_py = contract_py.replace(
             'contract_id = PublicId.from_str("open_aea/scaffold:0.1.0")',
             "contract_id = PUBLIC_ID",

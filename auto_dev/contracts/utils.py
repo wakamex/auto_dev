@@ -6,24 +6,6 @@ from aea.crypto.base import Address
 
 from auto_dev.contracts.param_type import ParamType
 
-
-def from_snake_case_to_camel_case(string: str):
-    """
-    Convert a string from snake case to camel case.
-    """
-    return "".join(word.capitalize() for word in string.split("_"))
-
-
-def from_camel_case_to_snake_case(string: str):
-    """
-    Convert a string from camel case to snake case.
-    Note: If the string is all uppercase, it will be converted to lowercase.
-    """
-    if string.isupper():
-        return string.lower()
-    return "".join("_" + c.lower() if c.isupper() else c for c in string).lstrip("_")
-
-
 SOLIDITY_TYPE_TO_PYTHON_TYPE = {
     "address": Address,
     "bool": bool,
