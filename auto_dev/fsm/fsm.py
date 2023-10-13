@@ -10,6 +10,7 @@ from typing import Dict, List, Tuple
 import yaml
 
 from auto_dev.constants import DEFAULT_ENCODING
+from auto_dev.utils import camel_to_snake
 
 # we define our base template
 BASE_MERMAID_TEMPLATE = Template(
@@ -35,13 +36,6 @@ graph TD
 
 STATE_TEMPLATE = Template("""$state""")
 TRANSITION_TEMPLATE = Template("""$start_state -->|$transition| $end_state""")
-
-
-def from_camel_case(name: str) -> str:
-    """
-    We convert a camel case string to a snake case string.
-    """
-    return "".join(["_" + i.lower() if i.isupper() else i for i in name]).lstrip("_")
 
 
 @dataclass
@@ -211,7 +205,7 @@ class FsmSpec:
             if len(items) != 4:
                 raise ValueError("Incorrect number of items in line!" + line)
             start_state, _, end_state, _transition = items
-            transition = from_camel_case(_transition).upper()
+            transition = camel_to_snake(_transition).upper()
             end_state = end_state[:-1]
             if start_state == '[*]':
                 initial_states.append(end_state)

@@ -14,12 +14,6 @@ from auto_dev.utils import isolated_filesystem
 
 
 @pytest.fixture
-def runner():
-    """Fixture for invoking command-line interfaces."""
-    return CliRunner()
-
-
-@pytest.fixture
 def test_filesystem():
     """Fixture for invoking command-line interfaces."""
     with isolated_filesystem(copy_cwd=True) as directory:
@@ -34,20 +28,6 @@ def test_clean_filesystem():
 
 
 @pytest.fixture
-def dummy_agent_tim(test_clean_filesystem) -> Path:
-    """Fixture for dummy agent tim."""
-    assert Path.cwd() == Path(test_clean_filesystem)
-
-    command = CommandExecutor(["aea", "create", "tim"])
-    result = command.execute(verbose=True)
-    if not result:
-        raise ValueError("Failed to create dummy agent tim")
-
-    os.chdir(str(Path.cwd() / "tim"))
-    return Path.cwd()
-
-
-@pytest.fixture 
 def test_packages_filesystem(test_filesystem):
     """
     Fixure for testing packages.
@@ -65,6 +45,34 @@ def test_packages_filesystem(test_filesystem):
 
 
 @pytest.fixture
-def cli_runner():
+def runner():
     """Fixture for invoking command-line interfaces."""
     return CliRunner()
+
+
+@pytest.fixture
+def dummy_agent_tim(test_clean_filesystem) -> Path:
+    """Fixture for dummy agent tim."""
+
+    assert test_clean_filesystem
+
+    agent = "tim"
+    command = f"aea create {agent}"
+    command_executor = CommandExecutor(command)
+    result = command_executor.execute(verbose=True, shell=True)
+    if not result:
+        raise ValueError(f"CLI command execution failed: `{command}`")
+
+    os.chdir(str(Path.cwd() / agent))
+
+    commands = (
+        "aea generate-key ethereum",
+        "aea add-key ethereum",
+    )
+    for command in commands:
+        command_executor = CommandExecutor(command.split())
+        result = command_executor.execute(verbose=True)
+        if not result:
+            raise ValueError(f"CLI command execution failed: `{command}`")
+
+    return Path.cwd()

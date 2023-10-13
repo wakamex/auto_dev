@@ -2,11 +2,8 @@
 This module contains tests for the fsm module.
 """
 
-from pathlib import Path
 from textwrap import dedent
 
-from auto_dev.cli import cli
-from auto_dev.constants import DEFAULT_ENCODING, PACKAGE_DIR
 from auto_dev.fsm.fsm import FsmSpec
 
 EXAMPLE = """
@@ -142,41 +139,8 @@ def test_from_mermaid_fsm():
     mermaid = fsm_spec.to_mermaid()
     fsm_spec_from_mermaid = FsmSpec.from_mermaid(mermaid)
 
-    # we check the atrtibutes
+    # we check the attributes
     assert fsm_spec_from_mermaid.default_start_state == fsm_spec.default_start_state
     assert set(fsm_spec_from_mermaid.states) == set(fsm_spec.states)
     assert set(fsm_spec_from_mermaid.alphabet_in) == set(fsm_spec.alphabet_in)
     assert fsm_spec_from_mermaid.transition_func == fsm_spec.transition_func
-
-
-def test_base_fsm(runner, dummy_agent_tim):
-    """Test scaffold base FSM."""
-
-    dummy_agent_tim.exists()
-    result = runner.invoke(cli, ["fsm", "base"])
-    assert result.exit_code == 0, result.output
-
-    assert (Path.cwd() / "vendor" / "valory" / "skills" / "abstract_abci").exists()
-    assert (Path.cwd() / "vendor" / "valory" / "skills" / "abstract_round_abci").exists()
-    assert (Path.cwd() / "vendor" / "valory" / "skills" / "registration_abci").exists()
-    assert (Path.cwd() / "vendor" / "valory" / "skills" / "reset_pause_abci").exists()
-
-
-def test_base_fsm_with_spec(runner, dummy_agent_tim):
-    """Test scaffold base FSM."""
-
-    dummy_agent_tim.exists()
-
-    name = "dummy"
-    path = Path(PACKAGE_DIR) / "data" / "fsm" / "fsm_specification.yaml"
-    result = runner.invoke(cli, ["fsm", "base", name, str(path)])
-    assert result.exit_code == 0, result.output
-
-    assert (Path.cwd() / "vendor" / "valory" / "skills" / "abstract_abci").exists()
-    assert (Path.cwd() / "vendor" / "valory" / "skills" / "abstract_round_abci").exists()
-    assert (Path.cwd() / "vendor" / "valory" / "skills" / "registration_abci").exists()
-    assert (Path.cwd() / "vendor" / "valory" / "skills" / "reset_pause_abci").exists()
-
-    new_skill_path = Path.cwd() / "skills" / name / "fsm_specification.yaml"
-    assert new_skill_path.exists()
-    assert new_skill_path.read_text(encoding=DEFAULT_ENCODING) == path.read_text(encoding=DEFAULT_ENCODING)

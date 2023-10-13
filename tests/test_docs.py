@@ -49,8 +49,11 @@ def test_documentation(doc):
 
 
 @pytest.mark.parametrize("doc", documenation)
-def test_doc_code_execution(doc):
+def test_doc_code_execution(doc, test_filesystem):
     """Test the documentation."""
+
+    assert test_filesystem
+
     commands = extract_code_blocks(doc)
 
     # execute the commands.
