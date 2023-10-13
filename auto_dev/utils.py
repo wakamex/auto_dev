@@ -125,3 +125,15 @@ def change_dir(target_path):
         yield
     finally:
         os.chdir(original_path)
+
+
+def remove_prefix(text: str, prefix: str) -> str:
+    """str.removeprefix"""
+
+    return text[len(prefix):] if prefix and text.startswith(prefix) else text
+
+
+def remove_suffix(text:str, suffix: str) -> str:
+    """str.removesuffix"""
+
+    return text[:-len(suffix)] if suffix and text.endswith(suffix) else text
