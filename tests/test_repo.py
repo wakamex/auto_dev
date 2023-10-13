@@ -72,7 +72,6 @@ class BaseTestRepo:
         assert not error_messages
 
 
-@pytest.mark.skip(reason="Not implemented yet")
 class TestRepoPython(BaseTestRepo):
     """Test scaffolding new python repository."""
 
