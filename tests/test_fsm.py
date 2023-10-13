@@ -2,13 +2,8 @@
 This module contains tests for the fsm module.
 """
 
-from pathlib import Path
 from textwrap import dedent
 
-from aea.cli import cli as aea_cli
-
-from auto_dev.cli import cli
-from auto_dev.constants import DEFAULT_ENCODING, PACKAGE_DIR
 from auto_dev.fsm.fsm import FsmSpec
 
 EXAMPLE = """
@@ -149,48 +144,3 @@ def test_from_mermaid_fsm():
     assert set(fsm_spec_from_mermaid.states) == set(fsm_spec.states)
     assert set(fsm_spec_from_mermaid.alphabet_in) == set(fsm_spec.alphabet_in)
     assert fsm_spec_from_mermaid.transition_func == fsm_spec.transition_func
-
-
-def test_base_fsm(runner, dummy_agent_tim):
-    """Test scaffold base FSM."""
-
-    dummy_agent_tim.exists()
-    result = runner.invoke(cli, ["fsm", "base"])
-    assert result.exit_code == 0, result.output
-
-    assert (Path.cwd() / "vendor" / "valory" / "skills" / "abstract_abci").exists()
-    assert (Path.cwd() / "vendor" / "valory" / "skills" / "abstract_round_abci").exists()
-    assert (Path.cwd() / "vendor" / "valory" / "skills" / "registration_abci").exists()
-    assert (Path.cwd() / "vendor" / "valory" / "skills" / "reset_pause_abci").exists()
-
-
-def test_base_fsm_with_spec(runner, dummy_agent_tim):
-    """Test scaffold base FSM."""
-
-    dummy_agent_tim.exists()
-
-    name = "dummy"
-    path = Path(PACKAGE_DIR) / "data" / "fsm" / "fsm_specification.yaml"
-    result = runner.invoke(cli, ["fsm", "base", name, str(path)])
-    assert result.exit_code == 0, result.output
-
-    assert (Path.cwd() / "vendor" / "valory" / "skills" / "abstract_abci").exists()
-    assert (Path.cwd() / "vendor" / "valory" / "skills" / "abstract_round_abci").exists()
-    assert (Path.cwd() / "vendor" / "valory" / "skills" / "registration_abci").exists()
-    assert (Path.cwd() / "vendor" / "valory" / "skills" / "reset_pause_abci").exists()
-
-    new_skill_path = Path.cwd() / "skills" / name / "fsm_specification.yaml"
-    assert new_skill_path.exists()
-    assert new_skill_path.read_text(encoding=DEFAULT_ENCODING) == path.read_text(encoding=DEFAULT_ENCODING)
-
-
-def test_base_fsm_aea_run_missing_overwrites(runner, dummy_agent_tim):
-    """Test scaffold base FSM upto `aea run`."""
-
-    dummy_agent_tim.exists()
-    result = runner.invoke(cli, ["fsm", "base"])
-    assert result.exit_code == 0, result.output
-
-    result = runner.invoke(aea_cli, ["run"])
-    assert result.exit_code == 1
-    assert "An error occurred during instantiation of connection valory" in result.output

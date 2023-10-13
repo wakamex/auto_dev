@@ -10,6 +10,7 @@ from typing import Dict, List, Tuple
 import yaml
 
 from auto_dev.constants import DEFAULT_ENCODING
+from auto_dev.utils import camel_to_snake
 
 # we define our base template
 BASE_MERMAID_TEMPLATE = Template(
