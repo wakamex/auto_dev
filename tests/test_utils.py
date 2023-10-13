@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 
 from auto_dev.constants import DEFAULT_ENCODING
-from auto_dev.utils import get_logger, get_packages, get_paths, has_package_code_changed
+from auto_dev.utils import get_logger, get_packages, get_paths, has_package_code_changed, remove_prefix, remove_suffix
 
 TEST_PACKAGES_JSON = {
     "packages/packages.json": """
@@ -117,3 +117,22 @@ def test_get_paths(test_packages_filesystem):
     """
     assert test_packages_filesystem == str(Path.cwd())
     assert len(get_paths()) == 0
+
+
+def test_remove_prefix():
+    """Test remove_prefix"""
+
+    assert remove_prefix("HelloWorld", "Hello") == "World"
+    assert remove_prefix("PythonIsGreat", "Python") == "IsGreat"
+    assert remove_prefix("abcdef", "xyz") == "abcdef"
+    assert remove_prefix("abc", "") == "abc"
+    assert remove_prefix("", "xyz") == ""
+
+def test_remove_suffix():
+    """Test remove_suffix"""
+
+    assert remove_suffix("HelloWorld", "World") == "Hello"
+    assert remove_suffix("PythonIsGreat", "Great") == "PythonIs"
+    assert remove_suffix("abcdef", "xyz") == "abcdef"
+    assert remove_suffix("abc", "") == "abc"
+    assert remove_suffix("", "xyz") == ""
