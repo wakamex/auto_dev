@@ -2,7 +2,7 @@
 # github_url = "https://github.com/<user or organization>/<project>/"
 
 [version]
-current = "0.2.34"
+current = "0.2.29"
 
 # Example of a semver regexp.
 # Make sure this matches current_version before
@@ -29,9 +29,11 @@ src = "pyproject.toml"
 # run after the files have been patched
 # and before the git commit is made
 
-#  [[before_commit]]
-#  name = "check changelog"
-#  cmd = "grep -q {new_version} Changelog.rst"
+# [[before_commit]]
+# name = "create pr into main"
+# cmd = "git "
+
+  
 
 # Or run some commands after the git tag and the branch
 # have been pushed:
