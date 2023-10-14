@@ -119,7 +119,7 @@ def change_dir(target_path):
     """
     Temporarily change the working directory.
     """
-    original_path = os.getcwd()
+    original_path = str(Path.cwd())
     try:
         os.chdir(target_path)
         yield

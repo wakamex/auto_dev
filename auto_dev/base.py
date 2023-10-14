@@ -68,7 +68,9 @@ def build_cli(plugins=False):
             # we use all available cores
             num_processes = os.cpu_count()
         ctx.obj["NUM_PROCESSES"] = num_processes
-        version = pkg_resources.require("autonomy_dev")[0].version
+        # get the version from the package
+        version = pkg_resources.get_distribution("autonomy-dev").version
+
         ctx.obj["LOGGER"].info(f"Starting Auto Dev v{version} ...")
         # we get the version from the package
         if verbose:
