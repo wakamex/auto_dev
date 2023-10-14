@@ -55,7 +55,11 @@ class Releaser:
             command=command.split(" "),
         )
 
-        return cli_tool.execute(verbose=True, stream=True)
+        result = cli_tool.execute(verbose=True, stream=True)
+        if not result:
+            self.logger.error("Failed to update the version. 😭")
+            return quit()
+        return result
 
     def post_release(self, version):
         """
