@@ -56,3 +56,30 @@ dependencies:
   open-aea-ledger-ethereum: {}
 """
 }
+
+
+
+
+SAMPLE_PYTHON_CLI_FILE = """
+\"\"\"CLI for {project_name}.\"\"\"
+
+import click
+
+from {project_name}.main import main
+
+
+@click.command()
+def cli():
+    \"\"\"CLI entrypoint for the {project_name} module.\"\"\"
+    main()
+"""
+
+
+SAMPLE_PYTHON_MAIN_FILE = """
+\"\"\"Main module for {project_name}.\"\"\"
+
+def main():
+    \"\"\"Main entrypoint for the {project_name} module.\"\"\"
+    print("Hello World")
+
+"""
