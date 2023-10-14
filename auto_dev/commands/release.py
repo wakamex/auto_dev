@@ -1,8 +1,8 @@
 """
 We release the package.
 """
-import os
 import subprocess
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -58,14 +58,8 @@ class Releaser:
         result = cli_tool.execute(verbose=True, stream=True)
         if not result:
             self.logger.error("Failed to update the version. 😭")
-            return quit()
+            sys.exit(1)
         return result
-
-    def post_release(self, version):
-        """
-        We run the post release.
-        """
-        return True
 
     def release(self):
         """
@@ -83,9 +77,6 @@ class Releaser:
             self.logger.error("Pre release failed. 😭")
             return False
         self.update_version(new_version)
-        if not self.post_release(new_version):
-            self.logger.error("Post release failed. 😭")
-            return False
         self.logger.info(f"New version is {new_version} 🎉")
         return True
 

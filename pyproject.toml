@@ -50,7 +50,6 @@ twine = "^4.0.1"
 mkdocs-autorefs = "^0.4.1"
 pre-commit = "^2.20.0"
 toml = "^0.10.2"
-bump2version = "^1.0.1"
 yamllint = "^1.27.1"
 GitPython = "^3.1.27"
 rich-click = "^1.5.2"
@@ -64,13 +63,14 @@ web3 = "~5"
 open-autonomy = ">=0.10,<=0.12"
 docker = "~6"
 autoflake8 = "^0.4.1"
+tbump = "^6.11.0"
 
 [tool.poetry.dev-dependencies]
 responses = "^0.23.1"
 
 [tool.poetry.extras]
 all = [ "pytest", "black", "isort", "mypy", "pylama", "pylint", "autoflake8", "pytest-cov",]
-dev = [ "tox", "pre-commit", "virtualenv", "pip", "twine", "toml", "bump2version",]
+dev = [ "tox", "pre-commit", "virtualenv", "pip", "twine", "toml", "tbump",]
 doc = [ "mkdocs", "mkdocs-include-markdown-plugin", "mkdocs-material", "mkdocstrings", "mkdocs-material-extension", "mkdocs-autorefs",]
 
 [tool.poetry.scripts]
@@ -82,4 +82,3 @@ version = "^8.4.1"
 
 [tool.poetry.group.dev.dependencies]
 twine = "^4.0.2"
-tbump = "^6.11.0"
