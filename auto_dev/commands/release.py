@@ -111,14 +111,7 @@ class Releaser:
         if not self.is_repo_clean():
             self.logger.error("Repo is not clean. 😭 We will not release!")
             return False
-        new_version = self.get_new_version()
-        command = f"git push --set-upstream origin heads/v{new_version}"
-        self.logger.info(f"Run command:\n {command}")
-        result = subprocess.run(command, check=True, shell=True, env=os.environ)
-        if not result.returncode == 0:
-            self.logger.error("Failed to push the branch. 😭")
-            return False
-        return result
+        return True
 
     def is_repo_clean(self):
         """
