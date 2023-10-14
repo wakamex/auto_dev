@@ -48,7 +48,7 @@ class Releaser:
         """
         We update the version.
         """
-        command = f"bumpversion {self.dep_path} --new-version {new_version}"
+        command = f"tbump --new-version {new_version}"
         self.logger.info(f"Running command:\n `{command}`")
 
         cli_tool = CommandExecutor(
