@@ -1,6 +1,8 @@
 """
 We release the package.
 """
+import os
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -46,16 +48,32 @@ class Releaser:
         """
         We update the version.
         """
-        with open(self.dep_path, "r", encoding=DEFAULT_ENCODING) as file_pointer:
-            data = toml.load(file_pointer)
-        data["tool"]["poetry"]["version"] = new_version
-        with open(self.dep_path, "w", encoding=DEFAULT_ENCODING) as file_pointer:
-            toml.dump(data, file_pointer)
+        command = f"bumpversion {self.dep_path} --new-version {new_version}"
+        self.logger.info(f"Running command:\n `{command}`")
 
-    def post_release(self):
+        cli_tool = CommandExecutor(
+            command=command.split(" "),
+        )
+        return cli_tool.execute(verbose=True, stream=True)
+
+    def post_release(self, version):
         """
         We run the post release.
         """
+        command = f"git push --set-upstream origin heads/v{version}"
+        self.logger.info(f"Run command:\n {command}")
+        result = subprocess.run(command, check=True, shell=True, env=os.environ)
+        if not result.returncode == 0:
+            self.logger.error("Failed to push the branch. 😭")
+            return False
+        command = "git push --tags"
+        self.logger.info(f"Run command:\n {command}")
+        result = subprocess.run(command, check=True, shell=True)
+
+        if not result:
+            self.logger.error("Failed to push the tag. 😭")
+            return False
+        return True
 
     def release(self):
         """
@@ -64,14 +82,16 @@ class Releaser:
         self.logger.info("Running the release... 🚀")
         self.logger.info(f"Current version is {self.current_version()}. 🚀")
         self.logger.info(f"New version will be {self.get_new_version()}. 🚀")
+        new_version = self.get_new_version()
+        confirmation = input(f"Are you sure you want to release {new_version}? [y/N]")
+        if confirmation.lower() != "y":
+            self.logger.info("Release aborted. 😎")
+            return False
         if not self.pre_release():
             self.logger.error("Pre release failed. 😭")
             return False
-        new_version = self.get_new_version()
-        if not self.update_version(new_version):
-            self.logger.error("Update version failed. 😭")
-            return False
-        if not self.post_release():
+        self.update_version(new_version)
+        if not self.post_release(new_version):
             self.logger.error("Post release failed. 😭")
             return False
         self.logger.info(f"New version is {new_version} 🎉")
@@ -82,11 +102,27 @@ class Releaser:
         We run the pre release.
         """
         # we checkout to a new branch for the release
+        self.logger.info("Running the pre release... 🚀")
+        if not self.is_repo_clean():
+            self.logger.error("Repo is not clean. 😭 We will not release!")
+            return False
         new_version = self.get_new_version()
         cli_tool = CommandExecutor(
             command=f"git checkout -b v{new_version}".split(" "),
         )
-        return cli_tool.execute(verbose=self.verbose, stream=self.verbose)
+        result = cli_tool.execute(verbose=True, stream=True)
+        if not result:
+            self.logger.error("Failed to create the branch. 😭")
+        return result
+
+    def is_repo_clean(self):
+        """
+        We check the project is clean using a command to check if there are ANY changes.
+        """
+        self.logger.info("Checking the tree is clean... 🚀")
+        result = subprocess.run(['git', 'status', '--porcelain'], capture_output=True, text=True, check=False)
+        # we check there are no changes
+        return result.stdout == ""
 
 
 cli = build_cli()

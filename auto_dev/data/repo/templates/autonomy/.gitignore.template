@@ -2,6 +2,7 @@
 !.gitignore
 !.dockerignore
 !.env.template
+!.bumpversion.cfg
 
 __pycache__
 
