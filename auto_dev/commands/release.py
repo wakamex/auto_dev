@@ -54,12 +54,16 @@ class Releaser:
         cli_tool = CommandExecutor(
             command=command.split(" "),
         )
+
         return cli_tool.execute(verbose=True, stream=True)
 
     def post_release(self, version):
         """
         We run the post release.
         """
+        command = "git add ."
+        self.logger.info(f"Run command:\n {command}")
+        result = subprocess.run(command, check=True, shell=True, env=os.environ)
         command = f"git push --set-upstream origin heads/v{version}"
         self.logger.info(f"Run command:\n {command}")
         result = subprocess.run(command, check=True, shell=True, env=os.environ)
