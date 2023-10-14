@@ -45,7 +45,7 @@ def test_packages_filesystem(test_filesystem):
 
 
 @pytest.fixture
-def runner():
+def cli_runner():
     """Fixture for invoking command-line interfaces."""
     return CliRunner()
 
