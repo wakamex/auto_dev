@@ -3250,6 +3250,23 @@ lint = ["flake8 (==3.5.0)", "mypy (==0.641)", "mypy-extensions (>=0.4.1)"]
 test = ["pytest (==3.10.1)", "pytest-xdist (==1.26.0)"]
 
 [[package]]
+name = "py-eth-sig-utils"
+version = "0.4.0"
+description = "Python Ethereum Signing Utils"
+optional = false
+python-versions = "*"
+files = [
+    {file = "py_eth_sig_utils-0.4.0-py3-none-any.whl", hash = "sha256:8f2fe9b8d3c475bfca3b3bb901f6ef79e42b7b4abcd00ad5de5d483fff8359e9"},
+    {file = "py_eth_sig_utils-0.4.0.tar.gz", hash = "sha256:bdf76b06677a43eba42e29ddebe6832bfbdda4c09a6b171d0de318e5a06992ad"},
+]
+
+[package.dependencies]
+eth-abi = ">=1.1.1"
+py-ecc = ">=1.7.1"
+pycryptodome = ">=3.4.7"
+rlp = ">=1.1.0"
+
+[[package]]
 name = "py-multibase"
 version = "1.0.3"
 description = "Multibase implementation for Python"
@@ -4917,4 +4934,4 @@ doc = ["mkdocs", "mkdocs-autorefs", "mkdocs-include-markdown-plugin", "mkdocs-ma
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.7.2,<=3.11.5"
-content-hash = "696ce942cd2004be5747b0fe38ad2cc64279a0401e9b977f6af7190d96d63b29"
+content-hash = "c203196680a037154f92bbc3ec5959371db11c48df45b26bec7259f3c1de2295"
