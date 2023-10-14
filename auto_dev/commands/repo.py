@@ -13,7 +13,6 @@ import sys
 from pathlib import Path
 
 import rich_click as click
-
 from aea.cli.utils.config import get_default_author_from_cli_config
 
 from auto_dev.base import build_cli

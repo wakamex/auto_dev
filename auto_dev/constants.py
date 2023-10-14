@@ -58,8 +58,6 @@ dependencies:
 }
 
 
-
-
 SAMPLE_PYTHON_CLI_FILE = """
 \"\"\"CLI for {project_name}.\"\"\"
 
