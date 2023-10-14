@@ -126,6 +126,10 @@ def release(
 ) -> None:
     """
     We release the package.
+    Automaticaly bump the version and create a new tag.
+    Push the tag to github.
+    Push the branch to github.
+    This will trigger a github action to publish the package to pypi.
     """
     logger = ctx.obj["LOGGER"]
     logger.info("Releasing the package... 🚀")
