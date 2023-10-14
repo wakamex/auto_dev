@@ -128,6 +128,7 @@ def test_remove_prefix():
     assert remove_prefix("abc", "") == "abc"
     assert remove_prefix("", "xyz") == ""
 
+
 def test_remove_suffix():
     """Test remove_suffix"""
 

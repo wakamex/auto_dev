@@ -7,7 +7,6 @@ import pytest
 from aea.cli import cli as aea_cli
 
 from auto_dev.cli import cli
-from auto_dev.constants import BASE_FSM_SKILLS
 
 FSM_SPEC = Path("auto_dev/data/fsm/fsm_specification.yaml").absolute()
 
