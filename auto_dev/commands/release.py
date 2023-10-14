@@ -48,7 +48,7 @@ class Releaser:
         """
         We update the version.
         """
-        command = f"tbump {new_version} --only-patch --non-interactive"
+        command = f"tbump {new_version}"
         self.logger.info(f"Running command:\n `{command}`")
 
         cli_tool = CommandExecutor(
@@ -61,9 +61,6 @@ class Releaser:
         """
         We run the post release.
         """
-        command = "git add ."
-        self.logger.info(f"Run command:\n {command}")
-        result = subprocess.run(command, check=True, shell=True, env=os.environ)
         command = f"git push --set-upstream origin heads/v{version}"
         self.logger.info(f"Run command:\n {command}")
         result = subprocess.run(command, check=True, shell=True, env=os.environ)
