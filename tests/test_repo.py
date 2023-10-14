@@ -6,7 +6,6 @@ import subprocess
 from pathlib import Path
 from typing import Tuple
 
-import pytest
 from aea.cli.utils.config import get_default_author_from_cli_config
 
 from auto_dev.cli import cli

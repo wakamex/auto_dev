@@ -13,12 +13,11 @@ import sys
 from pathlib import Path
 
 import rich_click as click
-
 from aea.cli.utils.config import get_default_author_from_cli_config
 
 from auto_dev.base import build_cli
 from auto_dev.cli_executor import CommandExecutor
-from auto_dev.constants import DEFAULT_ENCODING, TEMPLATE_FOLDER
+from auto_dev.constants import DEFAULT_ENCODING, SAMPLE_PYTHON_CLI_FILE, SAMPLE_PYTHON_MAIN_FILE, TEMPLATE_FOLDER
 from auto_dev.utils import change_dir
 
 
@@ -117,7 +116,12 @@ def repo(ctx, name, type_of_repo):
         if type_of_repo == "python":
             src_dir = Path(name)
             src_dir.mkdir(exist_ok=False)
+            logger.info(f"Scaffolding `{str(src_dir)}`")
             (src_dir / "__init__.py").touch()
+            (src_dir / "main.py").write_text(SAMPLE_PYTHON_MAIN_FILE)
+            (src_dir / "cli.py").write_text(SAMPLE_PYTHON_CLI_FILE.format(project_name=name))
+        else:
+            raise NotImplementedError(f"Unsupported repo type: {type_of_repo}")
 
         logger.info(f"{type_of_repo.capitalize()} successfully setup.")
 
