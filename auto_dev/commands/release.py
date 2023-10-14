@@ -112,13 +112,6 @@ class Releaser:
             self.logger.error("Repo is not clean. 😭 We will not release!")
             return False
         new_version = self.get_new_version()
-        cli_tool = CommandExecutor(
-            command=f"git checkout -b v{new_version}".split(" "),
-        )
-        result = cli_tool.execute(verbose=True, stream=True)
-        if not result:
-            self.logger.error("Failed to create the branch. 😭")
-        # now we push the branch
         command = f"git push --set-upstream origin heads/v{new_version}"
         self.logger.info(f"Run command:\n {command}")
         result = subprocess.run(command, check=True, shell=True, env=os.environ)
