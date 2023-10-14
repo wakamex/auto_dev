@@ -113,7 +113,7 @@ def repo(ctx, name, type_of_repo):
             )
             logger.info("Initialising autonomy packages.")
             execute_commands("autonomy packages init", verbose=verbose, logger=logger)
-        if type_of_repo == "python":
+        elif type_of_repo == "python":
             src_dir = Path(name)
             src_dir.mkdir(exist_ok=False)
             logger.info(f"Scaffolding `{str(src_dir)}`")
