@@ -14,6 +14,8 @@ from pathlib import Path
 
 import rich_click as click
 
+from aea.cli.utils.config import get_default_author_from_cli_config
+
 from auto_dev.base import build_cli
 from auto_dev.cli_executor import CommandExecutor
 from auto_dev.constants import DEFAULT_ENCODING, TEMPLATE_FOLDER
@@ -34,7 +36,7 @@ cli = build_cli()
 
 render_args = {
     "project_name": "test",
-    "author": "8ball030",
+    "author": get_default_author_from_cli_config(),
     "email": "8ball030@gmail.com",
     "description": "",
     "version": "0.1.0",
