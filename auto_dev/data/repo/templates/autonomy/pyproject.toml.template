@@ -27,8 +27,6 @@ open-aea-test-autonomy = "0.10.7"
 open-autonomy = "0.10.7"
 autonomy-dev = {{extras = ["all"], version = "^0.2.2"}}
 pyyaml = "==5.4.1"
-hypothesis = "^6.87.2"
-
 
 
 [tool.poetry.dev-dependencies]
