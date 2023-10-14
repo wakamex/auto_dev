@@ -17,15 +17,10 @@ from aea.configurations.constants import DEFAULT_AEA_CONFIG_FILE
 
 from auto_dev.base import build_cli
 from auto_dev.cli_executor import CommandExecutor
-from auto_dev.constants import DEFAULT_ENCODING
+from auto_dev.constants import DEFAULT_ENCODING, BASE_FSM_SKILLS
 from auto_dev.contracts.block_explorer import BlockExplorer
 from auto_dev.contracts.contract_scafolder import ContractScaffolder
 from auto_dev.utils import camel_to_snake, remove_suffix
-
-SKILLS = {
-    "registration_abci": "bafybeig3jo3fhcxz7xgwpxnmf74ann2bwlqyaq2466wrkg5mbc33wmpk6y",
-    "reset_pause_abci": "bafybeicuma62mkfb36ygsycufhjqt6jqffi7zhhuxdlgdvmq6kcjl2ebm4",
-}
 
 
 cli = build_cli()
@@ -105,9 +100,8 @@ def fsm(spec):
     if not Path(DEFAULT_AEA_CONFIG_FILE).exists():
         raise ValueError(f"No {DEFAULT_AEA_CONFIG_FILE} found in current directory")
 
-    skills = "registration_abci", "reset_pause_abci"
-    for skill in skills:
-        command = CommandExecutor(["autonomy", "add", "skill", SKILLS[skill]])
+    for skill, ipfs_hash in BASE_FSM_SKILLS.items():
+        command = CommandExecutor(["autonomy", "add", "skill", ipfs_hash])
         result = command.execute(verbose=True)
         if not result:
             raise ValueError(f"Adding failed for skill: {skill}")

@@ -81,3 +81,9 @@ def main():
     print("Hello World")
 
 """
+
+BASE_FSM_SKILLS = {
+    "registration_abci": "bafybeidbirkdjus6wbpynmyv6ffb6uevsi3zeuhokiqokuw42o7ar5j7hm",
+    "reset_pause_abci": "bafybeicpxn2khtaesuf4cq6ypwdmdmonlqroj2q2i6cxvpizc2y4cw66pe",
+    "termination_abci": "bafybeieqm46zuccaagnko3qlw6p3nvoohdrfgvpmw467r5lyil2dqrzjsy",
+}
