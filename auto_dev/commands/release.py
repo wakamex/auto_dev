@@ -48,31 +48,23 @@ class Releaser:
         """
         We update the version.
         """
-        command = f"bumpversion {self.dep_path} --new-version {new_version}"
+        command = f"tbump {new_version} --non-interactive"
         self.logger.info(f"Running command:\n `{command}`")
 
         cli_tool = CommandExecutor(
             command=command.split(" "),
         )
-        return cli_tool.execute(verbose=True, stream=True)
+
+        result = cli_tool.execute(verbose=True, stream=True)
+        if not result:
+            self.logger.error("Failed to update the version. 😭")
+            return quit()
+        return result
 
     def post_release(self, version):
         """
         We run the post release.
         """
-        command = f"git push --set-upstream origin heads/v{version}"
-        self.logger.info(f"Run command:\n {command}")
-        result = subprocess.run(command, check=True, shell=True, env=os.environ)
-        if not result.returncode == 0:
-            self.logger.error("Failed to push the branch. 😭")
-            return False
-        command = "git push --tags"
-        self.logger.info(f"Run command:\n {command}")
-        result = subprocess.run(command, check=True, shell=True)
-
-        if not result:
-            self.logger.error("Failed to push the tag. 😭")
-            return False
         return True
 
     def release(self):
@@ -106,14 +98,7 @@ class Releaser:
         if not self.is_repo_clean():
             self.logger.error("Repo is not clean. 😭 We will not release!")
             return False
-        new_version = self.get_new_version()
-        cli_tool = CommandExecutor(
-            command=f"git checkout -b v{new_version}".split(" "),
-        )
-        result = cli_tool.execute(verbose=True, stream=True)
-        if not result:
-            self.logger.error("Failed to create the branch. 😭")
-        return result
+        return True
 
     def is_repo_clean(self):
         """
