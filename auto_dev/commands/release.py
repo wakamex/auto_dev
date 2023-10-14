@@ -113,6 +113,13 @@ class Releaser:
         result = cli_tool.execute(verbose=True, stream=True)
         if not result:
             self.logger.error("Failed to create the branch. 😭")
+        # now we push the branch
+        command = f"git push --set-upstream origin heads/v{new_version}"
+        self.logger.info(f"Run command:\n {command}")
+        result = subprocess.run(command, check=True, shell=True, env=os.environ)
+        if not result.returncode == 0:
+            self.logger.error("Failed to push the branch. 😭")
+            return False
         return result
 
     def is_repo_clean(self):
