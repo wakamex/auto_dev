@@ -65,19 +65,6 @@ class Releaser:
         """
         We run the post release.
         """
-        command = f"git push --set-upstream origin heads/v{version}"
-        self.logger.info(f"Run command:\n {command}")
-        result = subprocess.run(command, check=True, shell=True, env=os.environ)
-        if not result.returncode == 0:
-            self.logger.error("Failed to push the branch. 😭")
-            return False
-        command = "git push --tags"
-        self.logger.info(f"Run command:\n {command}")
-        result = subprocess.run(command, check=True, shell=True)
-
-        if not result:
-            self.logger.error("Failed to push the tag. 😭")
-            return False
         return True
 
     def release(self):
