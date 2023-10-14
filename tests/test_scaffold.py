@@ -7,6 +7,7 @@ import pytest
 from aea.cli import cli as aea_cli
 
 from auto_dev.cli import cli
+from auto_dev.constants import BASE_FSM_SKILLS
 
 FSM_SPEC = Path("auto_dev/data/fsm/fsm_specification.yaml").absolute()
 
@@ -27,6 +28,7 @@ def test_scaffold_fsm_with_aea_run(cli_runner, spec, dummy_agent_tim):
     assert (Path.cwd() / "vendor" / "valory" / "skills" / "abstract_round_abci").exists()
     assert (Path.cwd() / "vendor" / "valory" / "skills" / "registration_abci").exists()
     assert (Path.cwd() / "vendor" / "valory" / "skills" / "reset_pause_abci").exists()
+    assert (Path.cwd() / "vendor" / "valory" / "skills" / "termination_abci").exists()
 
     result = cli_runner.invoke(aea_cli, ["run"])
     assert result.exit_code == 1
