@@ -31,19 +31,15 @@ IMPORTS = """
 import asyncio
 from asyncio.events import AbstractEventLoop
 import logging
-from typing import Any, Optional, Set, cast
+from typing import Any, Dict, Optional, Set, cast
 
 from aea.common import Address
-from aea.configurations.base import ConnectionConfig
-from aea.connections.base import ConnectionStates
-from aea.identity.base import Identity
-
-# TODO: import any library dependencies for the connection
-
 from aea.configurations.base import PublicId
-from aea.connections.base import BaseSyncConnection, Connection
+from aea.connections.base import Connection, ConnectionStates
 from aea.mail.base import Envelope, Message
 from aea.protocols.dialogue.base import Dialogue as BaseDialogue
+
+# TODO: import any library dependencies for the connection
 
 from packages.{protocol_author}.protocols.{protocol_name}.dialogues import {protocol_name_camelcase}Dialogue
 from packages.{protocol_author}.protocols.{protocol_name}.dialogues import {protocol_name_camelcase}Dialogues as Base{protocol_name_camelcase}Dialogues
@@ -79,7 +75,7 @@ class {protocol_name_camelcase}Dialogues(Base{protocol_name_camelcase}Dialogues)
             :param receiver_address: the address of the receiving agent
             :return: The role of the agent
             \"\"\"
-            del message, receiver_address
+            assert message, receiver_address
             return {protocol_name_camelcase}Dialogue.Role.{ROLE}  # TODO: check
 
         Base{protocol_name_camelcase}Dialogues.__init__(
@@ -91,13 +87,13 @@ class {protocol_name_camelcase}Dialogues(Base{protocol_name_camelcase}Dialogues)
 
 ASYNC_CHANNEL = """
 class {name_camelcase}AsyncChannel:  # pylint: disable=too-many-instance-attributes
-    \"\"\"A wrapper for a {proper_name}.\"\"\"
+    \"\"\"A channel handling incomming communication from the {proper_name} connection.\"\"\"
 
     def __init__(
         self,
         agent_address: Address,
         connection_id: PublicId,
-        **kwargs  # TODO: pass the neccesary arguments for your channel
+        **kwargs  # TODO: pass the neccesary arguments for your channel explicitly
     ):
         \"\"\"
         Initialize a {proper_name} channel.
@@ -112,9 +108,9 @@ class {name_camelcase}AsyncChannel:  # pylint: disable=too-many-instance-attribu
 
         self._connection = None
         
-        # TODO: set any custom connection configuration (e.g. from **kwargs)
-        # self.db_url = connection_string
-        # self.engine = create_engine(connection_string)
+        # TODO: assign attributes from custom connection configuration explicitly
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
         self._in_queue: Optional[asyncio.Queue] = None
         self._loop: Optional[asyncio.AbstractEventLoop] = None
@@ -171,7 +167,7 @@ class {name_camelcase}AsyncChannel:  # pylint: disable=too-many-instance-attribu
             performative={protocol_name_camelcase}Message.Performative.{PERFORMATIVE},  # TODO: set correct performative
             result={{result: result}},
         )
-        self.logger.info(f"returning message: {{response_msg}}"))
+        self.logger.info(f"returning message: {{response_msg}}")
         envelope = Envelope(
             to=str(query_envelope.sender),
             sender=str(self.connection_id),
