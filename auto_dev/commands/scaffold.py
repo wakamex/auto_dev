@@ -124,7 +124,7 @@ def fsm(spec):
 
 @scaffold.command()
 @click.argument("name", default=None, required=True)
-@click.option("--protocol", default=None, required=False, help="a text file containing a protocol specification.")
+@click.option("--protocol", default=None, required=True, help="a text file containing a protocol specification.")
 @click.pass_context
 def connection(  # pylint: disable=R0914
     ctx,
