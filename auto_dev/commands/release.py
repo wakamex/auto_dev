@@ -1,8 +1,8 @@
 """
 We release the package.
 """
-import os
 import subprocess
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -48,32 +48,18 @@ class Releaser:
         """
         We update the version.
         """
-        command = f"bumpversion {self.dep_path} --new-version {new_version}"
+        command = f"tbump {new_version} --non-interactive"
         self.logger.info(f"Running command:\n `{command}`")
 
         cli_tool = CommandExecutor(
             command=command.split(" "),
         )
-        return cli_tool.execute(verbose=True, stream=True)
 
-    def post_release(self, version):
-        """
-        We run the post release.
-        """
-        command = f"git push --set-upstream origin heads/v{version}"
-        self.logger.info(f"Run command:\n {command}")
-        result = subprocess.run(command, check=True, shell=True, env=os.environ)
-        if not result.returncode == 0:
-            self.logger.error("Failed to push the branch. 😭")
-            return False
-        command = "git push --tags"
-        self.logger.info(f"Run command:\n {command}")
-        result = subprocess.run(command, check=True, shell=True)
-
+        result = cli_tool.execute(verbose=True, stream=True)
         if not result:
-            self.logger.error("Failed to push the tag. 😭")
-            return False
-        return True
+            self.logger.error("Failed to update the version. 😭")
+            sys.exit(1)
+        return result
 
     def release(self):
         """
@@ -91,9 +77,6 @@ class Releaser:
             self.logger.error("Pre release failed. 😭")
             return False
         self.update_version(new_version)
-        if not self.post_release(new_version):
-            self.logger.error("Post release failed. 😭")
-            return False
         self.logger.info(f"New version is {new_version} 🎉")
         return True
 
@@ -106,14 +89,7 @@ class Releaser:
         if not self.is_repo_clean():
             self.logger.error("Repo is not clean. 😭 We will not release!")
             return False
-        new_version = self.get_new_version()
-        cli_tool = CommandExecutor(
-            command=f"git checkout -b v{new_version}".split(" "),
-        )
-        result = cli_tool.execute(verbose=True, stream=True)
-        if not result:
-            self.logger.error("Failed to create the branch. 😭")
-        return result
+        return True
 
     def is_repo_clean(self):
         """
@@ -150,6 +126,10 @@ def release(
 ) -> None:
     """
     We release the package.
+    Automaticaly bump the version and create a new tag.
+    Push the tag to github.
+    Push the branch to github.
+    This will trigger a github action to publish the package to pypi.
     """
     logger = ctx.obj["LOGGER"]
     logger.info("Releasing the package... 🚀")
