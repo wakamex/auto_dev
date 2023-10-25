@@ -149,21 +149,33 @@ class {name_camelcase}AsyncChannel:  # pylint: disable=too-many-instance-attribu
 
         :param query_envelope: The envelope containing an {protocol_name} message.
         \"\"\"
-        if not self._connection:
-            raise ValueError("{proper_name} not connected, call connect first!")
+
+        if not (self._loop and self._connection):
+            raise ConnectionError("{proper_name} not connected, call connect first!")
+
+        if not isinstance({protocol_name}_envelope.message, {protocol_name_camelcase}Message):
+            raise TypeError("Message not of type {protocol_name_camelcase}Message)")
 
         message = {protocol_name}_envelope.message
 
+        performative_handlers = {handler_mapping}
+
+        if message.performative not in performative_handlers:
+            log_msg = "Message with unexpected performative `{{message.performative}}` received."
+            self.logger.error(log_msg)
+            return
+
         dialogue = cast({protocol_name_camelcase}Dialogue, self._dialogues.update(message))
         if dialogue is None:
-            raise ValueError("No dialogue exists!")
+            self.logger.warning(f"Could not create dialogue for message={{message}}")
+            return
 
         # TODO: unpack message, execute necessary logic
-        # query = messagquery_msge.query
+        # query = message.query
         # result = self._connection.execute(text(query), query_msg.params).fetchall()
         result = "dummy_data"
 
-        response_msg = dialogue.reply(
+        response_message = dialogue.reply(
             performative={protocol_name_camelcase}Message.Performative.{PERFORMATIVE},  # TODO: set correct performative
             result={{result: result}},
         )
