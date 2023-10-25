@@ -188,6 +188,8 @@ class {name_camelcase}AsyncChannel:  # pylint: disable=too-many-instance-attribu
         )
         await self._in_queue.put(envelope)
 
+    {handlers}
+
     async def _cancel_tasks(self) -> None:
         \"\"\"Cancel all requests tasks pending.\"\"\"
         for task in list(self._tasks):

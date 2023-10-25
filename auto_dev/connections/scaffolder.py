@@ -4,6 +4,7 @@ import shutil
 import sys
 import tempfile
 import textwrap
+from typing import List
 from collections import namedtuple
 from pathlib import Path
 
@@ -49,7 +50,18 @@ def read_protocol(filepath: str) -> ProtocolSpecification:
     return ProtocolSpecification(metadata, custom_types, speech_acts)
 
 
-def performative_handler_mapping(protocol_name: str, performatives: str):
+def get_handlers(protocol_name: str, performatives: List[str]) -> str:
+    """Format handler methods."""
+
+    name = to_camel(protocol_name)
+    method = "def {p}(self, message: {name}Message) -> {name}Message:\n    return"
+    methods = [method.format(p=p, name=name) for p in performatives]
+    handlers = "\n\n".join(textwrap.indent(m, INDENT) for m in methods)
+
+    return handlers.lstrip()
+
+
+def get_handler_mapping(protocol_name: str, performatives: List[str]) -> str:
     """Format mapping from performative to handler method."""
 
     name = to_camel(protocol_name)
@@ -93,7 +105,8 @@ class ConnectionFolderTemplate:  # pylint: disable=R0902  # Too many instance at
         reply = self.protocol.speech_acts["reply"]
         incoming_performatives = [a for a in speech_acts if a not in termination]
 
-        handler_mapping = performative_handler_mapping(protocol_name, incoming_performatives)
+        handlers = get_handlers(protocol_name, incoming_performatives)
+        handler_mapping = get_handler_mapping(protocol_name, incoming_performatives)
 
         kwargs = {
             "year": 2023,  # overwritten by aea scaffold
@@ -104,6 +117,7 @@ class ConnectionFolderTemplate:  # pylint: disable=R0902  # Too many instance at
             "protocol_author": protocol_author,
             "protocol_name": protocol_name,
             "protocol_name_camelcase": to_camel(protocol_name),
+            "handlers": handlers,
             "handler_mapping": handler_mapping,
             "ROLE": roles[0].upper(),
             "OTHER_ROLE": roles[-1].upper(),
