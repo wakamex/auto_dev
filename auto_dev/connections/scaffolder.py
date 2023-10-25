@@ -45,7 +45,9 @@ def read_protocol(filepath: str) -> ProtocolSpecification:
 class ConnectionFolderTemplate:  # pylint: disable=R0902  # Too many instance attributes
     """ConnectionFolderTemplate"""
 
-    def __init__(self, logger, protocol):
+    def __init__(self, name: str, logger, protocol):
+        """"""
+        self.name = name
         self.logger = logger
         self.src = Path(AEA_DIR) / "connections" / "scaffold"
         self.path = Path(tempfile.mkdtemp()) / "scaffold"
@@ -60,7 +62,6 @@ class ConnectionFolderTemplate:  # pylint: disable=R0902  # Too many instance at
 
     @property
     def kwargs(self) -> dict:
-        """Template formatting kwargs."""
         name = "test_connection"
 
         protocol_name = self.protocol.metadata["name"]
@@ -71,9 +72,9 @@ class ConnectionFolderTemplate:  # pylint: disable=R0902  # Too many instance at
         kwargs = {
             "year": 2023,  # overwritten by aea scaffold
             "author": AEA_CONFIG["author"],  # overwritten by aea scaffold in copyright header
-            "name": name,
-            "name_camelcase": to_camel(name),
-            "proper_name": to_camel(name, sep=" "),
+            "name": self.name,
+            "name_camelcase": to_camel(self.name),
+            "proper_name": to_camel(self.name, sep=" "),
             "protocol_author": protocol_author,
             "protocol_name": protocol_name,
             "protocol_name_camelcase": to_camel(protocol_name),
@@ -106,15 +107,13 @@ class ConnectionScaffolder:
         self.name = name
         self.logger = logger or get_logger()
         self.verbose = verbose
-        self.protocol = protocol
-        if self.protocol:
-            self.protocol = read_protocol(protocol)
-            self.logger.info(f"Read protocol specification: {protocol}")
+        self.protocol = read_protocol(protocol)
+        self.logger.info(f"Read protocol specification: {protocol}")
 
     def generate(self) -> None:
         """Generate connection."""
 
-        template = ConnectionFolderTemplate(self.logger, self.protocol)
+        template = ConnectionFolderTemplate(self.name, self.logger, self.protocol)
         template.augment()
 
         with folder_swapper(template.path, template.src):
