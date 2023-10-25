@@ -3,11 +3,14 @@
 import shutil
 import sys
 import tempfile
+import textwrap
 from collections import namedtuple
 from pathlib import Path
 
 import yaml
 from aea import AEA_DIR
+import shutil
+from auto_dev.cli_executor import CommandExecutor
 from aea.protocols.generator.base import ProtocolGenerator
 
 from auto_dev.cli_executor import CommandExecutor
@@ -15,6 +18,10 @@ from auto_dev.constants import AEA_CONFIG, DEFAULT_ENCODING
 from auto_dev.data.connections.template import CONNECTION_TEMPLATE
 from auto_dev.data.connections.test_template import TEST_CONNECTION_TEMPLATE
 from auto_dev.utils import folder_swapper, get_logger, remove_prefix
+
+INDENT = "    "
+
+INDENT = "    "
 
 ProtocolSpecification = namedtuple('ProtocolSpecification', ['metadata', 'custom_types', 'speech_acts'])
 
@@ -40,6 +47,18 @@ def read_protocol(filepath: str) -> ProtocolSpecification:
 
     metadata, custom_types, speech_acts = yaml.safe_load_all(content)
     return ProtocolSpecification(metadata, custom_types, speech_acts)
+
+
+def performative_handler_mapping(protocol_name: str, performatives: str):
+    """Format mapping from performative to handler method."""
+
+    name = to_camel(protocol_name)
+    entry = "{name}Message.Performative.{P}: self.{p}"
+    entries = (entry.format(name=name, P=p.upper(), p=p) for p in performatives)
+    content = textwrap.indent(",\n".join(entries), INDENT * 1)
+    handler_mapping = textwrap.indent("{\n" + content + ",\n}", INDENT * 2)
+
+    return handler_mapping.lstrip()
 
 
 class ConnectionFolderTemplate:  # pylint: disable=R0902  # Too many instance attributes
@@ -69,6 +88,13 @@ class ConnectionFolderTemplate:  # pylint: disable=R0902  # Too many instance at
         speech_acts = list(self.protocol.metadata["speech_acts"])
         roles = list(self.protocol.speech_acts["roles"])
 
+        # incoming speech acts on connection side
+        termination = set(self.protocol.speech_acts["termination"])
+        reply = self.protocol.speech_acts["reply"]
+        incoming_performatives = [a for a in speech_acts if a not in termination]
+
+        handler_mapping = performative_handler_mapping(protocol_name, incoming_performatives)
+
         kwargs = {
             "year": 2023,  # overwritten by aea scaffold
             "author": AEA_CONFIG["author"],  # overwritten by aea scaffold in copyright header
@@ -78,6 +104,7 @@ class ConnectionFolderTemplate:  # pylint: disable=R0902  # Too many instance at
             "protocol_author": protocol_author,
             "protocol_name": protocol_name,
             "protocol_name_camelcase": to_camel(protocol_name),
+            "handler_mapping": handler_mapping,
             "ROLE": roles[0].upper(),
             "OTHER_ROLE": roles[-1].upper(),
             "PERFORMATIVE": speech_acts[0].upper(),
