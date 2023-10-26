@@ -4,7 +4,7 @@ import shutil
 import sys
 import tempfile
 import textwrap
-from typing import List
+from typing import Dict, List
 from collections import namedtuple
 from pathlib import Path
 
@@ -25,6 +25,32 @@ INDENT = "    "
 INDENT = "    "
 
 ProtocolSpecification = namedtuple('ProtocolSpecification', ['metadata', 'custom_types', 'speech_acts'])
+
+
+HANDLER_TEMPLATE = """
+def {p}(self, message: {name}Message, dialogue: {name}Dialogue) -> {name}Message:
+    # TODO: implement necessary logic
+
+    response_message = dialogue.reply(
+        performative={name}Message.Performative.{r},
+        {kwargs},
+    )
+
+    return response_message
+"""
+
+
+HANDLER_TEMPLATE = """
+def {p}(self, message: {name}Message, dialogue: {name}Dialogue) -> {name}Message:
+    # TODO: implement necessary logic
+
+    response_message = dialogue.reply(
+        performative={name}Message.Performative.{r},
+        {kwargs},
+    )
+
+    return response_message
+"""
 
 
 def to_camel(name: str, sep="") -> str:
@@ -50,19 +76,38 @@ def read_protocol(filepath: str) -> ProtocolSpecification:
     return ProtocolSpecification(metadata, custom_types, speech_acts)
 
 
-def get_handlers(protocol_name: str, performatives: List[str]) -> str:
+def get_handlers(protocol: ProtocolSpecification) -> str:
     """Format handler methods."""
 
+    protocol_name = protocol.metadata["name"]
+    speech_acts = protocol.metadata["speech_acts"]
+    termination = set(protocol.speech_acts["termination"])
+    reply = protocol.speech_acts["reply"]
+
+    incoming_performatives = [a for a in speech_acts if a not in termination]
+    performative_responses = {a: reply[a] for a in incoming_performatives}
+
     name = to_camel(protocol_name)
-    method = "def {p}(self, message: {name}Message) -> {name}Message:\n    return"
-    methods = [method.format(p=p, name=name) for p in performatives]
-    handlers = "\n\n".join(textwrap.indent(m, INDENT) for m in methods)
+    methods = []
+    for p, replies in performative_responses.items():
+        r = replies[0]
+        resp = speech_acts[r]
+        resp = ",\n".join(f"{kw}=..." for kw in resp)
+        kwargs = textwrap.indent(resp, INDENT * 2).lstrip()
+        methods += [HANDLER_TEMPLATE.format(p=p, name=name, r=r.upper(), kwargs=kwargs)]
 
-    return handlers.lstrip()
+    handlers = "".join(textwrap.indent(m, INDENT) for m in methods)
+
+    return handlers.strip()
 
 
-def get_handler_mapping(protocol_name: str, performatives: List[str]) -> str:
+def get_handler_mapping(protocol: ProtocolSpecification) -> str:
     """Format mapping from performative to handler method."""
+
+    protocol_name = protocol.metadata["name"]
+    speech_acts = list(protocol.metadata["speech_acts"])
+    termination = set(protocol.speech_acts["termination"])
+    performatives = [a for a in speech_acts if a not in termination]
 
     name = to_camel(protocol_name)
     entry = "{name}Message.Performative.{P}: self.{p}"
@@ -100,13 +145,8 @@ class ConnectionFolderTemplate:  # pylint: disable=R0902  # Too many instance at
         speech_acts = list(self.protocol.metadata["speech_acts"])
         roles = list(self.protocol.speech_acts["roles"])
 
-        # incoming speech acts on connection side
-        termination = set(self.protocol.speech_acts["termination"])
-        reply = self.protocol.speech_acts["reply"]
-        incoming_performatives = [a for a in speech_acts if a not in termination]
-
-        handlers = get_handlers(protocol_name, incoming_performatives)
-        handler_mapping = get_handler_mapping(protocol_name, incoming_performatives)
+        handlers = get_handlers(self.protocol)
+        handler_mapping = get_handler_mapping(self.protocol)
 
         kwargs = {
             "year": 2023,  # overwritten by aea scaffold
