@@ -59,7 +59,7 @@ class RepoScaffolder:
         new_repo_dir = Path.cwd()
         template_folder = TEMPLATES[self.type_of_repo]
         for file in template_folder.rglob("*"):
-            if not file.is_file():
+            if not file.is_file() or "__pycache__" in file.parts:
                 continue
 
             rel_path = file.relative_to(template_folder)
