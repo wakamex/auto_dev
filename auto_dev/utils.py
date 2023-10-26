@@ -127,6 +127,18 @@ def change_dir(target_path):
         os.chdir(original_path)
 
 
+@contextmanager
+def restore_directory():
+    """
+    Ensure working directory is restored.
+    """
+    original_dir = os.getcwd()
+    try:
+        yield
+    finally:
+        os.chdir(original_dir)
+
+
 def snake_to_camel(string: str):
     """
     Convert a string from snake case to camel case.

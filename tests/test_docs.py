@@ -9,6 +9,7 @@ import pytest
 
 from auto_dev.cli_executor import CommandExecutor
 from auto_dev.constants import DEFAULT_ENCODING
+from auto_dev.utils import restore_directory
 
 
 def extract_code_blocks(doc):
@@ -45,9 +46,6 @@ def test_documentation(doc):
     assert Path(doc).exists()
 
 
-# extract the code blocks from the documentation.
-
-
 @pytest.mark.parametrize("doc", documenation)
 def test_doc_code_execution(doc, test_filesystem):
     """Test the documentation."""
@@ -56,12 +54,11 @@ def test_doc_code_execution(doc, test_filesystem):
 
     commands = extract_code_blocks(doc)
 
-    # execute the commands.
-    for command in commands:
-        logger.info(f"Executing command:\n\"\"\n{command}\n\"\"")
-        # really not ideal, but cd is shell command, and were not passing the entire shell command.
-        if command.startswith("cd"):
-            os.chdir(command.split(" ")[1])
-        else:
-            executor = CommandExecutor(command)
-            assert executor.execute(stream=True, shell=True, verbose=False), f"Command failed: {command}"
+    with restore_directory():
+        for command in commands:
+            logger.info(f"Executing command:\n\"\"\n{command}\n\"\"")
+            if command.startswith("cd "):
+                os.chdir(command.split(" ")[1])
+            else:
+                executor = CommandExecutor(command)
+                assert executor.execute(stream=True, shell=True, verbose=False), f"Command failed: {command}"
