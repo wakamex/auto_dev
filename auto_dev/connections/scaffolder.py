@@ -22,22 +22,7 @@ from auto_dev.utils import folder_swapper, get_logger, remove_prefix
 
 INDENT = "    "
 
-INDENT = "    "
-
 ProtocolSpecification = namedtuple('ProtocolSpecification', ['metadata', 'custom_types', 'speech_acts'])
-
-
-HANDLER_TEMPLATE = """
-def {p}(self, message: {name}Message, dialogue: {name}Dialogue) -> {name}Message:
-    # TODO: implement necessary logic
-
-    response_message = dialogue.reply(
-        performative={name}Message.Performative.{r},
-        {kwargs},
-    )
-
-    return response_message
-"""
 
 
 HANDLER_TEMPLATE = """
@@ -122,7 +107,6 @@ class ConnectionFolderTemplate:  # pylint: disable=R0902  # Too many instance at
     """ConnectionFolderTemplate"""
 
     def __init__(self, name: str, logger, protocol):
-        """"""
         self.name = name
         self.logger = logger
         self.src = Path(AEA_DIR) / "connections" / "scaffold"
@@ -138,7 +122,7 @@ class ConnectionFolderTemplate:  # pylint: disable=R0902  # Too many instance at
 
     @property
     def kwargs(self) -> dict:
-        name = "test_connection"
+        """Template formatting kwargs."""
 
         protocol_name = self.protocol.metadata["name"]
         protocol_author = self.protocol.metadata["author"]

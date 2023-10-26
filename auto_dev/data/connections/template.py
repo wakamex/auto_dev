@@ -104,18 +104,16 @@ class {name_camelcase}AsyncChannel:  # pylint: disable=too-many-instance-attribu
 
         self.agent_address = agent_address
         self.connection_id = connection_id
-        self._dialogues = {protocol_name_camelcase}Dialogues(str({name_camelcase}Connection.connection_id))
-
-        self._connection = None
-        
         # TODO: assign attributes from custom connection configuration explicitly
         for key, value in kwargs.items():
             setattr(self, key, value)
 
+        self.is_stopped = True
+        self._connection = None
+        self._tasks: Set[asyncio.Task] = set()
         self._in_queue: Optional[asyncio.Queue] = None
         self._loop: Optional[asyncio.AbstractEventLoop] = None
-        self.is_stopped = True
-        self._tasks: Set[asyncio.Task] = set()
+        self._dialogues = {protocol_name_camelcase}Dialogues(str({name_camelcase}Connection.connection_id))
 
         self.logger = _default_logger
         self.logger.debug("Initialised the {proper_name} channel")
@@ -165,33 +163,30 @@ class {name_camelcase}AsyncChannel:  # pylint: disable=too-many-instance-attribu
             self.logger.error(log_msg)
             return
 
+        handler = performative_handlers[message.performative]
+
         dialogue = cast({protocol_name_camelcase}Dialogue, self._dialogues.update(message))
         if dialogue is None:
             self.logger.warning(f"Could not create dialogue for message={{message}}")
             return
 
-        # TODO: unpack message, execute necessary logic
-        # query = message.query
-        # result = self._connection.execute(text(query), query_msg.params).fetchall()
-        result = "dummy_data"
+        response_message = handler(message, dialogue)
+        self.logger.info(f"returning message: {{response_message}}")
 
-        response_message = dialogue.reply(
-            performative={protocol_name_camelcase}Message.Performative.{PERFORMATIVE},  # TODO: set correct performative
-            result={{result: result}},
-        )
-        self.logger.info(f"returning message: {{response_msg}}")
         envelope = Envelope(
-            to=str(query_envelope.sender),
+            to=str({protocol_name}_envelope.sender),
             sender=str(self.connection_id),
-            message=response_msg,
+            message=response_message,
             protocol_specification_id={protocol_name_camelcase}Message.protocol_specification_id,
         )
+
         await self._in_queue.put(envelope)
 
     {handlers}
 
     async def _cancel_tasks(self) -> None:
         \"\"\"Cancel all requests tasks pending.\"\"\"
+
         for task in list(self._tasks):
             if task.done():  # pragma: nocover
                 continue
@@ -207,6 +202,7 @@ class {name_camelcase}AsyncChannel:  # pylint: disable=too-many-instance-attribu
 
     async def disconnect(self) -> None:
         \"\"\"Disconnect.\"\"\"
+
         if not self.is_stopped:
             await self._cancel_tasks()
             self.connection.close()
@@ -214,9 +210,8 @@ class {name_camelcase}AsyncChannel:  # pylint: disable=too-many-instance-attribu
             self.logger.info("{proper_name} has shutdown.")
 
     async def get_message(self) -> Optional[Envelope]:
-        \"\"\"
-        Check the in-queue for envelopes.
-        \"\"\"
+        \"\"\"Check the in-queue for envelopes.\"\"\"
+
         if self.is_stopped:
             return None
         try:
@@ -252,6 +247,7 @@ class {name_camelcase}Connection(Connection):
 
     async def connect(self) -> None:
         \"\"\"Connect to a {proper_name}.\"\"\"
+
         if self.is_connected:  # pragma: nocover
             return
 
@@ -261,6 +257,7 @@ class {name_camelcase}Connection(Connection):
 
     async def disconnect(self) -> None:
         \"\"\"Disconnect from a {proper_name}.\"\"\"
+
         if self.is_disconnected:
             return  # pragma: nocover
         self.state = ConnectionStates.disconnecting
@@ -273,6 +270,7 @@ class {name_camelcase}Connection(Connection):
 
         :param envelope: the envelope to send.
         \"\"\"
+
         self._ensure_connected()
         return await self.channel.send(envelope)
 
@@ -284,6 +282,7 @@ class {name_camelcase}Connection(Connection):
         :param kwargs: keyword arguments to receive
         :return: the envelope received, if present.  # noqa: DAR202
         \"\"\"
+
         self._ensure_connected()
         try:
 
