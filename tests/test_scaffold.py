@@ -1,11 +1,12 @@
 """Tests for the scaffold command"""
 
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
 from aea.cli import cli as aea_cli
 
-from aea.cli import cli as aea_cli
 from auto_dev.cli import cli
 
 FSM_SPEC = Path("auto_dev/data/fsm/fsm_specification.yaml").absolute()
@@ -46,33 +47,45 @@ class TestScaffoldConnection:
         assert result.exit_code == 2, result.output
         assert "Missing argument 'NAME'" in result.output
 
-    def test_scaffold_with_spec_yaml(self, runner, dummy_agent_tim, caplog):
+    def test_scaffold_with_spec_yaml(self, cli_runner, dummy_agent_tim, caplog):
         """Test scaffold protocol specification in YAML."""
+
         path = Path.cwd() / ".." / "tests" / "data" / "dummy_protocol.yaml"
         result = cli_runner.invoke(cli, ["scaffold", "connection", "my_connection", "--protocol", str(path)])
         assert result.exit_code == 0, result.output
         assert f"Read protocol specification: {path}" in caplog.text
+        assert f"New connection scaffolded at {dummy_agent_tim}" in caplog.text
 
-    def test_scaffold_with_spec_readme(self, runner, dummy_agent_tim, caplog):
+    def test_scaffold_with_spec_readme(self, cli_runner, dummy_agent_tim, caplog):
         """Test scaffold protocol specification in README."""
+
         path = Path.cwd() / ".." / "tests" / "data" / "dummy_protocol.md"
         result = cli_runner.invoke(cli, ["scaffold", "connection", "my_connection", "--protocol", str(path)])
         assert result.exit_code == 0, result.output
         assert f"Read protocol specification: {path}" in caplog.text
+        assert f"New connection scaffolded at {dummy_agent_tim}" in caplog.text
 
-    def test_scaffold_with_python(self, runner, dummy_agent_tim, caplog):
+    def test_scaffold_with_python(self, cli_runner, dummy_agent_tim, caplog):
         """Test scaffold with python run for correct imports."""
 
         path = Path.cwd() / ".." / "tests" / "data" / "dummy_protocol.yaml"
-        result = runner.invoke(aea_cli, ["generate", "protocol", str(path)])
+        result = cli_runner.invoke(aea_cli, ["generate", "protocol", str(path)])
         assert result.exit_code == 0, result.output
 
-        result = runner.invoke(cli, ["scaffold", "connection", "my_connection", "--protocol", str(path)])
+        result = cli_runner.invoke(cli, ["scaffold", "connection", "my_connection", "--protocol", str(path)])
+        assert result.exit_code == 0, result.output
+        assert f"New connection scaffolded at {dummy_agent_tim}" in caplog.text
+
+        result = cli_runner.invoke(aea_cli, "remove-key ethereum".split())
         assert result.exit_code == 0, result.output
 
-        result = runner.invoke(aea_cli, "publish --push-missing --local".split())
+        result = cli_runner.invoke(aea_cli, "publish --push-missing --local".split())
         assert result.exit_code == 0, result.output
 
-        connection_path = Path("../packages/zarathustra/connections/my_connection/connection.py")
-        result = subprocess.run([sys.executable, connection_path], shell=True, text=True, capture_output=True)
-        assert result.returncode == 0, result.output
+        connection_dir = Path("../packages/zarathustra/connections/my_connection")
+        connection_path = connection_dir / "connection.py"
+        test_connection_path = connection_dir / "tests" / "test_connection.py"
+
+        for path in (connection_path, test_connection_path):
+            result = subprocess.run([sys.executable, path], shell=True, check=True, capture_output=True)
+            assert result.returncode == 0, result.output
