@@ -88,4 +88,4 @@ class TestScaffoldConnection:
 
         for path in (connection_path, test_connection_path):
             result = subprocess.run([sys.executable, path], shell=True, check=True, capture_output=True)
-            assert result.returncode == 0, result.output
+            assert result.returncode == 0, result.stderr
