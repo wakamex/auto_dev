@@ -51,9 +51,10 @@ def cli_runner():
 
 
 @pytest.fixture
-def dummy_agent_tim(test_filesystem) -> Path:
+def dummy_agent_tim(test_filesystem, monkeypatch) -> Path:
     """Fixture for dummy agent tim."""
 
+    monkeypatch.syspath_prepend(test_filesystem)
     assert Path.cwd() == Path(test_filesystem)
 
     agent = "tim"
