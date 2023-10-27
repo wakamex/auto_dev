@@ -155,17 +155,11 @@ class TestFolderSwapper:
     def setup_class(cls):
         """Setup class"""
         cls.temp_dir = tempfile.TemporaryDirectory()  # pylint: disable=consider-using-with
-
-    @pytest.fixture(autouse=True)
-    def setup(self):
-        """Setup"""
-
-        self.a_dir = Path(tempfile.mkdtemp(dir=self.temp_dir.name))
-        self.b_dir = Path(tempfile.mkdtemp(dir=self.temp_dir.name))
-        self.a_file_path = self.a_dir / "test_file.txt"
-        self.a_file_path.write_text("dummy data")
-        assert self.a_file_path.exists()
-        self.b_file_path = self.b_dir / "test_file.txt"
+        cls.a_dir = Path(tempfile.mkdtemp(dir=cls.temp_dir.name))
+        cls.b_dir = Path(tempfile.mkdtemp(dir=cls.temp_dir.name))
+        cls.a_file_path = cls.a_dir / "test_file.txt"
+        cls.a_file_path.write_text("dummy data")
+        cls.b_file_path = cls.b_dir / "test_file.txt"
 
     def test_folder_swapper(self):
         """
