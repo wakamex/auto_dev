@@ -10,14 +10,7 @@ from click.testing import CliRunner
 
 from auto_dev.cli_executor import CommandExecutor
 from auto_dev.constants import AUTONOMY_PACKAGES_FILE, DEFAULT_ENCODING, SAMPLE_PACKAGE_FILE, SAMPLE_PACKAGES_JSON
-from auto_dev.cli_executor import CommandExecutor
 from auto_dev.utils import isolated_filesystem
-
-
-@pytest.fixture
-def runner():
-    """Fixture for invoking command-line interfaces."""
-    return CliRunner()
 
 
 @pytest.fixture
@@ -58,7 +51,7 @@ def cli_runner():
 
 
 @pytest.fixture
-def dummy_agent_tim(test_clean_filesystem) -> Path:
+def dummy_agent_tim(test_filesystem) -> Path:
     """Fixture for dummy agent tim."""
 
     assert Path.cwd() == Path(test_filesystem)

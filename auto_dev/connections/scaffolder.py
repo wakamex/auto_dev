@@ -1,51 +1,51 @@
+"""Connection scaffolder."""
+
+import shutil
 import sys
 import tempfile
 from collections import namedtuple
 from pathlib import Path
-import yaml
-import shutil
-import tempfile
-from auto_dev.cli_executor import CommandExecutor
-from aea.protocols.generator.base import ProtocolGenerator
-from aea import AEA_DIR
 
-from auto_dev.utils import folder_swapper, get_logger
-from auto_dev.constants import AEA_CONFIG
+import yaml
+from aea import AEA_DIR
+from aea.protocols.generator.base import ProtocolGenerator
+
+from auto_dev.cli_executor import CommandExecutor
+from auto_dev.constants import AEA_CONFIG, DEFAULT_ENCODING
 from auto_dev.data.connections.template import CONNECTION_TEMPLATE
 from auto_dev.data.connections.test_template import TEST_CONNECTION_TEMPLATE
-
+from auto_dev.utils import folder_swapper, get_logger, remove_prefix
 
 ProtocolSpecification = namedtuple('ProtocolSpecification', ['metadata', 'custom_types', 'speech_acts'])
 
 
-def to_camel(s: str, sep="") -> str:
+def to_camel(name: str, sep="") -> str:
     """Snake to camelcase."""
-    return sep.join(map(str.capitalize, s.split("_")))
+    return sep.join(map(str.capitalize, name.split("_")))
 
 
 def read_protocol(filepath: str) -> ProtocolSpecification:
     """Read protocol specification."""
 
-    content = Path(filepath).read_text()
+    content = Path(filepath).read_text(encoding=DEFAULT_ENCODING)
     if "```" in content:
         if content.count("```") != 2:
             raise ValueError("Expecting a single code block")
-        content = content.split('```')[1].lstrip("yaml")  # TODO: use remove_prefix
+        content = remove_prefix(content.split('```')[1], "yaml")
 
     # use ProtocolGenerator to validate the specification
     with tempfile.NamedTemporaryFile(mode='w', delete=False) as temp_file:
-        Path(temp_file.name).write_text(content)
+        Path(temp_file.name).write_text(content, encoding=DEFAULT_ENCODING)
         ProtocolGenerator(temp_file.name)
 
     metadata, custom_types, speech_acts = yaml.safe_load_all(content)
     return ProtocolSpecification(metadata, custom_types, speech_acts)
 
 
-class ConnectionFolderTemplate:
+class ConnectionFolderTemplate:  # pylint: disable=R0902  # Too many instance attributes
     """ConnectionFolderTemplate"""
 
     def __init__(self, logger, protocol):
-        """"""
         self.logger = logger
         self.src = Path(AEA_DIR) / "connections" / "scaffold"
         self.path = Path(tempfile.mkdtemp()) / "scaffold"
@@ -60,12 +60,13 @@ class ConnectionFolderTemplate:
 
     @property
     def kwargs(self) -> dict:
+        """Template formatting kwargs."""
         name = "test_connection"
 
         protocol_name = self.protocol.metadata["name"]
         protocol_author = self.protocol.metadata["author"]
         speech_acts = list(self.protocol.metadata["speech_acts"])
-        roles = list(self.protocol.speech_acts["roles"])  # TODO rename
+        roles = list(self.protocol.speech_acts["roles"])
 
         kwargs = {
             "year": 2023,  # overwritten by aea scaffold
@@ -88,7 +89,7 @@ class ConnectionFolderTemplate:
 
         self.tests.mkdir()
         (self.tests / "__init__.py").touch()
-        
+
         doc = "".join(part.format(**self.kwargs) + "\n" for part in CONNECTION_TEMPLATE)
         self.connection.write_text(doc)
 
@@ -123,5 +124,3 @@ class ConnectionScaffolder:
             if not result:
                 self.logger.error(f"Command failed: {command}")
                 sys.exit(1)
-
-   

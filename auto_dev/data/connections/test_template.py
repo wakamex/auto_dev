@@ -1,3 +1,4 @@
+"""Template for the tests for the connection scaffolder."""
 
 from collections import namedtuple
 
@@ -141,5 +142,7 @@ class Test{name_camelcase}Connection():
         await self.{name}_connection.send(msg)
 """
 
-TestConnectionTemplate = namedtuple('TestConnectionTemplate', ['HEADER', 'DOCSTRING', 'IMPORTS', 'DIALOGUES', 'CONNECTION'])
+TestConnectionTemplate = namedtuple(
+    'TestConnectionTemplate', ['HEADER', 'DOCSTRING', 'IMPORTS', 'DIALOGUES', 'CONNECTION']
+)
 TEST_CONNECTION_TEMPLATE = TestConnectionTemplate(HEADER, DOCSTRING, IMPORTS, DIALOGUES, CONNECTION)

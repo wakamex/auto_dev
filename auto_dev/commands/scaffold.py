@@ -10,19 +10,18 @@ Also contains a Contract, which we will use to allow the user to;
 """
 
 from pathlib import Path
+
 import rich_click as click
 import yaml
 from aea.configurations.constants import DEFAULT_AEA_CONFIG_FILE
 
 from auto_dev.base import build_cli
 from auto_dev.cli_executor import CommandExecutor
-from auto_dev.constants import DEFAULT_ENCODING, BASE_FSM_SKILLS
+from auto_dev.connections.scaffolder import ConnectionScaffolder
+from auto_dev.constants import BASE_FSM_SKILLS, DEFAULT_ENCODING
 from auto_dev.contracts.block_explorer import BlockExplorer
 from auto_dev.contracts.contract_scafolder import ContractScaffolder
 from auto_dev.utils import camel_to_snake, remove_suffix
-
-
-from auto_dev.connections.scaffolder import ConnectionScaffolder
 
 cli = build_cli()
 
@@ -128,7 +127,9 @@ def fsm(spec):
 @click.option("--protocol", default=None, required=False, help="a text file containing a protocol specification.")
 @click.pass_context
 def connection(  # pylint: disable=R0914
-    ctx, name, protocol,
+    ctx,
+    name,
+    protocol,
 ):
     """
     Scaffold a connection.

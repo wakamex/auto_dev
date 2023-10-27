@@ -6,12 +6,13 @@ import logging
 import os
 import shutil
 import subprocess
+import tempfile
 from contextlib import contextmanager
 from functools import reduce
 from glob import glob
 from pathlib import Path
-import tempfile
 from typing import Optional, Union
+
 from rich.logging import RichHandler
 
 from .constants import AUTONOMY_PACKAGES_FILE, DEFAULT_ENCODING
@@ -127,23 +128,22 @@ def change_dir(target_path):
 
 
 @contextmanager
-def change_dir(target_path):
+def restore_directory():
     """
-    Temporarily change the working directory.
+    Ensure working directory is restored.
     """
-    original_path = str(Path.cwd())
+    original_dir = os.getcwd()
     try:
-        os.chdir(target_path)
         yield
     finally:
-        os.chdir(original_path)
+        os.chdir(original_dir)
 
 
 @contextmanager
 def folder_swapper(dir_a: Union[str, Path], dir_b: Union[str, Path]):
     """
-    A custom context manager that swaps the contents of two folders, allows the execution of logic 
-    within the context, and ensures the original folder contents are restored on exit, whether due 
+    A custom context manager that swaps the contents of two folders, allows the execution of logic
+    within the context, and ensures the original folder contents are restored on exit, whether due
     to success or failure.
     """
 
@@ -158,11 +158,11 @@ def folder_swapper(dir_a: Union[str, Path], dir_b: Union[str, Path]):
     shutil.copytree(dir_a, dir_a_backup)
     shutil.copytree(dir_b, dir_b_backup)
 
-    def overwrite(x: Path, y: Path) -> None:
+    def overwrite(source_dir: Path, target_dir: Path) -> None:
         shutil.rmtree(dir_a)
         shutil.rmtree(dir_b)
-        shutil.copytree(x, dir_a)
-        shutil.copytree(y, dir_b)
+        shutil.copytree(source_dir, dir_a)
+        shutil.copytree(target_dir, dir_b)
 
     try:
         overwrite(dir_b_backup, dir_a_backup)
@@ -171,18 +171,6 @@ def folder_swapper(dir_a: Union[str, Path], dir_b: Union[str, Path]):
         overwrite(dir_a_backup, dir_b_backup)
         shutil.rmtree(dir_a_backup.parent)
         shutil.rmtree(dir_b_backup.parent)
-
-
-@contextmanager
-def restore_directory():
-    """
-    Ensure working directory is restored.
-    """
-    original_dir = os.getcwd()
-    try:
-        yield
-    finally:
-        os.chdir(original_dir)
 
 
 def snake_to_camel(string: str):

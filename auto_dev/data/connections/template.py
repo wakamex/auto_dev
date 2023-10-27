@@ -1,3 +1,6 @@
+"""Template for the connection for the connection scaffolder."""
+
+# pylint: skip-file
 
 from collections import namedtuple
 
@@ -281,5 +284,10 @@ class {name_camelcase}Connection(Connection):
             return None
 """
 
-ConnectionTemplate = namedtuple('ConnectionTemplate', ['HEADER', 'DOCSTRING', 'IMPORTS', 'PULBIC_ID', 'LOGGER', 'DIALOGUES', 'ASYNC_CHANNEL', 'CONNECTION'])
-CONNECTION_TEMPLATE = ConnectionTemplate(HEADER, DOCSTRING, IMPORTS, PULBIC_ID, LOGGER, DIALOGUES, ASYNC_CHANNEL, CONNECTION)
+ConnectionTemplate = namedtuple(
+    'ConnectionTemplate',
+    ['HEADER', 'DOCSTRING', 'IMPORTS', 'PULBIC_ID', 'LOGGER', 'DIALOGUES', 'ASYNC_CHANNEL', 'CONNECTION'],
+)
+CONNECTION_TEMPLATE = ConnectionTemplate(
+    HEADER, DOCSTRING, IMPORTS, PULBIC_ID, LOGGER, DIALOGUES, ASYNC_CHANNEL, CONNECTION
+)

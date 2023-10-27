@@ -4,13 +4,21 @@ We test the functions from utils
 
 import json
 import shutil
-from pathlib import Path
 import tempfile
+from pathlib import Path
 
 import pytest
 
 from auto_dev.constants import DEFAULT_ENCODING
-from auto_dev.utils import get_logger, get_packages, get_paths, has_package_code_changed, remove_prefix, remove_suffix, folder_swapper
+from auto_dev.utils import (
+    folder_swapper,
+    get_logger,
+    get_packages,
+    get_paths,
+    has_package_code_changed,
+    remove_prefix,
+    remove_suffix,
+)
 
 TEST_PACKAGES_JSON = {
     "packages/packages.json": """
@@ -146,7 +154,7 @@ class TestFolderSwapper:
     @classmethod
     def setup_class(cls):
         """Setup class"""
-        cls.temp_dir = tempfile.TemporaryDirectory()
+        cls.temp_dir = tempfile.TemporaryDirectory()  # pylint: disable=consider-using-with
 
     @pytest.fixture(autouse=True)
     def setup(self):
@@ -181,7 +189,7 @@ class TestFolderSwapper:
 
         try:
             with folder_swapper(self.a_dir, self.b_dir):
-                1 / 0
+                raise ZeroDivisionError("Whoops!")
         except ZeroDivisionError:
             pass
 
