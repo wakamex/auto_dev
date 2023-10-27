@@ -4,14 +4,11 @@ import shutil
 import sys
 import tempfile
 import textwrap
-from typing import Dict, List
 from collections import namedtuple
 from pathlib import Path
 
 import yaml
 from aea import AEA_DIR
-import shutil
-from auto_dev.cli_executor import CommandExecutor
 from aea.protocols.generator.base import ProtocolGenerator
 
 from auto_dev.cli_executor import CommandExecutor
@@ -26,11 +23,11 @@ ProtocolSpecification = namedtuple('ProtocolSpecification', ['metadata', 'custom
 
 
 HANDLER_TEMPLATE = """
-def {p}(self, message: {name}Message, dialogue: {name}Dialogue) -> {name}Message:
+def {handler}(self, message: {protocol}Message, dialogue: {protocol}Dialogue) -> {protocol}Message:
     # TODO: implement necessary logic
 
     response_message = dialogue.reply(
-        performative={name}Message.Performative.{r},
+        performative={protocol}Message.Performative.{performative},
         {kwargs},
     )
 
@@ -72,14 +69,18 @@ def get_handlers(protocol: ProtocolSpecification) -> str:
     incoming_performatives = [a for a in speech_acts if a not in termination]
     performative_responses = {a: reply[a] for a in incoming_performatives}
 
-    name = to_camel(protocol_name)
+    protocol = to_camel(protocol_name)
     methods = []
-    for p, replies in performative_responses.items():
-        r = replies[0]
-        resp = speech_acts[r]
+    for handler, replies in performative_responses.items():
+        performative = replies[0]
+        resp = speech_acts[performative]
         resp = ",\n".join(f"{kw}=..." for kw in resp)
         kwargs = textwrap.indent(resp, INDENT * 2).lstrip()
-        methods += [HANDLER_TEMPLATE.format(p=p, name=name, r=r.upper(), kwargs=kwargs)]
+        methods += [
+            HANDLER_TEMPLATE.format(
+                handler=handler, protocol=protocol, performative=performative.upper(), kwargs=kwargs
+            )
+        ]
 
     handlers = "".join(textwrap.indent(m, INDENT) for m in methods)
 
@@ -95,8 +96,8 @@ def get_handler_mapping(protocol: ProtocolSpecification) -> str:
     performatives = [a for a in speech_acts if a not in termination]
 
     name = to_camel(protocol_name)
-    entry = "{name}Message.Performative.{P}: self.{p}"
-    entries = (entry.format(name=name, P=p.upper(), p=p) for p in performatives)
+    entry = "{name}Message.Performative.{performative}: self.{handler}"
+    entries = (entry.format(name=name, performative=p.upper(), handler=p) for p in performatives)
     content = textwrap.indent(",\n".join(entries), INDENT * 1)
     handler_mapping = textwrap.indent("{\n" + content + ",\n}", INDENT * 2)
 

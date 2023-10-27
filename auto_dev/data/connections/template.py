@@ -332,5 +332,20 @@ class {name_camelcase}Connection(Connection):
             return None
 """
 
-ConnectionTemplate = namedtuple('ConnectionTemplate', ['HEADER', 'DOCSTRING', 'IMPORTS', 'PULBIC_ID', 'LOGGER', 'DIALOGUES', 'BASE_ASYNC_CHANNEL', 'ASYNC_CHANNEL', 'CONNECTION'])
-CONNECTION_TEMPLATE = ConnectionTemplate(HEADER, DOCSTRING, IMPORTS, PULBIC_ID, LOGGER, DIALOGUES, BASE_ASYNC_CHANNEL, ASYNC_CHANNEL, CONNECTION)
+ConnectionTemplate = namedtuple(
+    'ConnectionTemplate',
+    [
+        'HEADER',
+        'DOCSTRING',
+        'IMPORTS',
+        'PULBIC_ID',
+        'LOGGER',
+        'DIALOGUES',
+        'BASE_ASYNC_CHANNEL',
+        'ASYNC_CHANNEL',
+        'CONNECTION',
+    ],
+)
+CONNECTION_TEMPLATE = ConnectionTemplate(
+    HEADER, DOCSTRING, IMPORTS, PULBIC_ID, LOGGER, DIALOGUES, BASE_ASYNC_CHANNEL, ASYNC_CHANNEL, CONNECTION
+)
