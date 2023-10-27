@@ -171,3 +171,44 @@ def folder_swapper(dir_a: Union[str, Path], dir_b: Union[str, Path]):
         overwrite(dir_a_backup, dir_b_backup)
         shutil.rmtree(dir_a_backup.parent)
         shutil.rmtree(dir_b_backup.parent)
+
+
+@contextmanager
+def restore_directory():
+    """
+    Ensure working directory is restored.
+    """
+    original_dir = os.getcwd()
+    try:
+        yield
+    finally:
+        os.chdir(original_dir)
+
+
+def snake_to_camel(string: str):
+    """
+    Convert a string from snake case to camel case.
+    """
+    return "".join(word.capitalize() for word in string.split("_"))
+
+
+def camel_to_snake(string: str):
+    """
+    Convert a string from camel case to snake case.
+    Note: If the string is all uppercase, it will be converted to lowercase.
+    """
+    if string.isupper():
+        return string.lower()
+    return "".join("_" + c.lower() if c.isupper() else c for c in string).lstrip("_")
+
+
+def remove_prefix(text: str, prefix: str) -> str:
+    """str.removeprefix"""
+
+    return text[len(prefix) :] if prefix and text.startswith(prefix) else text
+
+
+def remove_suffix(text: str, suffix: str) -> str:
+    """str.removesuffix"""
+
+    return text[: -len(suffix)] if suffix and text.endswith(suffix) else text

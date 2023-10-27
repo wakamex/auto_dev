@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 from click.testing import CliRunner
 
+from auto_dev.cli_executor import CommandExecutor
 from auto_dev.constants import AUTONOMY_PACKAGES_FILE, DEFAULT_ENCODING, SAMPLE_PACKAGE_FILE, SAMPLE_PACKAGES_JSON
 from auto_dev.cli_executor import CommandExecutor
 from auto_dev.utils import isolated_filesystem
@@ -57,14 +58,28 @@ def cli_runner():
 
 
 @pytest.fixture
-def dummy_agent_tim(test_filesystem) -> Path:
+def dummy_agent_tim(test_clean_filesystem) -> Path:
     """Fixture for dummy agent tim."""
+
     assert Path.cwd() == Path(test_filesystem)
 
-    command = CommandExecutor(["aea", "create", "tim"])
-    result = command.execute(verbose=True)
+    agent = "tim"
+    command = f"aea create {agent}"
+    command_executor = CommandExecutor(command)
+    result = command_executor.execute(verbose=True, shell=True)
     if not result:
-        raise ValueError("Failed to create dummy agent tim")
+        raise ValueError(f"CLI command execution failed: `{command}`")
 
-    os.chdir(str(Path.cwd() / "tim"))
+    os.chdir(str(Path.cwd() / agent))
+
+    commands = (
+        "aea generate-key ethereum",
+        "aea add-key ethereum",
+    )
+    for command in commands:
+        command_executor = CommandExecutor(command.split())
+        result = command_executor.execute(verbose=True)
+        if not result:
+            raise ValueError(f"CLI command execution failed: `{command}`")
+
     return Path.cwd()
