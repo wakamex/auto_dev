@@ -1,0 +1,5 @@
+[MASTER]
+ignore=auto_dev/data,test_*.py
+
+[MESSAGES CONTROL]
+disable=W0201
