@@ -28,22 +28,23 @@ HEADER = """
 DOCSTRING = """\"\"\"{proper_name} connection and channel.\"\"\""""
 
 IMPORTS = """
+from abc import abstractmethod
 import asyncio
 from asyncio.events import AbstractEventLoop
 import logging
-from typing import Any, Dict, Optional, Set, cast
+from typing import Any, Dict, Callable, Optional, Set, cast
 
 from aea.common import Address
 from aea.configurations.base import PublicId
 from aea.connections.base import Connection, ConnectionStates
 from aea.mail.base import Envelope, Message
-from aea.protocols.dialogue.base import Dialogue as BaseDialogue
-
-# TODO: import any library dependencies for the connection
+from aea.protocols.dialogue.base import Dialogue
 
 from packages.{protocol_author}.protocols.{protocol_name}.dialogues import {protocol_name_camelcase}Dialogue
 from packages.{protocol_author}.protocols.{protocol_name}.dialogues import {protocol_name_camelcase}Dialogues as Base{protocol_name_camelcase}Dialogues
 from packages.{protocol_author}.protocols.{protocol_name}.message import {protocol_name_camelcase}Message
+
+# TODO: import any library dependencies for the connection
 """
 
 PULBIC_ID = """
@@ -68,7 +69,7 @@ class {protocol_name_camelcase}Dialogues(Base{protocol_name_camelcase}Dialogues)
 
         def role_from_first_message(  # pylint: disable=unused-argument
             message: Message, receiver_address: Address
-        ) -> BaseDialogue.Role:
+        ) -> Dialogue.Role:
             \"\"\"Infer the role of the agent from an incoming/outgoing first message
 
             :param message: an incoming/outgoing first message
@@ -85,8 +86,121 @@ class {protocol_name_camelcase}Dialogues(Base{protocol_name_camelcase}Dialogues)
         )
 """
 
+BASE_ASYNC_CHANNEL = """
+class BaseAsyncChannel:
+    \"\"\"BaseAsyncChannel.\"\"\"
+
+    def __init__(
+        self,
+        agent_address: Address,
+        connection_id: PublicId,
+        message_type: Message,
+    ):
+        \"\"\"
+        Initialize the BaseAsyncChannel channel.
+
+        :param agent_address: the address of the agent.
+        :param connection_id: the id of the connection.
+        :param message_type: the associated message type.
+        \"\"\"
+
+        self.agent_address = agent_address
+        self.connection_id = connection_id
+        self.message_type = message_type
+
+        self.is_stopped = True
+        self._connection = None
+        self._tasks: Set[asyncio.Task] = set()
+        self._in_queue: Optional[asyncio.Queue] = None
+        self._loop: Optional[asyncio.AbstractEventLoop] = None
+        self.logger = _default_logger
+
+    @property
+    @abstractmethod
+    def performative_handlers(self) -> Dict[Message.Performative, Callable[[Message, Dialogue], Message]]:
+        \"\"\"Performative to message handler mapping.\"\"\"
+
+    @abstractmethod
+    async def connect(self, loop: AbstractEventLoop) -> None:
+        \"\"\"Connect channel using loop.\"\"\"
+
+    @abstractmethod
+    async def disconnect(self) -> None:
+        \"\"\"Disconnect channel.\"\"\"
+
+    async def send(self, envelope: Envelope) -> None:
+        \"\"\"
+        Send an envelope with a protocol message.
+
+        It sends the envelope, waits for and receives the result.
+        The result is translated into a response envelope.
+        Finally, the response envelope is sent to the in-queue.
+
+        :param query_envelope: The envelope containing a protocol message.
+        \"\"\"
+
+        if not (self._loop and self._connection):
+            raise ConnectionError("{{self.__class__.__name__}} not connected, call connect first!")
+
+        if not isinstance(envelope.message, self.message_type):
+            raise TypeError(f"Message not of type {{self.message_type}}")
+
+        message = envelope.message
+
+        if message.performative not in self.performative_handlers:
+            log_msg = "Message with unexpected performative `{{message.performative}}` received."
+            self.logger.error(log_msg)
+            return
+
+        handler = self.performative_handlers[message.performative]
+
+        dialogue = cast(Dialogue, self._dialogues.update(message))
+        if dialogue is None:
+            self.logger.warning(f"Could not create dialogue for message={{message}}")
+            return
+
+        response_message = handler(message, dialogue)
+        self.logger.info(f"returning message: {{response_message}}")
+
+        response_envelope = Envelope(
+            to=str(envelope.sender),
+            sender=str(self.connection_id),
+            message=response_message,
+            protocol_specification_id=self.message_type.protocol_specification_id,
+        )
+
+        await self._in_queue.put(response_envelope)
+
+    async def get_message(self) -> Optional[Envelope]:
+        \"\"\"Check the in-queue for envelopes.\"\"\"
+
+        if self.is_stopped:
+            return None
+        try:
+            envelope = self._in_queue.get_nowait()
+            return envelope
+        except asyncio.QueueEmpty:
+            return None
+
+    async def _cancel_tasks(self) -> None:
+        \"\"\"Cancel all requests tasks pending.\"\"\"
+
+        for task in list(self._tasks):
+            if task.done():  # pragma: nocover
+                continue
+            task.cancel()
+
+        for task in list(self._tasks):
+            try:
+                await task
+            except KeyboardInterrupt:  # pragma: nocover
+                raise
+            except BaseException:  # pragma: nocover # pylint: disable=broad-except
+                pass  # nosec
+"""
+
 ASYNC_CHANNEL = """
-class {name_camelcase}AsyncChannel:  # pylint: disable=too-many-instance-attributes
+class {name_camelcase}AsyncChannel(BaseAsyncChannel):  # pylint: disable=too-many-instance-attributes
     \"\"\"A channel handling incomming communication from the {proper_name} connection.\"\"\"
 
     def __init__(
@@ -96,26 +210,19 @@ class {name_camelcase}AsyncChannel:  # pylint: disable=too-many-instance-attribu
         **kwargs  # TODO: pass the neccesary arguments for your channel explicitly
     ):
         \"\"\"
-        Initialize a {proper_name} channel.
+        Initialize the {proper_name} channel.
 
         :param agent_address: the address of the agent.
         :param connection_id: the id of the connection.
         \"\"\"
 
-        self.agent_address = agent_address
-        self.connection_id = connection_id
+        super().__init__(agent_address, connection_id, message_type={protocol_name_camelcase}Message)
+
         # TODO: assign attributes from custom connection configuration explicitly
         for key, value in kwargs.items():
             setattr(self, key, value)
 
-        self.is_stopped = True
-        self._connection = None
-        self._tasks: Set[asyncio.Task] = set()
-        self._in_queue: Optional[asyncio.Queue] = None
-        self._loop: Optional[asyncio.AbstractEventLoop] = None
         self._dialogues = {protocol_name_camelcase}Dialogues(str({name_camelcase}Connection.connection_id))
-
-        self.logger = _default_logger
         self.logger.debug("Initialised the {proper_name} channel")
 
     async def connect(self, loop: AbstractEventLoop) -> None:
@@ -137,93 +244,25 @@ class {name_camelcase}AsyncChannel:  # pylint: disable=too-many-instance-attribu
                 self._in_queue = None
                 self.logger.exception("Failed to start {proper_name}.")
 
-    async def send(self, {protocol_name}_envelope: Envelope) -> None:
-        \"\"\"
-        Send an envelope with a {protocol_name} message.
-
-        It sends the query to the {proper_name}, waits for and receives the result.
-        The result is translated into a response envelope.
-        Finally, the response envelope is sent to the in-queue.
-
-        :param query_envelope: The envelope containing an {protocol_name} message.
-        \"\"\"
-
-        if not (self._loop and self._connection):
-            raise ConnectionError("{proper_name} not connected, call connect first!")
-
-        if not isinstance({protocol_name}_envelope.message, {protocol_name_camelcase}Message):
-            raise TypeError("Message not of type {protocol_name_camelcase}Message)")
-
-        message = {protocol_name}_envelope.message
-
-        performative_handlers = {handler_mapping}
-
-        if message.performative not in performative_handlers:
-            log_msg = "Message with unexpected performative `{{message.performative}}` received."
-            self.logger.error(log_msg)
-            return
-
-        handler = performative_handlers[message.performative]
-
-        dialogue = cast({protocol_name_camelcase}Dialogue, self._dialogues.update(message))
-        if dialogue is None:
-            self.logger.warning(f"Could not create dialogue for message={{message}}")
-            return
-
-        response_message = handler(message, dialogue)
-        self.logger.info(f"returning message: {{response_message}}")
-
-        envelope = Envelope(
-            to=str({protocol_name}_envelope.sender),
-            sender=str(self.connection_id),
-            message=response_message,
-            protocol_specification_id={protocol_name_camelcase}Message.protocol_specification_id,
-        )
-
-        await self._in_queue.put(envelope)
-
-    {handlers}
-
-    async def _cancel_tasks(self) -> None:
-        \"\"\"Cancel all requests tasks pending.\"\"\"
-
-        for task in list(self._tasks):
-            if task.done():  # pragma: nocover
-                continue
-            task.cancel()
-
-        for task in list(self._tasks):
-            try:
-                await task
-            except KeyboardInterrupt:  # pragma: nocover
-                raise
-            except BaseException:  # pragma: nocover # pylint: disable=broad-except
-                pass  # nosec
-
     async def disconnect(self) -> None:
-        \"\"\"Disconnect.\"\"\"
+        \"\"\"Disconnect channel.\"\"\"
 
         if not self.is_stopped:
             await self._cancel_tasks()
-            self.connection.close()
+            self.connection.close()  # TODO: close connection
             self.is_stopped = True
             self.logger.info("{proper_name} has shutdown.")
 
-    async def get_message(self) -> Optional[Envelope]:
-        \"\"\"Check the in-queue for envelopes.\"\"\"
+    @property
+    def performative_handlers(self) -> Dict[{protocol_name_camelcase}Message.Performative, Callable[[{protocol_name_camelcase}Message, {protocol_name_camelcase}Dialogue], {protocol_name_camelcase}Message]]:
+        return {handler_mapping}
 
-        if self.is_stopped:
-            return None
-        try:
-            envelope = self._in_queue.get_nowait()
-            return envelope
-        except asyncio.QueueEmpty:
-            return None
+    {handlers}
 """
 
 CONNECTION = """
 class {name_camelcase}Connection(Connection):
-    \"\"\"Proxy to the functionality of a {proper_name}\"\"\"
+    \"\"\"Proxy to the functionality of a {proper_name} connection.\"\"\"
 
     connection_id = CONNECTION_ID
 
@@ -242,7 +281,7 @@ class {name_camelcase}Connection(Connection):
             self.address,
             database_type,
             connection_id=self.connection_id,
-            **custom_kwargs
+            **custom_kwargs,
         )
 
     async def connect(self) -> None:
@@ -293,10 +332,5 @@ class {name_camelcase}Connection(Connection):
             return None
 """
 
-ConnectionTemplate = namedtuple(
-    'ConnectionTemplate',
-    ['HEADER', 'DOCSTRING', 'IMPORTS', 'PULBIC_ID', 'LOGGER', 'DIALOGUES', 'ASYNC_CHANNEL', 'CONNECTION'],
-)
-CONNECTION_TEMPLATE = ConnectionTemplate(
-    HEADER, DOCSTRING, IMPORTS, PULBIC_ID, LOGGER, DIALOGUES, ASYNC_CHANNEL, CONNECTION
-)
+ConnectionTemplate = namedtuple('ConnectionTemplate', ['HEADER', 'DOCSTRING', 'IMPORTS', 'PULBIC_ID', 'LOGGER', 'DIALOGUES', 'BASE_ASYNC_CHANNEL', 'ASYNC_CHANNEL', 'CONNECTION'])
+CONNECTION_TEMPLATE = ConnectionTemplate(HEADER, DOCSTRING, IMPORTS, PULBIC_ID, LOGGER, DIALOGUES, BASE_ASYNC_CHANNEL, ASYNC_CHANNEL, CONNECTION)
