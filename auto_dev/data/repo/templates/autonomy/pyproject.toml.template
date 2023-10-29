@@ -29,8 +29,6 @@ autonomy-dev = {{extras = ["all"], version = "^0.2.2"}}
 pyyaml = "==5.4.1"
 
 
-
-
 [tool.poetry.dev-dependencies]
 
 

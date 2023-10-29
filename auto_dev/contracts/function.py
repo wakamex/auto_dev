@@ -7,8 +7,8 @@ from dataclasses import dataclass
 from typing import Any, Dict
 
 from auto_dev.contracts.contract_templates import READ_FUNCTION_TEMPLATE
-from auto_dev.contracts.utils import from_camel_case_to_snake_case
 from auto_dev.contracts.variable import Variable
+from auto_dev.utils import camel_to_snake
 
 
 @dataclass
@@ -38,7 +38,7 @@ class Function:
     @property
     def name(self):
         """Return the name of the function."""
-        return from_camel_case_to_snake_case(self.abi["name"])
+        return camel_to_snake(self.abi["name"])
 
     @property
     def camel_case_name(self):

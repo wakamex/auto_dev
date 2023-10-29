@@ -2,6 +2,7 @@
 Implement fsm tooling
 """
 
+
 import rich_click as click
 
 from auto_dev.base import build_cli
@@ -14,8 +15,6 @@ logger = get_logger()
 cli = build_cli(plugins=False)
 
 # we have a fsm command group
-
-
 @cli.group()
 def fsm():
     """
