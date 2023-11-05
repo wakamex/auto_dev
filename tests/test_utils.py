@@ -194,6 +194,22 @@ class TestFolderSwapper:
         assert not self.b_file_path.exists()
 
 
+def test_load_aea_ctx(dummy_agent_tim):
+    """Test load_aea_ctx"""
+
+    assert dummy_agent_tim
+    mock_func = lambda ctx, *args, **kwargs: (ctx, args, kwargs)
+    mock_context = MagicMock(spec=click.Context)
+
+    decorated_func = load_aea_ctx(mock_func)
+    result = decorated_func(mock_context, "arg1", "arg2", kwarg1="value1", kwarg2="value2")
+
+    ctx, args, kwargs = result
+    assert ctx.aea_ctx.agent_config.name == "tim"
+    assert args == ("arg1", "arg2")
+    assert kwargs == {"kwarg1": "value1", "kwarg2": "value2"}
+
+
 def test_load_aea_ctx_without_config_fails():
     """Test load_aea_ctx fails without aea-config.yaml in local directory."""
 
