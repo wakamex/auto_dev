@@ -242,7 +242,7 @@ class {name_camelcase}AsyncChannel(BaseAsyncChannel):  # pylint: disable=too-man
             except Exception as e:  # pragma: nocover # pylint: disable=broad-except
                 self.is_stopped = True
                 self._in_queue = None
-                raise ConnectionError(f"Failed to start {proper_name}: {e}")
+                raise ConnectionError(f"Failed to start {proper_name}: {{e}}")
 
     async def disconnect(self) -> None:
         \"\"\"Disconnect channel.\"\"\"
