@@ -6,8 +6,10 @@ import json
 import shutil
 import tempfile
 from pathlib import Path
+from unittest.mock import MagicMock
 
 import pytest
+import rich_click as click
 
 from auto_dev.constants import DEFAULT_ENCODING
 from auto_dev.utils import (
@@ -18,6 +20,7 @@ from auto_dev.utils import (
     has_package_code_changed,
     remove_prefix,
     remove_suffix,
+    load_aea_ctx,
 )
 
 TEST_PACKAGES_JSON = {
@@ -189,3 +192,14 @@ class TestFolderSwapper:
 
         assert self.a_file_path.is_file()
         assert not self.b_file_path.exists()
+
+
+def test_load_aea_ctx_without_config_fails():
+    """Test load_aea_ctx fails without aea-config.yaml in local directory."""
+
+    mock_func = lambda ctx, *args, **kwargs: (ctx, args, kwargs)
+    mock_context = MagicMock(spec=click.Context)
+
+    decorated_func = load_aea_ctx(mock_func)
+    with pytest.raises(FileNotFoundError):
+        result = decorated_func(mock_context, "arg1", "arg2", kwarg1="value1", kwarg2="value2")
