@@ -14,6 +14,7 @@ from pathlib import Path
 import rich_click as click
 import yaml
 from aea.configurations.constants import DEFAULT_AEA_CONFIG_FILE, PROTOCOL_LANGUAGE_PYTHON, SUPPORTED_PROTOCOL_LANGUAGES
+from aea.configurations.data_types import PublicId
 
 from auto_dev.base import build_cli
 from auto_dev.cli_executor import CommandExecutor
@@ -22,7 +23,7 @@ from auto_dev.constants import BASE_FSM_SKILLS, DEFAULT_ENCODING
 from auto_dev.contracts.block_explorer import BlockExplorer
 from auto_dev.contracts.contract_scafolder import ContractScaffolder
 from auto_dev.protocols.scaffolder import ProtocolScaffolder
-from auto_dev.utils import camel_to_snake, remove_suffix
+from auto_dev.utils import camel_to_snake, remove_suffix, load_aea_ctx
 
 cli = build_cli()
 
@@ -145,20 +146,24 @@ def protocol(ctx, protocol_specification_path: str, language: str) -> None:
 
 @scaffold.command()
 @click.argument("name", default=None, required=True)
-@click.option("--protocol", default=None, required=True, help="a text file containing a protocol specification.")
+@click.option("--protocol", type=PublicId.from_str, required=True, help="the PublicId of a protocol.")
 @click.pass_context
+@load_aea_ctx
 def connection(  # pylint: disable=R0914
     ctx,
     name,
-    protocol,
+    protocol: PublicId,
 ):
     """
     Scaffold a connection.
     """
-    logger = ctx.obj["LOGGER"]
-    verbose = ctx.obj["VERBOSE"]
 
-    scaffolder = ConnectionScaffolder(name, protocol, logger=logger, verbose=verbose)
+    logger = ctx.obj["LOGGER"]
+
+    if protocol not in ctx.aea_ctx.agent_config.protocols:
+        raise click.ClickException(f"Protocol {protocol} not found in agent configuration.")
+
+    scaffolder = ConnectionScaffolder(ctx, name, protocol)
     scaffolder.generate()
 
     connection_path = Path.cwd() / "connections" / name
