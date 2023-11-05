@@ -6,14 +6,14 @@ import tempfile
 import textwrap
 from pathlib import Path
 
+import rich_click as click
 import yaml
 from aea import AEA_DIR
 from aea.configurations.data_types import PublicId
-from aea.helpers.yaml_utils import yaml_dump, yaml_dump_all
-import rich_click as click
+from aea.helpers.yaml_utils import yaml_dump
 
 from auto_dev.cli_executor import CommandExecutor
-from auto_dev.constants import AEA_CONFIG
+from auto_dev.constants import AEA_CONFIG, DEFAULT_ENCODING
 from auto_dev.data.connections.template import CONNECTION_TEMPLATE
 from auto_dev.data.connections.test_template import TEST_CONNECTION_TEMPLATE
 from auto_dev.protocols.scaffolder import ProtocolSpecification, read_protocol
@@ -152,7 +152,7 @@ class ConnectionScaffolder:
     def __init__(self, ctx: click.Context, name, protocol_id: PublicId):
         """Initialize ConnectionScaffolder."""
 
-        # TODO: `aea add protocol`, currently works only with `adev scaffold protocol crud_protocol.yaml`
+        # `aea add protocol`, currently works only with `adev scaffold protocol crud_protocol.yaml`
         protocol_specification_path = Path("protocols") / protocol_id.name / "README.md"
         if not protocol_specification_path.exists():
             raise click.ClickException(f"{protocol_specification_path} not found.")
@@ -170,11 +170,13 @@ class ConnectionScaffolder:
 
         connection_path = Path.cwd() / "connections" / self.name
         connection_yaml = connection_path / "connection.yaml"
-        connection_config = self.ctx.aea_ctx.connection_loader.load(open(connection_yaml, "r"))
+        with open(connection_yaml, "r", encoding=DEFAULT_ENCODING) as infile:
+            connection_config = self.ctx.aea_ctx.connection_loader.load(infile)
         connection_config.protocols.add(self.protocol_id)
         connection_config.class_name = f"{to_camel(self.name)}Connection"
         connection_config.description = self.protocol.metadata["description"].replace("protocol", "connection")
-        yaml_dump(connection_config.ordered_json, open(connection_yaml, "w"))
+        with open(connection_yaml, "w", encoding=DEFAULT_ENCODING) as outfile:  # # pylint: disable=R1732
+            yaml_dump(connection_config.ordered_json, outfile)
         self.logger.info(f"Updated {connection_yaml}")
 
     def generate(self) -> None:
@@ -192,4 +194,3 @@ class ConnectionScaffolder:
                 sys.exit(1)
 
         self.update_config()
-

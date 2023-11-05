@@ -23,7 +23,7 @@ from auto_dev.constants import BASE_FSM_SKILLS, DEFAULT_ENCODING
 from auto_dev.contracts.block_explorer import BlockExplorer
 from auto_dev.contracts.contract_scafolder import ContractScaffolder
 from auto_dev.protocols.scaffolder import ProtocolScaffolder
-from auto_dev.utils import camel_to_snake, remove_suffix, load_aea_ctx
+from auto_dev.utils import camel_to_snake, load_aea_ctx, remove_suffix
 
 cli = build_cli()
 

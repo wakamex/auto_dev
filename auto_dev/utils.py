@@ -4,22 +4,21 @@ Utilities for auto_dev.
 import json
 import logging
 import os
-import yaml
 import shutil
 import subprocess
 import tempfile
-import rich_click as click
 from contextlib import contextmanager
 from functools import reduce
 from glob import glob
 from pathlib import Path
-from typing import Optional, Union, Callable, Any
+from typing import Any, Callable, Optional, Union
 
-from rich.logging import RichHandler
-
+import rich_click as click
+import yaml
 from aea.cli.utils.config import get_registry_path_from_cli_config
 from aea.cli.utils.context import Context
 from aea.configurations.base import AgentConfig
+from rich.logging import RichHandler
 
 from .constants import AUTONOMY_PACKAGES_FILE, DEFAULT_ENCODING
 

@@ -18,9 +18,9 @@ from auto_dev.utils import (
     get_packages,
     get_paths,
     has_package_code_changed,
+    load_aea_ctx,
     remove_prefix,
     remove_suffix,
-    load_aea_ctx,
 )
 
 TEST_PACKAGES_JSON = {
@@ -198,7 +198,7 @@ def test_load_aea_ctx(dummy_agent_tim):
     """Test load_aea_ctx"""
 
     assert dummy_agent_tim
-    mock_func = lambda ctx, *args, **kwargs: (ctx, args, kwargs)
+    mock_func = lambda ctx, *args, **kwargs: (ctx, args, kwargs)  # pylint: disable=C3001
     mock_context = MagicMock(spec=click.Context)
 
     decorated_func = load_aea_ctx(mock_func)
@@ -213,9 +213,9 @@ def test_load_aea_ctx(dummy_agent_tim):
 def test_load_aea_ctx_without_config_fails():
     """Test load_aea_ctx fails without aea-config.yaml in local directory."""
 
-    mock_func = lambda ctx, *args, **kwargs: (ctx, args, kwargs)
+    mock_func = lambda ctx, *args, **kwargs: (ctx, args, kwargs)  # pylint: disable=C3001
     mock_context = MagicMock(spec=click.Context)
 
     decorated_func = load_aea_ctx(mock_func)
     with pytest.raises(FileNotFoundError):
-        result = decorated_func(mock_context, "arg1", "arg2", kwarg1="value1", kwarg2="value2")
+        decorated_func(mock_context, "arg1", "arg2", kwarg1="value1", kwarg2="value2")
