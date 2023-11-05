@@ -65,7 +65,7 @@ class ProtocolScaffolder:
         command = f"aea generate protocol {self.protocol_specification_path} --l {self.language}"
         result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
         if not result.returncode == 0:
-            raise ValueError(f"Protocol scaffolding failed: {stderr}")
+            raise ValueError(f"Protocol scaffolding failed: {result.stderr}")
 
         protocol = read_protocol(self.protocol_specification_path)
         protocol_name = protocol.metadata["name"]

@@ -40,7 +40,7 @@ def test_scaffold_fsm_with_aea_run(cli_runner, spec, dummy_agent_tim):
 def test_scaffold_protocol(cli_runner, dummy_agent_tim, caplog):
     """Test scaffold protocol"""
 
-    path = Path.cwd() / ".." / "tests" / "data" / f"dummy_protocol.yaml"
+    path = Path.cwd() / ".." / "tests" / "data" / "dummy_protocol.yaml"
     command = ["scaffold", "protocol", str(path)]
     result = cli_runner.invoke(cli, command)
 

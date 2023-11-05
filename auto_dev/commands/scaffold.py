@@ -13,21 +13,16 @@ from pathlib import Path
 
 import rich_click as click
 import yaml
-from aea.configurations.constants import DEFAULT_AEA_CONFIG_FILE
+from aea.configurations.constants import DEFAULT_AEA_CONFIG_FILE, PROTOCOL_LANGUAGE_PYTHON, SUPPORTED_PROTOCOL_LANGUAGES
 
 from auto_dev.base import build_cli
 from auto_dev.cli_executor import CommandExecutor
-from auto_dev.protocols.scaffolder import ProtocolScaffolder
 from auto_dev.connections.scaffolder import ConnectionScaffolder
 from auto_dev.constants import BASE_FSM_SKILLS, DEFAULT_ENCODING
 from auto_dev.contracts.block_explorer import BlockExplorer
 from auto_dev.contracts.contract_scafolder import ContractScaffolder
+from auto_dev.protocols.scaffolder import ProtocolScaffolder
 from auto_dev.utils import camel_to_snake, remove_suffix
-
-from aea.configurations.constants import (
-    PROTOCOL_LANGUAGE_PYTHON,
-    SUPPORTED_PROTOCOL_LANGUAGES,
-)
 
 cli = build_cli()
 
