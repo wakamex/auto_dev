@@ -17,11 +17,17 @@ from aea.configurations.constants import DEFAULT_AEA_CONFIG_FILE
 
 from auto_dev.base import build_cli
 from auto_dev.cli_executor import CommandExecutor
+from auto_dev.protocols.scaffolder import ProtocolScaffolder
 from auto_dev.connections.scaffolder import ConnectionScaffolder
 from auto_dev.constants import BASE_FSM_SKILLS, DEFAULT_ENCODING
 from auto_dev.contracts.block_explorer import BlockExplorer
 from auto_dev.contracts.contract_scafolder import ContractScaffolder
 from auto_dev.utils import camel_to_snake, remove_suffix
+
+from aea.configurations.constants import (
+    PROTOCOL_LANGUAGE_PYTHON,
+    SUPPORTED_PROTOCOL_LANGUAGES,
+)
 
 cli = build_cli()
 
@@ -120,6 +126,26 @@ def fsm(spec):
     result = command.execute(verbose=True)
     if not result:
         raise ValueError(f"FSM scaffolding failed for spec: {spec}")
+
+
+@scaffold.command()
+@click.argument("protocol_specification_path", type=str, required=True)
+@click.option(
+    "--l",
+    "language",
+    type=click.Choice(SUPPORTED_PROTOCOL_LANGUAGES),
+    required=False,
+    default=PROTOCOL_LANGUAGE_PYTHON,
+    help="Specify the language in which to generate the protocol package.",
+)
+@click.pass_context
+def protocol(ctx, protocol_specification_path: str, language: str) -> None:
+    """Scaffold a protocol"""
+
+    logger = ctx.obj["LOGGER"]
+    verbose = ctx.obj["VERBOSE"]
+    scaffolder = ProtocolScaffolder(protocol_specification_path, language, logger=logger, verbose=verbose)
+    scaffolder.generate()
 
 
 @scaffold.command()
