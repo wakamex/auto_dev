@@ -70,6 +70,11 @@ def parse_enums(protocol: ProtocolSpecification) -> Dict[str, Dict[str, str]]:
     return enums
 
 
+def get_docstring_index(node: ast.stmt):
+    """Get docstring index"""
+    return next((i + 1 for i, stmt in enumerate(node.body) if isinstance(stmt, ast.Expr) and isinstance(stmt.value, ast.Str)), 0)
+
+
 def get_raise_statement(stmt) -> ast.stmt:
     """Get raise statement"""
     return next(
@@ -101,6 +106,9 @@ class EnumModifier:
         content = custom_types_path.read_text()
         root = ast.parse(content)
 
+        new_import = ast.ImportFrom(module="enum", names=[ast.alias(name='Enum', asname=None)], level=0)
+        root.body.insert(get_docstring_index(root), new_import)
+
         for node in root.body:
             if isinstance(node, ast.ClassDef) and node.name in enums:
                 self._process_enum(node, enums)
@@ -123,7 +131,7 @@ class EnumModifier:
         node.bases = [ast.Name(id='Enum', ctx=ast.Load())]
 
         class_attrs = self._create_class_attributes(enums[node.name], node)
-        docstring_index = self._get_docstring_index(node)
+        docstring_index = get_docstring_index(node)
         node.body = node.body[:docstring_index] + class_attrs + node.body[docstring_index:]
         self._update_methods(node)
 
@@ -136,12 +144,6 @@ class EnumModifier:
             )
 
         return list(starmap(to_ast_assign, enum_values.items()))
-
-    def _get_docstring_index(self, node: ast.ClassDef):
-        for i, stmt in enumerate(node.body):
-            if isinstance(stmt, ast.Expr) and isinstance(stmt.value, ast.Str):
-                return i + 1
-        return 0
 
     def _update_methods(self, node: ast.ClassDef):
         to_remove = []
