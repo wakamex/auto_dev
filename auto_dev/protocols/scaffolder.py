@@ -129,5 +129,5 @@ class ProtocolScaffolder:
         if not result.returncode == 0:
             raise ValueError(f"Protocol fingerprinting failed: {result.stderr}")
 
-        connection_path = Path.cwd() / "protocols" / protocol_name
-        self.logger.info(f"New protocol scaffolded at {connection_path}")
+        protocol_path = Path.cwd() / "protocols" / protocol_name
+        self.logger.info(f"New protocol scaffolded at {protocol_path}")
