@@ -67,6 +67,12 @@ def parse_enums(protocol: ProtocolSpecification) -> Dict[str, Dict[str, str]]:
     return enums
 
 
+def get_raise_statement(stmt) -> ast.stmt:
+    return next(statement for statement in stmt.body if isinstance(statement, ast.Raise)
+                and isinstance(statement.exc, ast.Name)
+                and statement.exc.id == 'NotImplementedError')
+
+
 class EnumModifier:
     """EnumModifier"""
 
@@ -84,6 +90,102 @@ class EnumModifier:
 
         custom_types_path = self.protocol_path / "custom_types.py"
         content = custom_types_path.read_text()
+        root = ast.parse(content)
+
+        for node in root.body:
+            if isinstance(node, ast.ClassDef) and node.name in enums:
+                self._process_enum(node, enums)
+
+        modified_code = ast.unparse(root)
+        updated_content = self.update_content(content, modified_code)
+        self.format_and_write_to_file(custom_types_path, updated_content)
+        self.logger.info(f"Updated: {custom_types_path}")
+
+    def update_content(self, content: str, modified_code: str):
+        i = content.find(modified_code.split("\n")[0])
+        return content[:i] + modified_code
+
+    def format_and_write_to_file(self, file_path: Path, content: str):
+        file_path.write_text(content)
+        Formatter.run_black(file_path)
+
+    def _process_enum(self, node: ast.ClassDef, enums):
+        name = camel_to_snake(node.name)
+        node.bases = [ast.Name(id='Enum', ctx=ast.Load())]
+
+        class_attrs = self._create_class_attributes(enums[node.name], node)
+        docstring_index = self._get_docstring_index(node)
+        node.body = node.body[:docstring_index] + class_attrs + node.body[docstring_index:]
+        self._update_methods(node)
+
+    def _create_class_attributes(self, enum_values: Dict[str, str], node: ast.ClassDef):
+
+        def to_ast_assign(attr_name: str, attr_value: str):
+            return ast.Assign(
+                    targets=[ast.Name(id=attr_name, ctx=ast.Store())],
+                    value=ast.Constant(value=int(attr_value)),
+                    lineno=node.lineno,
+                )
+
+        return list(starmap(to_ast_assign, enum_values.items()))
+
+    def _get_docstring_index(self, node: ast.ClassDef):
+        for i, stmt in enumerate(node.body):
+            if isinstance(stmt, ast.Expr) and isinstance(stmt.value, ast.Str):
+                return i + 1
+        return 0
+
+    def _update_methods(self, node: ast.ClassDef):
+        to_remove = []
+        for i, stmt in enumerate(node.body):
+            if isinstance(stmt, ast.FunctionDef):
+                if stmt.name in ("__init__", "__eq__"):
+                    to_remove.append(i)
+                elif stmt.name == "encode":
+                    self._modify_encode_function(stmt, node)
+                elif stmt.name == "decode":
+                    self._modify_decode_function(stmt, node)
+
+        for i in sorted(to_remove, reverse=True):
+            node.body.pop(i)
+
+    def _modify_encode_function(self, stmt: ast.stmt, node: ast.ClassDef):
+        name = camel_to_snake(node.name)
+        statement = get_raise_statement(stmt)
+        j = stmt.body.index(statement)
+        stmt.body[j] = ast.Expr(
+            value=ast.Assign(
+                targets=[
+                    ast.Attribute(
+                        value=ast.Name(id=f"{name}_protobuf_object", ctx=ast.Load()),
+                        attr=name,
+                        ctx=ast.Store()
+                    )
+                ],
+                value=ast.Attribute(
+                    value=ast.Name(id=f"{name}_object", ctx=ast.Load()),
+                    attr="value",
+                    ctx=ast.Load()
+                ),
+                lineno=statement.lineno,
+            )
+        )
+
+    def _modify_decode_function(self, stmt: ast.stmt, node: ast.ClassDef):
+        name = camel_to_snake(node.name)
+        statement = get_raise_statement(stmt)
+        j = stmt.body.index(statement)
+        stmt.body[j] = ast.Return(
+            value=ast.Call(
+                func=ast.Name(id=node.name, ctx=ast.Load()),
+                args=[ast.Attribute(
+                    value=ast.Name(id=f'{name}_protobuf_object', ctx=ast.Load()),
+                    attr=name,
+                    ctx=ast.Load()
+                )],
+                keywords=[]
+            )
+        )
 
 
 class ProtocolScaffolder:
