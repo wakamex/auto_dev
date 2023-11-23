@@ -236,3 +236,9 @@ class ConnectionScaffolder:
 
         self.update_config()
         self.update_readme()
+
+        connection_id = PublicId(AEA_CONFIG["author"], self.name, "0.1.0")
+        cli_executor = CommandExecutor(f"aea fingerprint connection {connection_id}".split())
+        result = cli_executor.execute(verbose=True)
+        if not result:
+            raise ValueError(f"Fingerprinting failed: {connection_id}")
