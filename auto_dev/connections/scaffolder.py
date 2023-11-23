@@ -21,16 +21,21 @@ from auto_dev.utils import folder_swapper, get_logger
 
 INDENT = "    "
 
-
-HANDLER_TEMPLATE = """
-def {handler}(self, message: {protocol}Message, dialogue: {protocol}Dialogue) -> {protocol}Message:
-    # TODO: implement necessary logic
-
+REPLY_TEMPLATE = """
     response_message = dialogue.reply(
         performative={protocol}Message.Performative.{performative},
         {kwargs},
     )
+"""
 
+HANDLER_TEMPLATE = """
+def {handler}(self, message: {protocol}Message, dialogue: {protocol}Dialogue) -> {protocol}Message:
+    \"\"\"Handle {protocol}Message with {perfomative} Perfomative \"\"\"
+
+    {message_content}
+
+    # TODO: Implement the necessary logic required for the response message
+    {replies}
     return response_message
 """
 
@@ -43,7 +48,6 @@ def to_camel(name: str, sep="") -> str:
 def get_handlers(protocol: ProtocolSpecification) -> str:
     """Format handler methods."""
 
-    protocol_name = protocol.metadata["name"]
     speech_acts = protocol.metadata["speech_acts"]
     termination = set(protocol.speech_acts["termination"])
     reply = protocol.speech_acts["reply"]
@@ -51,21 +55,33 @@ def get_handlers(protocol: ProtocolSpecification) -> str:
     incoming_performatives = [a for a in speech_acts if a not in termination]
     performative_responses = {a: reply[a] for a in incoming_performatives}
 
-    protocol = to_camel(protocol_name)
+    protocol = to_camel(protocol.metadata["name"])
     methods = []
-    for handler, replies in performative_responses.items():
-        performative = replies[0]
-        resp = speech_acts[performative]
-        resp = ",\n".join(f"{kw}=..." for kw in resp)
-        kwargs = textwrap.indent(resp, INDENT * 2).lstrip()
+
+    for performative, responses in performative_responses.items():
+        incoming = "\n".join(f"{x} = message.{x}" for x in speech_acts[performative])
+        message_content = textwrap.indent(incoming, INDENT).lstrip()
+        replies = []
+        for response in responses:
+            resp = ",\n".join(f"{kw}=..." for kw in speech_acts[response])
+            kwargs = textwrap.indent(resp, INDENT * 2).lstrip()
+            reply = REPLY_TEMPLATE.format(
+                protocol=protocol,
+                performative=response.upper(),
+                kwargs=kwargs,
+            )
+            replies.append(reply)
         methods += [
             HANDLER_TEMPLATE.format(
-                handler=handler, protocol=protocol, performative=performative.upper(), kwargs=kwargs
+                handler=performative,
+                protocol=protocol,
+                perfomative=performative.upper(),
+                message_content=message_content,
+                replies="".join(replies),
             )
         ]
 
     handlers = "".join(textwrap.indent(m, INDENT) for m in methods)
-
     return handlers.strip()
 
 
@@ -80,7 +96,7 @@ def get_handler_mapping(protocol: ProtocolSpecification) -> str:
     name = to_camel(protocol_name)
     entry = "{name}Message.Performative.{performative}: self.{handler}"
     entries = (entry.format(name=name, performative=p.upper(), handler=p) for p in performatives)
-    content = textwrap.indent(",\n".join(entries), INDENT * 1)
+    content = textwrap.indent(",\n".join(entries), INDENT)
     handler_mapping = textwrap.indent("{\n" + content + ",\n}", INDENT * 2)
 
     return handler_mapping.lstrip()
@@ -149,7 +165,7 @@ class ConnectionFolderTemplate:  # pylint: disable=R0902  # Too many instance at
 class ConnectionScaffolder:
     """ConnectionScaffolder"""
 
-    def __init__(self, ctx: click.Context, name, protocol_id: PublicId):
+    def __init__(self, ctx: click.Context, name: str, protocol_id: PublicId):
         """Initialize ConnectionScaffolder."""
 
         # `aea add protocol`, currently works only with `adev scaffold protocol crud_protocol.yaml`
