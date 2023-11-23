@@ -278,7 +278,8 @@ class {name_camelcase}Connection(Connection):
         \"\"\"
 
         keys = []  # TODO: pop your custom kwargs
-        custom_kwargs = {{key: kwargs.pop(key) for key in keys}}
+        config = kwargs["configuration"].config
+        custom_kwargs = {{key: config.pop(key) for key in keys}}
         super().__init__(**kwargs)
 
         self.channel = {name_camelcase}AsyncChannel(
