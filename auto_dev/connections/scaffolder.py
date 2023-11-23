@@ -21,6 +21,14 @@ from auto_dev.utils import folder_swapper, get_logger
 
 INDENT = "    "
 
+README_TEMPLATE = """
+# {name} Connection
+
+## Description
+
+...
+"""
+
 REPLY_TEMPLATE = """
     response_message = dialogue.reply(
         performative={protocol}Message.Performative.{performative},
@@ -195,6 +203,18 @@ class ConnectionScaffolder:
             yaml_dump(connection_config.ordered_json, outfile)
         self.logger.info(f"Updated {connection_yaml}")
 
+    def update_readme(self):
+        """Update README.md"""
+
+        connection_path = Path.cwd() / "connections" / self.name
+        file_path = connection_path / "readme.md"
+        kwargs = {
+            "name": " ".join(map(str.capitalize, self.name.split("_"))),
+        }
+        content = README_TEMPLATE.format(**kwargs)
+        file_path.write_text(content)
+        file_path.rename(file_path.parent / "README.md")
+
     def generate(self) -> None:
         """Generate connection."""
 
@@ -210,3 +230,4 @@ class ConnectionScaffolder:
                 sys.exit(1)
 
         self.update_config()
+        self.update_readme()
