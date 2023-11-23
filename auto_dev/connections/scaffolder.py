@@ -53,6 +53,20 @@ def to_camel(name: str, sep="") -> str:
     return sep.join(map(str.capitalize, name.split("_")))
 
 
+def _format_reply_content(protocol_name, speech_acts, responses):
+    replies = []
+    for response in responses:
+        resp = ",\n".join(f"{kw}=..." for kw in speech_acts[response])
+        kwargs = textwrap.indent(resp, INDENT * 2).lstrip()
+        reply = REPLY_TEMPLATE.format(
+            protocol=protocol_name,
+            performative=response.upper(),
+            kwargs=kwargs,
+        )
+        replies.append(reply)
+    return "".join(replies)
+
+
 def get_handlers(protocol: ProtocolSpecification) -> str:
     """Format handler methods."""
 
@@ -63,29 +77,20 @@ def get_handlers(protocol: ProtocolSpecification) -> str:
     incoming_performatives = [a for a in speech_acts if a not in termination]
     performative_responses = {a: reply[a] for a in incoming_performatives}
 
-    protocol = to_camel(protocol.metadata["name"])
+    protocol_name = to_camel(protocol.metadata["name"])
     methods = []
 
     for performative, responses in performative_responses.items():
         incoming = "\n".join(f"{x} = message.{x}" for x in speech_acts[performative])
         message_content = textwrap.indent(incoming, INDENT).lstrip()
-        replies = []
-        for response in responses:
-            resp = ",\n".join(f"{kw}=..." for kw in speech_acts[response])
-            kwargs = textwrap.indent(resp, INDENT * 2).lstrip()
-            reply = REPLY_TEMPLATE.format(
-                protocol=protocol,
-                performative=response.upper(),
-                kwargs=kwargs,
-            )
-            replies.append(reply)
+        replies = _format_reply_content(protocol_name, speech_acts, responses)
         methods += [
             HANDLER_TEMPLATE.format(
                 handler=performative,
-                protocol=protocol,
+                protocol=protocol_name,
                 perfomative=performative.upper(),
                 message_content=message_content,
-                replies="".join(replies),
+                replies=replies,
             )
         ]
 
