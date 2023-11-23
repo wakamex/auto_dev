@@ -235,8 +235,9 @@ class {name_camelcase}AsyncChannel(BaseAsyncChannel):  # pylint: disable=too-man
         if self.is_stopped:
             self._loop = loop
             self._in_queue = asyncio.Queue()
-            self.is_stopped = False 
+            self.is_stopped = False
             try:
+                raise NotImplementedError("{name_camelcase}AsyncChannel.connect")
                 self._connection = ...  # TODO: e.g. self.engine.connect()
                 self.logger.info("{proper_name} has connected.")
             except Exception as e:  # pragma: nocover # pylint: disable=broad-except
@@ -247,11 +248,14 @@ class {name_camelcase}AsyncChannel(BaseAsyncChannel):  # pylint: disable=too-man
     async def disconnect(self) -> None:
         \"\"\"Disconnect channel.\"\"\"
 
-        if not self.is_stopped:
-            await self._cancel_tasks()
-            self.connection.close()  # TODO: close connection
-            self.is_stopped = True
-            self.logger.info("{proper_name} has shutdown.")
+        if self.is_stopped:
+            return
+
+        await self._cancel_tasks()
+        raise NotImplementedError("{name_camelcase}AsyncChannel.disconnect")
+        ...  # TODO: e.g. self._connection.close()
+        self.is_stopped = True
+        self.logger.info("{proper_name} has shutdown.")
 
     @property
     def performative_handlers(self) -> Dict[{protocol_name_camelcase}Message.Performative, Callable[[{protocol_name_camelcase}Message, {protocol_name_camelcase}Dialogue], {protocol_name_camelcase}Message]]:
