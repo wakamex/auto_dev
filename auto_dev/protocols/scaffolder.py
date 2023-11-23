@@ -72,7 +72,11 @@ def parse_enums(protocol: ProtocolSpecification) -> Dict[str, Dict[str, str]]:
 
 def get_docstring_index(node: ast.stmt):
     """Get docstring index"""
-    return next((i + 1 for i, stmt in enumerate(node.body) if isinstance(stmt, ast.Expr) and isinstance(stmt.value, ast.Str)), 0)
+
+    def is_docstring(stmt: ast.stmt):
+        return isinstance(stmt, ast.Expr) and isinstance(stmt.value, ast.Str)
+
+    return next((i + 1 for i, stmt in enumerate(node.body) if is_docstring(stmt)), 0)
 
 
 def get_raise_statement(stmt) -> ast.stmt:
