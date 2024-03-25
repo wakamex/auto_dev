@@ -51,6 +51,17 @@ from packages.{protocol_author}.protocols.{protocol_name}.message import {protoc
 from packages.{author}.connections.{name}.connection import CONNECTION_ID as CONNECTION_PUBLIC_ID
 """
 
+HELPERS = """
+def envelope_it(message: {protocol_name_camelcase}Message):
+    \"\"\"Envelope the message\"\"\"
+
+    return Envelope(
+        to=message.to,
+        sender=message.sender,
+        message=message,
+    )
+"""
+
 DIALOGUES = """
 class {protocol_name_camelcase}Dialogues(Base{protocol_name_camelcase}Dialogues):
     \"\"\"The dialogues class keeps track of all {name} dialogues.\"\"\"
@@ -139,10 +150,10 @@ class Test{name_camelcase}Connection():
             # ...
         )
 
-        await self.{name}_connection.send(msg)
+        await self.{name}_connection.send(envelope_it(msg))
 """
 
 TestConnectionTemplate = namedtuple(
-    'TestConnectionTemplate', ['HEADER', 'DOCSTRING', 'IMPORTS', 'DIALOGUES', 'CONNECTION']
+    'TestConnectionTemplate', ['HEADER', 'DOCSTRING', 'IMPORTS', 'HELPERS', 'DIALOGUES', 'CONNECTION']
 )
-TEST_CONNECTION_TEMPLATE = TestConnectionTemplate(HEADER, DOCSTRING, IMPORTS, DIALOGUES, CONNECTION)
+TEST_CONNECTION_TEMPLATE = TestConnectionTemplate(HEADER, DOCSTRING, IMPORTS, HELPERS, DIALOGUES, CONNECTION)
