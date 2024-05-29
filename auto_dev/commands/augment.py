@@ -1,8 +1,10 @@
 """
 Implement scaffolding tooling
 """
+
 from copy import deepcopy
 from pathlib import Path
+from typing import List, Tuple
 
 import rich_click as click
 import yaml
@@ -35,6 +37,73 @@ logging_config:
 """
 )
 
+LEDGER_CONNECTION_CONFIG = yaml.safe_load(
+    """
+public_id: valory/ledger:0.19.0
+type: connection
+config:
+  ledger_apis:
+    ethereum:
+      address: ${str}
+      chain_id: ${int}
+      poa_chain: ${bool:false}
+      default_gas_price_strategy: ${str:eip1559}
+"""
+)
+
+IPFS_CONNECTION_CONFIG = yaml.safe_load(
+    """
+public_id: valory/ipfs:0.1.0
+type: connection
+config:
+  ipfs_domain: /dns/registry.autonolas.tech/tcp/443/https
+"""
+)
+
+ABCI_CONNECTION_CONFIG = yaml.safe_load(
+    """
+public_id: valory/abci:0.1.0
+type: connection
+config:
+  host: ${str:localhost}
+  port: ${int:26658}
+  use_tendermint: ${bool:false}
+  target_skill_id: ${str}
+"""
+)
+
+PROMETHEUS_CONNECTION_CONFIG = yaml.safe_load(
+    """
+public_id: fetchai/prometheus:0.8.0
+type: connection
+config:
+  port: 8888
+  host: 0.0.0.0
+"""
+)
+
+WEBSOCKET_SERVER_CONNECTION_CONFIG = yaml.safe_load(
+    """
+public_id: eightballer/websocket_server:0.1.0
+type: connection
+config:
+  target_skill_id: ${str}
+  port: 8080
+  host: 0.0.0.0
+"""
+)
+
+HTTP_SERVER_CONNECTION_CONFIG = yaml.safe_load(
+    """
+public_id: eightballer/http_server:0.1.0
+type: connection
+config:
+  target_skill_id: ${str}
+  port: 26658
+  host: 0.0.0.0
+"""
+)
+
 CONSOLE_HANDLER = yaml.safe_load(
     """
 class: rich.logging.RichHandler
@@ -52,6 +121,7 @@ url: /log/
 method: POST
 """
 )
+
 LOGFILE_HANDLER = yaml.safe_load(
     """
 class: logging.FileHandler
@@ -67,19 +137,59 @@ HANDLERS = {
     "logfile": LOGFILE_HANDLER,
 }
 
+CONNECTIONS = {
+    "ledger": (
+        "valory/ledger:0.19.0:bafybeicgfupeudtmvehbwziqfxiz6ztsxr5rxzvalzvsdsspzz73o5fzfi",
+        LEDGER_CONNECTION_CONFIG,
+    ),
+    "abci": ("valory/abci:0.1.0:bafybeigtjiag4a2h6msnlojahtc5pae7jrphjegjb3mlk2l54igc4jwnxe", ABCI_CONNECTION_CONFIG),
+    "ipfs": ("valory/ipfs:0.1.0:bafybeieymwm2o7qp3aybimpsw75qwrqsdqeq764sqlhggookgitncituwa", IPFS_CONNECTION_CONFIG),
+    "p2p_libp2p_client": (
+        "valory/p2p_libp2p_client:0.1.0:bafybeidfm65eece533hfvg2xyn4icpmvz4lmvbemstrlo3iuffb7e72ycq",
+        {},
+    ),
+    "http_client": ("valory/http_client:0.23.0:bafybeidykl4elwbcjkqn32wt5h4h7tlpeqovrcq3c5bcplt6nhpznhgczi", {}),
+    "http_server": (
+        "eightballer/http_server:0.1.0:bafybeic5m2px4wanaqjc6jc3ileqmc76k2loitjrsmlffqvafx7bznwrba",
+        HTTP_SERVER_CONNECTION_CONFIG,
+    ),
+    "websocket_server": (
+        "eightballer/websocket_server:0.1.0:bafybeifop5szl2ikmesdax7mhjsbtzklfqlkxacm3jvk4hxnl32fhxedwy",
+        WEBSOCKET_SERVER_CONNECTION_CONFIG,
+    ),
+    "prometheus": (
+        "fetchai/prometheus:0.8.0:bafybeid3gtvpl2rjo2bccjg27mye3ckyimbn42xtbjqnajjmfkmajnfjeu",
+        PROMETHEUS_CONNECTION_CONFIG,
+    ),
+}
 
-def write(path: str, content: dict):
-    """Safe write the contents to the path using yaml."""
-    with open(path, "w", encoding=DEFAULT_ENCODING) as file:
-        yaml.dump(content, file, default_flow_style=False, sort_keys=False)
+AEA_CONFIG = "aea-config.yaml"
 
 
-class LoggingScaffolder:
-    """Logging scaffolder."""
+class BaseScaffolder:
+    """BaseScaffolder"""
+
+    def load(self):
+        """Load"""
+        if not Path(AEA_CONFIG).exists():
+            raise FileNotFoundError(f"File {AEA_CONFIG} not found")
+        content = Path(AEA_CONFIG).read_text(encoding=DEFAULT_ENCODING)
+        self.aea_config = list(yaml.safe_load_all(content))
 
     def __init__(self):
         """Init scaffolder."""
         self.logger = get_logger()
+        self.load()
+
+    def write(self):
+        """Write"""
+        with open(AEA_CONFIG, "w", encoding=DEFAULT_ENCODING) as file:
+            yaml.dump_all(self.aea_config, file, default_flow_style=False, sort_keys=False)
+        self.load()
+
+
+class LoggingScaffolder(BaseScaffolder):
+    """Logging scaffolder."""
 
     def generate(self, handlers: list):
         """Scaffold logging."""
@@ -109,8 +219,8 @@ class LoggingScaffolder:
         else:
             aea_config = list(config)[0]
         logging_config = self.generate(handlers)
-        aea_config.update(logging_config)
-        write(path, aea_config)
+        self.aea_config[0].update(logging_config)
+        self.write()
         return logging_config
 
 
@@ -127,6 +237,44 @@ def logging(handlers):
     logging_scaffolder = LoggingScaffolder()
     logging_scaffolder.scaffold(handlers)
     logger.info("Logging scaffolded.")
+
+
+class ConnectionScaffolder(BaseScaffolder):
+    """ConnectionScaffolder"""
+
+    def generate(self, connections: list) -> List[Tuple[str, str]]:
+        """Generate connections."""
+        self.logger.info(f"Generating connection config for: {connections}")
+        if not connections:
+            raise ValueError("No connections provided")
+        if connections == ["all"]:
+            connections = CONNECTIONS
+        for connection in connections:
+            if connection not in CONNECTIONS:
+                raise ValueError(f"Connection '{connection}' not found")
+        connections = [CONNECTIONS[c] for c in connections]
+        return connections
+
+    def scaffold(self, connections: list) -> None:
+        """Scaffold connection."""
+
+        connections = self.generate(connections)
+        for connection, config in connections:
+            self.aea_config[0]["connections"].append(connection)
+            if config:
+                self.aea_config.append(config)
+
+        self.write()
+
+
+@augment.command()
+@click.argument("connections", nargs=-1, type=click.Choice(CONNECTIONS), required=True)
+def connection(connections):
+    """Augment an AEA configuration with connections."""
+    logger.info(f"Augmenting agent connections: {connections}")
+    connection_scaffolder = ConnectionScaffolder()
+    connection_scaffolder.scaffold(connections)
+    logger.info("Connections scaffolded.")
 
 
 if __name__ == "__main__":
