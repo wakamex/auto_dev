@@ -14,6 +14,7 @@ from auto_dev.protocols.scaffolder import read_protocol
 FSM_SPEC = Path("auto_dev/data/fsm/fsm_specification.yaml").absolute()
 
 
+@pytest.mark.skip(reason="Needs chain contracts update")
 @pytest.mark.parametrize("spec", [None, FSM_SPEC])
 def test_scaffold_fsm_with_aea_run(cli_runner, spec, dummy_agent_tim):
     """Test scaffold base FSM upto `aea run`."""
