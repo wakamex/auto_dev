@@ -7,4 +7,7 @@ fmt:
 test:
 	poetry run adev -v test -p tests
 
+docs:
+	poetry run mkdocs build
+
 all: fmt lint test
