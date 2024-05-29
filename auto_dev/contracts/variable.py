@@ -12,9 +12,9 @@ from auto_dev.contracts.utils import PARAM_TO_STR_MAPPING
 class Variable:
     """This class represent a variable in solidity."""
 
-    internalType: ParamType  # pylint: disable=C0103
     type: ParamType
     name: str
+    internalType: ParamType = None  # pylint: disable=C0103
     components: Optional[Any] = None
     index: Optional[int] = None
 

@@ -209,7 +209,15 @@ class LoggingScaffolder(BaseScaffolder):
 
     def scaffold(self, handlers: list):
         """Scaffold logging."""
+        path = "aea-config.yaml"
+        if not Path(path).exists():
+            raise FileNotFoundError(f"File {path} not found")
 
+        config = yaml.safe_load_all(Path(path).read_text(encoding=DEFAULT_ENCODING))
+        if isinstance(config, dict):
+            aea_config = config
+        else:
+            aea_config = list(config)[0]
         logging_config = self.generate(handlers)
         self.aea_config[0].update(logging_config)
         self.write()

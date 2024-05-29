@@ -1,113 +1,39 @@
-[tool]
+[build-system]
+build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core>=1.0.0", "setuptools"]
+
 [tool.poetry]
 name = "autonomy_dev"
-version = "0.2.11"
+version = "0.2.36"
 homepage = "https://github.com/8ball030/auto_dev"
 description = "A collection of tooling to enable open source development of autonomy tools"
 authors = ["8Baller <8ball030@gmail.com>"]
 readme = "README.md"
-license =  "Apache-2.0"
-classifiers=[
-    'Development Status :: 2 - Pre-Alpha',
-    'Intended Audience :: Developers',
-    'License :: OSI Approved :: Apache Software License',
-    'Natural Language :: English',
-    'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3.8',
-    'Programming Language :: Python :: 3.9',
-    'Programming Language :: Python :: 3.10',
-    'Programming Language :: Python :: 3.11',
+license = "Apache-2.0"
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: Apache Software License",
+  "Natural Language :: English",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
 ]
-packages = [
-    { include = "auto_dev" },
-    { include = "tests", format = "sdist" },
-]
+[[tool.poetry.packages]]
+include = "auto_dev"
 
-
-[tool.poetry.dependencies]
-python = ">=3.7.2,<=3.11"
-click = "8.0.2"
-black = "^22.6.0"
-mypy = "^0.971"
-pytest-cov = "^3.0.0"
-tox = "^3.25.1"
-pip = "^22.2.2"
-mkdocs = "^1.3.1"
-mkdocs-include-markdown-plugin = "^3.6.1"
-mkdocs-material = "^8.4.0"
-mkdocs-material-extensions = "^1.0.3"
-twine = "^4.0.1"
-mkdocs-autorefs = "^0.4.1"
-pre-commit = "^2.20.0"
-toml = "^0.10.2"
-bump2version = "^1.0.1"
-yamllint = "^1.27.1"
-GitPython = "^3.1.27"
-pylama = {extras = ["all"], version = "^8.4.1"}
-rich-click = "^1.5.2"
-install = "^1.3.5"
-mkdocstrings-python = "^0.10.0"
-isort = "~5"
-pylint = "~2"
-open-aea = "^1"
-open-aea-cli-ipfs = "^1"
-web3 = "~5"
-open-autonomy = ">=0.10,<=0.12"
-docker = "~6"
-autoflake8 = "^0.4.1"
-
-[tool.poetry.dev-dependencies]
-responses = "^0.23.1"
-
-
-[tool.poetry.extras]
-all = [
-    "pytest",
-    "black",
-    "isort",
-    "mypy",
-    "pylama",
-    "pylint",
-    "autoflake8",
-    "pytest-cov"
-    ]
-
-dev = ["tox", "pre-commit", "virtualenv", "pip", "twine", "toml", "bump2version"]
-
-doc = [
-    "mkdocs",
-    "mkdocs-include-markdown-plugin",
-    "mkdocs-material",
-    "mkdocstrings",
-    "mkdocs-material-extension",
-    "mkdocs-autorefs"
-    ]
-
-[tool.poetry.scripts]
-adev = 'auto_dev.cli:cli'
-
-[tool.poetry.group.dev.dependencies]
-twine = "^4.0.2"
+[[tool.poetry.packages]]
+include = "tests"
+format = "sdist"
 
 [tool.black]
 line-length = 120
 skip-string-normalization = true
-target-version = ['py37', 'py38', 'py39']
-include = '\.pyi?$'
-exclude = '''
-/(
-    \.eggs
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | _build
-  | buck-out
-  | build
-  | dist
-)/
-'''
+target-version = ["py37", "py38", "py39"]
+include = "\\.pyi?$"
+exclude = "/(\n    \\.eggs\n  | \\.git\n  | \\.hg\n  | \\.mypy_cache\n  | \\.tox\n  | \\.venv\n  | _build\n  | buck-out\n  | build\n  | dist\n)/\n"
 
 [tool.isort]
 multi_line_output = 3
@@ -117,10 +43,103 @@ use_parentheses = true
 ensure_newline_before_comments = true
 line_length = 120
 skip_gitignore = true
-# you can skip files as below
-#skip_glob = docs/conf.py
 
-[build-system]
-build-backend = "poetry.core.masonry.api"
-requires = ["poetry-core>=1.0.0", "setuptools"]
+[tool.poetry.dependencies]
+python = "<4.0,>=3.8"
+open-autonomy = "==0.14.10"
+open-aea-ledger-ethereum = "==1.50.0"
+open-aea-ledger-cosmos = "==1.50.0"
+open-aea-test-autonomy = "==0.14.10"
+web3 = "<7,>=6.0.0"
+ipfshttpclient = "==0.8.0a2"
+open-aea-cli-ipfs = "==1.50.0"
+typing_extensions = ">=3.10.0.2"
+protobuf = "<4.25.0,>=4.21.6"
+hypothesis = "==6.21.6"
+toml = "==0.10.2"
+tomte = {version = "==0.2.15", extras = ["cli", "tests", "ledgers", "black"]}
 
+py-multibase = "==1.0.3"
+py-multicodec = "==0.2.1"
+py-eth-sig-utils = "*"
+grpcio = "==1.53.0"
+asn1crypto = "<1.5.0,>=1.4.0"
+
+eth-utils = "==2.2.0"
+eth-abi = "==4.0.0"
+pycryptodome = "==3.18.0"
+
+
+## python = ">=3.8,<=3.11.5"
+## click = "8.0.2"
+## black = "^22.6.0"
+## mypy = "^0.971"
+## pytest-cov = "^3.0.0"
+## tox = "^3.25.1"
+## pip = "^22.2.2"
+## mkdocs = "^1.3.1"
+## mkdocs-include-markdown-plugin = "^3.6.1"
+## mkdocs-material = "^8.4.0"
+## mkdocs-material-extensions = "^1.0.3"
+## twine = "^4.0.1"
+## mkdocs-autorefs = "^0.4.1"
+## pre-commit = "^2.20.0"
+## toml = "^0.10.2"
+## yamllint = "^1.27.1"
+## GitPython = "^3.1.27"
+## rich-click = "^1.5.2"
+## install = "^1.3.5"
+## mkdocstrings-python = "^0.10.0"
+## isort = "~5"
+## pylint = "~2"
+## open-aea = "^1"
+## open-aea-cli-ipfs = "^1"
+## web3 = "~6"
+## open-autonomy = ">=0.10"
+## docker = "~6"
+## autoflake8 = "^0.4.1"
+## open-aea-ledger-cosmos = "^1"
+## open-aea-ledger-ethereum = "^1"
+## open-aea-test-autonomy = ">=0.10.7"
+## dateparser = ">=1.1.1"
+## hypothesis = "6.21.6"
+## py-ecc = ">=5.2.0"
+## ecdsa = "<=0.17.0"
+## eth-typing = ">=3.0.0"
+## py-eth-sig-utils = "^0.4.0"
+## tbump = "^6.11.0"
+rich-click = "^1.8.2"
+
+[tool.poetry.dev-dependencies]
+responses = "^0.23.1"
+
+[tool.poetry.extras]
+all = [
+  "pytest",
+  "black",
+  "isort",
+  "mypy",
+  "pylama",
+  "pylint",
+  "autoflake8",
+  "pytest-cov",
+]
+dev = ["tox", "pre-commit", "virtualenv", "pip", "twine", "toml", "tbump"]
+doc = [
+  "mkdocs",
+  "mkdocs-include-markdown-plugin",
+  "mkdocs-material",
+  "mkdocstrings",
+  "mkdocs-material-extension",
+  "mkdocs-autorefs",
+]
+
+[tool.poetry.scripts]
+adev = "auto_dev.cli:cli"
+
+[tool.poetry.dependencies.pylama]
+extras = ["all"]
+version = "^8.4.1"
+
+[tool.poetry.group.dev.dependencies]
+twine = "^4.0.2"

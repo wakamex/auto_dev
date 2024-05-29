@@ -23,14 +23,21 @@ class CommandExecutor:
         self.command = command
         self.cwd = str(cwd) if cwd else '.'
 
-    def execute(self, stream=False, verbose: bool = True):
+    def execute(self, stream=False, verbose: bool = True, shell: bool = False):
         """Execute the command."""
         if stream:
-            return self._execute_stream(verbose)
-        logger.debug(f"Executing command:\n\"\"\n{' '.join(self.command)}\n\"\"")
+            return self._execute_stream(verbose, shell)
+        if verbose:
+            logger.debug(f"Executing command:\n\"\"\n{' '.join(self.command)}\n\"\"")
         try:
             result = subprocess.run(
-                self.command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=self.cwd, check=False, env=os.environ
+                self.command,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                cwd=self.cwd,
+                check=False,
+                env=os.environ,
+                shell=shell,
             )
             if verbose:
                 if len(result.stdout) > 0:
@@ -47,7 +54,7 @@ class CommandExecutor:
             logger.error("Command failed: %s", error)
             return False
 
-    def _execute_stream(self, verbose: bool = True):
+    def _execute_stream(self, verbose: bool = True, shell: bool = False):
         """Stream the command output. Especially useful for long running commands."""
         logger.debug(f"Executing command:\n\"\"\n{' '.join(self.command)}\n\"\"")
         try:
@@ -57,6 +64,7 @@ class CommandExecutor:
                 stderr=subprocess.PIPE,
                 cwd=self.cwd,
                 universal_newlines=True,
+                shell=shell,
             ) as process:
                 for stdout_line in iter(process.stdout.readline, ""):  # type: ignore
                     if verbose:

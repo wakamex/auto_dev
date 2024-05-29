@@ -9,9 +9,9 @@ import yaml
 from web3 import Web3
 
 from auto_dev.constants import DEFAULT_ENCODING
-from auto_dev.contracts.contract_functions import ReadContractFunction
+from auto_dev.contracts.contract_functions import ContractFunction, FunctionType
 from auto_dev.contracts.function import Function
-from auto_dev.contracts.utils import from_snake_case_to_camel_case
+from auto_dev.utils import snake_to_camel
 
 
 class Contract:
@@ -40,12 +40,11 @@ class Contract:
         for function in w3_contract.all_functions():
             mutability = function.abi['stateMutability']
             if mutability in ['view', "pure"]:
-                queue = self.read_functions
+                self.read_functions.append(Function(function.abi, FunctionType.READ))
             elif mutability in ['nonpayable', 'payable']:
-                queue = self.write_functions
+                self.write_functions.append(Function(function.abi, FunctionType.WRITE))
             else:
                 raise ValueError(f"Function {function} has unknown state mutability: {mutability}")
-            queue.append(Function(function.abi))
 
     def __init__(self, author: str, name: str, abi: dict, address: str, web3: Optional[Web3] = None):
         """
@@ -87,7 +86,7 @@ class Contract:
         with contract_yaml_path.open("r", encoding=DEFAULT_ENCODING) as file_pointer:
             contract_yaml = yaml.safe_load(file_pointer)
         contract_yaml["contract_interface_paths"]["ethereum"] = f"build/{self.name}.json"
-        contract_yaml["class_name"] = from_snake_case_to_camel_case(self.name)
+        contract_yaml["class_name"] = snake_to_camel(self.name)
         with contract_yaml_path.open("w", encoding=DEFAULT_ENCODING) as file_pointer:
             yaml.dump(contract_yaml, file_pointer, sort_keys=False)
 
@@ -101,9 +100,7 @@ class Contract:
         contract_py_path = self.path / "contract.py"
         with contract_py_path.open("r", encoding=DEFAULT_ENCODING) as file_pointer:
             contract_py = file_pointer.read()
-        contract_py = contract_py.replace(
-            "class MyScaffoldContract", f"class {from_snake_case_to_camel_case(self.name)}"
-        )
+        contract_py = contract_py.replace("class MyScaffoldContract", f"class {snake_to_camel(self.name)}")
         contract_py = contract_py.replace(
             'contract_id = PublicId.from_str("open_aea/scaffold:0.1.0")',
             "contract_id = PUBLIC_ID",
@@ -119,7 +116,8 @@ class Contract:
         )
 
         read_functions = "\n".join([function.to_string() for function in self.read_functions])
-        contract_py += read_functions
+        write_functions = "\n".join([function.to_string() for function in self.write_functions])
+        contract_py += read_functions + write_functions
 
         with contract_py_path.open("w", encoding=DEFAULT_ENCODING) as file_pointer:
             file_pointer.write(contract_py)
@@ -146,7 +144,7 @@ class Contract:
         """
         Scaffold a read function.
         """
-        return ReadContractFunction(function)
+        return ContractFunction(function, FunctionType.READ)
 
     def process(self):
         """

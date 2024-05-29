@@ -6,13 +6,18 @@ import logging
 import os
 import shutil
 import subprocess
+import tempfile
 from contextlib import contextmanager
 from functools import reduce
 from glob import glob
 from pathlib import Path
-from tempfile import TemporaryDirectory
-from typing import Optional
+from typing import Any, Callable, Optional, Union
 
+import rich_click as click
+import yaml
+from aea.cli.utils.config import get_registry_path_from_cli_config
+from aea.cli.utils.context import Context
+from aea.configurations.base import AgentConfig
 from rich.logging import RichHandler
 
 from .constants import AUTONOMY_PACKAGES_FILE, DEFAULT_ENCODING
@@ -98,7 +103,7 @@ def isolated_filesystem(copy_cwd: bool = False):
     And to navigate to it and then to clean it up.
     """
     original_path = Path.cwd()
-    with TemporaryDirectory() as temp_dir:
+    with tempfile.TemporaryDirectory() as temp_dir:
         os.chdir(temp_dir)
         if copy_cwd:
             # we copy the content of the original directory into the temporary one
@@ -112,3 +117,114 @@ def isolated_filesystem(copy_cwd: bool = False):
                     shutil.copytree(file_path, Path(temp_dir, file_name))
         yield str(Path(temp_dir))
     os.chdir(original_path)
+
+
+@contextmanager
+def change_dir(target_path):
+    """
+    Temporarily change the working directory.
+    """
+    original_path = str(Path.cwd())
+    try:
+        os.chdir(target_path)
+        yield
+    finally:
+        os.chdir(original_path)
+
+
+@contextmanager
+def restore_directory():
+    """
+    Ensure working directory is restored.
+    """
+    original_dir = os.getcwd()
+    try:
+        yield
+    finally:
+        os.chdir(original_dir)
+
+
+@contextmanager
+def folder_swapper(dir_a: Union[str, Path], dir_b: Union[str, Path]):
+    """
+    A custom context manager that swaps the contents of two folders, allows the execution of logic
+    within the context, and ensures the original folder contents are restored on exit, whether due
+    to success or failure.
+    """
+
+    dir_a = Path(dir_a)
+    dir_b = Path(dir_b)
+
+    if not dir_a.exists() or not dir_b.exists():
+        raise FileNotFoundError("One or both of the provided directories do not exist.")
+
+    dir_a_backup = Path(tempfile.mkdtemp()) / "backup_a"
+    dir_b_backup = Path(tempfile.mkdtemp()) / "backup_b"
+    shutil.copytree(dir_a, dir_a_backup)
+    shutil.copytree(dir_b, dir_b_backup)
+
+    def overwrite(source_dir: Path, target_dir: Path) -> None:
+        shutil.rmtree(dir_a)
+        shutil.rmtree(dir_b)
+        shutil.copytree(source_dir, dir_a)
+        shutil.copytree(target_dir, dir_b)
+
+    try:
+        overwrite(dir_b_backup, dir_a_backup)
+        yield
+    finally:
+        overwrite(dir_a_backup, dir_b_backup)
+        shutil.rmtree(dir_a_backup.parent)
+        shutil.rmtree(dir_b_backup.parent)
+
+
+def snake_to_camel(string: str):
+    """
+    Convert a string from snake case to camel case.
+    """
+    return "".join(word.capitalize() for word in string.split("_"))
+
+
+def camel_to_snake(string: str):
+    """
+    Convert a string from camel case to snake case.
+    Note: If the string is all uppercase, it will be converted to lowercase.
+    """
+    if string.isupper():
+        return string.lower()
+    return "".join("_" + c.lower() if c.isupper() else c for c in string).lstrip("_")
+
+
+def remove_prefix(text: str, prefix: str) -> str:
+    """str.removeprefix"""
+
+    return text[len(prefix) :] if prefix and text.startswith(prefix) else text
+
+
+def remove_suffix(text: str, suffix: str) -> str:
+    """str.removesuffix"""
+
+    return text[: -len(suffix)] if suffix and text.endswith(suffix) else text
+
+
+def load_aea_ctx(func: Callable[[click.Context, ..., Any], Any]) -> Callable[[click.Context, ..., Any], Any]:
+    """Load aea Context and AgentConfig if aea-config.yaml exists"""
+
+    def wrapper(ctx: click.Context, *args, **kwargs):
+
+        aea_config = Path("aea-config.yaml")
+        if not aea_config.exists():
+            raise FileNotFoundError(f"Could not find {aea_config}")
+
+        registry_path = get_registry_path_from_cli_config()
+        ctx.aea_ctx = Context(cwd=".", verbosity="INFO", registry_path=registry_path)
+
+        agent_config_yaml = yaml.safe_load(aea_config.read_text(encoding=DEFAULT_ENCODING))
+        agent_config_json = json.loads(json.dumps(agent_config_yaml))
+        ctx.aea_ctx.agent_config = AgentConfig.from_json(agent_config_json)
+
+        return func(ctx, *args, **kwargs)
+
+    wrapper.__name__ = func.__name__
+
+    return wrapper

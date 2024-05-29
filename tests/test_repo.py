@@ -2,82 +2,133 @@
 Tests for the click cli.
 """
 
-import os
 import subprocess
 from pathlib import Path
+from typing import Tuple
 
-import pytest
-from click.testing import CliRunner
+from aea.cli.utils.config import get_default_author_from_cli_config
 
 from auto_dev.cli import cli
+from auto_dev.utils import change_dir
 
 
-@pytest.fixture
-def runner():
-    """Fixture for invoking command-line interfaces."""
-    return CliRunner()
+class BaseTestRepo:
+    """Test scaffolding new repository."""
 
+    repo_name = "dummy"
+    type_of_repo: str
+    make_commands: Tuple[str]
 
-class TestE2E:
-    """Test the end to end functionality of the cli."""
+    @property
+    def cli_args(self):
+        """CLI arguments"""
+        return ("repo", self.repo_name, "-t", self.type_of_repo)
 
-    def test_repo_new(self, runner, test_clean_filesystem):
+    @property
+    def repo_path(self):
+        """Path of newly scaffolded repo."""
+        return Path.cwd() / self.repo_name
+
+    def test_repo_new(self, cli_runner, test_clean_filesystem):
         """Test the format command works with the current package."""
-        assert os.getcwd() == test_clean_filesystem
-        result = runner.invoke(cli, ["repo", "new", "-t", "python"])
+
+        assert test_clean_filesystem
+        result = cli_runner.invoke(cli, self.cli_args)
         assert result.exit_code == 0, result.output
+        assert (self.repo_path / ".git").exists()
 
-    def test_repo_new_fail(self, runner, test_filesystem):
+    def test_repo_new_fail(self, cli_runner, test_filesystem):
         """Test the format command works with the current package."""
-        assert os.getcwd() == test_filesystem
-        result = runner.invoke(cli, ["repo", "new", "-t", "python"])
+
+        assert test_filesystem
+
+        self.repo_path.mkdir()
+        result = cli_runner.invoke(cli, self.cli_args)
         assert result.exit_code == 1, result.output
 
-    def test_repo_new_test(self, runner, test_clean_filesystem):
-        """Test the format command works with the current package."""
-        assert os.getcwd() == test_clean_filesystem
-        result = runner.invoke(cli, ["repo", "new", "-t", "python"])
-        assert result.exit_code == 0, result.output
-        result = runner.invoke(cli, ["test", "-p", "."])
-        assert result.exit_code == 0, result.output
-
-    def test_repo_workflow(self, runner, test_clean_filesystem):
-        """Test github workflow scaffolding"""
-        assert os.getcwd() == test_clean_filesystem
-        result = runner.invoke(cli, ["repo", "new", "-t", "python"])
-        assert result.exit_code == 0, result.output
-        dev = Path.cwd() / ".github/workflows/dev.yml"
-        assert dev.exists()
-        content = dev.read_text(encoding="utf-8")
-        assert "3.7" in content
-        assert "3.10" in content
-
-    def test_makefile(self, runner, test_clean_filesystem):
+    def test_makefile(self, cli_runner, test_clean_filesystem):
         """Test scaffolding of Makefile"""
-        result = runner.invoke(cli, ["repo", "new", "-t", "python"])
-        makefile = Path(test_clean_filesystem) / "Makefile"
+
+        assert test_clean_filesystem
+
+        result = cli_runner.invoke(cli, self.cli_args)
+        makefile = self.repo_path / "Makefile"
         assert result.exit_code == 0, result.output
         assert makefile.read_text(encoding="utf-8")
 
-        # test that the actual make command works
         error_messages = {}
-        for command in ("fmt", "test"):  # lint still failing
-            result = subprocess.run(
-                f"make {command}",
-                shell=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                check=False,
-            )
-            if not result.returncode == 0:
-                error_messages[command] = result.stderr
+        with change_dir(self.repo_path):
+            for command in self.make_commands:
+                result = subprocess.run(
+                    f"make {command}",
+                    shell=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                    check=False,
+                )
+                if not result.returncode == 0:
+                    error_messages[command] = result.stderr
         assert not error_messages
 
-    def test_run_single_agent(self, runner, test_clean_filesystem):
-        """Test the scripts/run_single_agent.sh is generated"""
-        assert os.getcwd() == test_clean_filesystem
-        result = runner.invoke(cli, ["repo", "new", "-t", "python"])
+
+class TestRepoPython(BaseTestRepo):
+    """Test scaffolding new python repository."""
+
+    type_of_repo = "python"
+    make_commands = "fmt", "lint", "test"
+
+
+class TestRepoAutonomy(BaseTestRepo):
+    """Test scaffolding new autonomy repository."""
+
+    author = get_default_author_from_cli_config()
+    type_of_repo = "autonomy"
+    make_commands = "fmt", "test", "lint", "hashes"
+
+    def test_gitignore(self, cli_runner, test_clean_filesystem):
+        """Test the .gitignore works as expected"""
+
+        assert test_clean_filesystem
+
+        result = cli_runner.invoke(cli, self.cli_args)
         assert result.exit_code == 0, result.output
-        expected_path = Path.cwd() / "scripts" / "run_single_agent.sh"
+
+        packages_folder = self.repo_path / "packages"
+        author_packages = packages_folder / self.author
+        author_packages.mkdir(parents=True)
+
+        # create files that should be ignored in the authors folder
+        for folder in ("protocols", "connections", "skills", "agents", "services"):
+            subfolder = author_packages / folder
+            subfolder.mkdir()
+            (subfolder / "keys.json").write_text("SECRET")
+            (subfolder / "my_private_keys").write_text("SECRET")
+            (subfolder / "__pycache__").mkdir()
+            (subfolder / "__pycache__" / "cachefile").write_text("cache data")
+
+        # any packages not from self should be ignored
+        another_author = packages_folder / "another_author"
+        another_author.mkdir()
+        (another_author / "some_file").write_text("some content")
+
+        with change_dir(self.repo_path):
+            result = subprocess.run(['git', 'status', '--porcelain'], capture_output=True, text=True, check=False)
+            assert result.returncode == 0
+            assert "packages" not in result.stdout
+
+            # any other file created in the author's own package directory should be detected
+            (author_packages / "some_other_file").write_text("to_be_committed")
+            result = subprocess.run(['git', 'status', '--porcelain'], capture_output=True, text=True, check=False)
+            assert result.returncode == 0
+            assert "packages" in result.stdout
+
+    def test_run_single_agent(self, cli_runner, test_clean_filesystem):
+        """Test the scripts/run_single_agent.sh is generated"""
+
+        assert test_clean_filesystem
+
+        result = cli_runner.invoke(cli, self.cli_args)
+        assert result.exit_code == 0, result.output
+        expected_path = self.repo_path / "scripts" / "run_single_agent.sh"
         assert expected_path.exists()

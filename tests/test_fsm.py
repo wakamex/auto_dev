@@ -1,6 +1,7 @@
 """
 This module contains tests for the fsm module.
 """
+
 from textwrap import dedent
 
 from auto_dev.fsm.fsm import FsmSpec
@@ -138,7 +139,7 @@ def test_from_mermaid_fsm():
     mermaid = fsm_spec.to_mermaid()
     fsm_spec_from_mermaid = FsmSpec.from_mermaid(mermaid)
 
-    # we check the atrtibutes
+    # we check the attributes
     assert fsm_spec_from_mermaid.default_start_state == fsm_spec.default_start_state
     assert set(fsm_spec_from_mermaid.states) == set(fsm_spec.states)
     assert set(fsm_spec_from_mermaid.alphabet_in) == set(fsm_spec.alphabet_in)

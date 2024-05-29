@@ -9,23 +9,29 @@ Also contains a Contract, which we will use to allow the user to;
 
 """
 
+from pathlib import Path
+
 import rich_click as click
 import yaml
+from aea.configurations.constants import DEFAULT_AEA_CONFIG_FILE, PROTOCOL_LANGUAGE_PYTHON, SUPPORTED_PROTOCOL_LANGUAGES
+from aea.configurations.data_types import PublicId
 
 from auto_dev.base import build_cli
-from auto_dev.constants import DEFAULT_ENCODING
+from auto_dev.cli_executor import CommandExecutor
+from auto_dev.connections.scaffolder import ConnectionScaffolder
+from auto_dev.constants import BASE_FSM_SKILLS, DEFAULT_ENCODING
 from auto_dev.contracts.block_explorer import BlockExplorer
 from auto_dev.contracts.contract_scafolder import ContractScaffolder
-from auto_dev.contracts.utils import from_camel_case_to_snake_case
+from auto_dev.protocols.scaffolder import ProtocolScaffolder
+from auto_dev.utils import camel_to_snake, load_aea_ctx, remove_suffix
 
 cli = build_cli()
-
 
 # we have a new command group called scaffold.
 @cli.group()
 def scaffold():
     """
-    Scaffold a contract.
+    Scaffold a (set of) components.
     """
 
 
@@ -55,7 +61,7 @@ def contract(  # pylint: disable=R0914
             ctx.invoke(
                 contract,
                 address=str(contract_address),
-                name=from_camel_case_to_snake_case(contract_name),
+                name=camel_to_snake(contract_name),
                 block_explorer_url=yaml_dict["block_explorer_url"],
                 block_explorer_api_key=block_explorer_api_key,
                 read_functions=read_functions,
@@ -82,6 +88,86 @@ def contract(  # pylint: disable=R0914
         logger.info(f"    {function.name}")
 
     logger.info(f"New contract scaffolded at {contract_path}")
+
+
+@scaffold.command()
+@click.option("--spec", default=None, required=False)
+def fsm(spec):
+    """
+    Scaffold a FSM.
+
+    usage: `adev scaffold fsm [--spec fsm_specification.yaml]`
+    """
+
+    if not Path(DEFAULT_AEA_CONFIG_FILE).exists():
+        raise ValueError(f"No {DEFAULT_AEA_CONFIG_FILE} found in current directory")
+
+    for skill, ipfs_hash in BASE_FSM_SKILLS.items():
+        command = CommandExecutor(["autonomy", "add", "skill", ipfs_hash])
+        result = command.execute(verbose=True)
+        if not result:
+            raise ValueError(f"Adding failed for skill: {skill}")
+
+    if not spec:
+        return
+
+    path = Path(spec)
+    if not path.exists():
+        raise click.ClickException(f"Specified spec '{path}' does not exist.")
+
+    fsm_spec = yaml.safe_load(path.read_text(encoding=DEFAULT_ENCODING))
+    name = camel_to_snake(remove_suffix(fsm_spec["label"], "App"))
+
+    command = CommandExecutor(["autonomy", "scaffold", "fsm", name, "--spec", str(spec)])
+    result = command.execute(verbose=True)
+    if not result:
+        raise ValueError(f"FSM scaffolding failed for spec: {spec}")
+
+
+@scaffold.command()
+@click.argument("protocol_specification_path", type=str, required=True)
+@click.option(
+    "--l",
+    "language",
+    type=click.Choice(SUPPORTED_PROTOCOL_LANGUAGES),
+    required=False,
+    default=PROTOCOL_LANGUAGE_PYTHON,
+    help="Specify the language in which to generate the protocol package.",
+)
+@click.pass_context
+def protocol(ctx, protocol_specification_path: str, language: str) -> None:
+    """Scaffold a protocol"""
+
+    logger = ctx.obj["LOGGER"]
+    verbose = ctx.obj["VERBOSE"]
+    scaffolder = ProtocolScaffolder(protocol_specification_path, language, logger=logger, verbose=verbose)
+    scaffolder.generate()
+
+
+@scaffold.command()
+@click.argument("name", default=None, required=True)
+@click.option("--protocol", type=PublicId.from_str, required=True, help="the PublicId of a protocol.")
+@click.pass_context
+@load_aea_ctx
+def connection(  # pylint: disable=R0914
+    ctx,
+    name,
+    protocol: PublicId,
+):
+    """
+    Scaffold a connection.
+    """
+
+    logger = ctx.obj["LOGGER"]
+
+    if protocol not in ctx.aea_ctx.agent_config.protocols:
+        raise click.ClickException(f"Protocol {protocol} not found in agent configuration.")
+
+    scaffolder = ConnectionScaffolder(ctx, name, protocol)
+    scaffolder.generate()
+
+    connection_path = Path.cwd() / "connections" / name
+    logger.info(f"New connection scaffolded at {connection_path}")
 
 
 if __name__ == "__main__":

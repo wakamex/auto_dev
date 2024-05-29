@@ -1,6 +1,8 @@
 """
 We release the package.
 """
+import subprocess
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -46,16 +48,18 @@ class Releaser:
         """
         We update the version.
         """
-        with open(self.dep_path, "r", encoding=DEFAULT_ENCODING) as file_pointer:
-            data = toml.load(file_pointer)
-        data["tool"]["poetry"]["version"] = new_version
-        with open(self.dep_path, "w", encoding=DEFAULT_ENCODING) as file_pointer:
-            toml.dump(data, file_pointer)
+        command = f"tbump {new_version} --non-interactive"
+        self.logger.info(f"Running command:\n `{command}`")
 
-    def post_release(self):
-        """
-        We run the post release.
-        """
+        cli_tool = CommandExecutor(
+            command=command.split(" "),
+        )
+
+        result = cli_tool.execute(verbose=True, stream=True)
+        if not result:
+            self.logger.error("Failed to update the version. 😭")
+            sys.exit(1)
+        return result
 
     def release(self):
         """
@@ -64,16 +68,15 @@ class Releaser:
         self.logger.info("Running the release... 🚀")
         self.logger.info(f"Current version is {self.current_version()}. 🚀")
         self.logger.info(f"New version will be {self.get_new_version()}. 🚀")
+        new_version = self.get_new_version()
+        confirmation = input(f"Are you sure you want to release {new_version}? [y/N]")
+        if confirmation.lower() != "y":
+            self.logger.info("Release aborted. 😎")
+            return False
         if not self.pre_release():
             self.logger.error("Pre release failed. 😭")
             return False
-        new_version = self.get_new_version()
-        if not self.update_version(new_version):
-            self.logger.error("Update version failed. 😭")
-            return False
-        if not self.post_release():
-            self.logger.error("Post release failed. 😭")
-            return False
+        self.update_version(new_version)
         self.logger.info(f"New version is {new_version} 🎉")
         return True
 
@@ -82,11 +85,20 @@ class Releaser:
         We run the pre release.
         """
         # we checkout to a new branch for the release
-        new_version = self.get_new_version()
-        cli_tool = CommandExecutor(
-            command=f"git checkout -b v{new_version}".split(" "),
-        )
-        return cli_tool.execute(verbose=self.verbose, stream=self.verbose)
+        self.logger.info("Running the pre release... 🚀")
+        if not self.is_repo_clean():
+            self.logger.error("Repo is not clean. 😭 We will not release!")
+            return False
+        return True
+
+    def is_repo_clean(self):
+        """
+        We check the project is clean using a command to check if there are ANY changes.
+        """
+        self.logger.info("Checking the tree is clean... 🚀")
+        result = subprocess.run(['git', 'status', '--porcelain'], capture_output=True, text=True, check=False)
+        # we check there are no changes
+        return result.stdout == ""
 
 
 cli = build_cli()
@@ -114,6 +126,10 @@ def release(
 ) -> None:
     """
     We release the package.
+    Automaticaly bump the version and create a new tag.
+    Push the tag to github.
+    Push the branch to github.
+    This will trigger a github action to publish the package to pypi.
     """
     logger = ctx.obj["LOGGER"]
     logger.info("Releasing the package... 🚀")

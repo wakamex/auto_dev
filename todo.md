@@ -41,9 +41,34 @@ aea config set vendor.valory.connections.ipfs.config.ipfs_domain /dns/registry.a
 
 must ensure that use termination is set as so;
 
+this must be set so that use termination is true.
+```
+
+      use_termination: true
+
+```
+      
+
 ```
 aea config set skills.rysk_data_retrieval.models.params.args.use_termination false
 ```
+
+
+The agent will now run.
+
+However, it will quickly die due to not implemented error.
+
+
+After fixing the not implemented errors by inheriting from one of the rounds;
+```
+        setup:
+          consensus_threshold: 1
+          safe_contract_address: '0x0000000000000000000000000000000000000000'
+          all_participants:
+          - ${MAS_ADDRESS:str}
+```
+
+ensure the agent config has this added to the abci app
 
 # Payloads
 
@@ -54,6 +79,8 @@ Here we define the data types.
 # Rounds
 
 Note we must include at a minum a registration round
+
+
 
 ```
 class FetchCexBalancesRound(CollectSameUntilThresholdRound):
