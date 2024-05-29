@@ -5,6 +5,8 @@ Constants for the auto_dev package.
 import os
 from pathlib import Path
 
+from aea.cli.utils.config import get_or_create_cli_config
+
 DEFAULT_ENCODING = "utf-8"
 DEFAULT_TIMEOUT = 10
 # package directory
@@ -14,6 +16,8 @@ AUTONOMY_PACKAGES_FILE = "packages/packages.json"
 AUTO_DEV_FOLDER = os.path.join(os.path.dirname(__file__))
 PLUGIN_FOLDER = os.path.join(AUTO_DEV_FOLDER, "commands")
 TEMPLATE_FOLDER = os.path.join(AUTO_DEV_FOLDER, "data", "repo", "templates")
+
+AEA_CONFIG = get_or_create_cli_config()
 
 SAMPLE_PACKAGES_JSON = {
     "packages/packages.json": """

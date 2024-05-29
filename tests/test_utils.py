@@ -4,12 +4,24 @@ We test the functions from utils
 
 import json
 import shutil
+import tempfile
 from pathlib import Path
+from unittest.mock import MagicMock
 
 import pytest
+import rich_click as click
 
 from auto_dev.constants import DEFAULT_ENCODING
-from auto_dev.utils import get_logger, get_packages, get_paths, has_package_code_changed, remove_prefix, remove_suffix
+from auto_dev.utils import (
+    folder_swapper,
+    get_logger,
+    get_packages,
+    get_paths,
+    has_package_code_changed,
+    load_aea_ctx,
+    remove_prefix,
+    remove_suffix,
+)
 
 TEST_PACKAGES_JSON = {
     "packages/packages.json": """
@@ -137,3 +149,73 @@ def test_remove_suffix():
     assert remove_suffix("abcdef", "xyz") == "abcdef"
     assert remove_suffix("abc", "") == "abc"
     assert remove_suffix("", "xyz") == ""
+
+
+class TestFolderSwapper:
+    """TestFolderSwapper"""
+
+    @classmethod
+    def setup_class(cls):
+        """Setup class"""
+        cls.temp_dir = tempfile.TemporaryDirectory()  # pylint: disable=consider-using-with
+        cls.a_dir = Path(tempfile.mkdtemp(dir=cls.temp_dir.name))
+        cls.b_dir = Path(tempfile.mkdtemp(dir=cls.temp_dir.name))
+        cls.a_file_path = cls.a_dir / "test_file.txt"
+        cls.a_file_path.write_text("dummy data")
+        cls.b_file_path = cls.b_dir / "test_file.txt"
+
+    def test_folder_swapper(self):
+        """
+        Test the folder_swapper custom context manager.
+        """
+        assert self.a_file_path.is_file()
+        assert not self.b_file_path.exists()
+
+        with folder_swapper(self.a_dir, self.b_dir):
+            assert self.b_file_path.is_file()
+
+        assert self.a_file_path.is_file()
+        assert not self.b_file_path.exists()
+
+    def test_folder_swapper_execution_raises(self):
+        """
+        Test the folder_swapper custom context manager restores on raise.
+        """
+        assert self.a_file_path.is_file()
+        assert not self.b_file_path.exists()
+
+        try:
+            with folder_swapper(self.a_dir, self.b_dir):
+                raise ZeroDivisionError("Whoops!")
+        except ZeroDivisionError:
+            pass
+
+        assert self.a_file_path.is_file()
+        assert not self.b_file_path.exists()
+
+
+def test_load_aea_ctx(dummy_agent_tim):
+    """Test load_aea_ctx"""
+
+    assert dummy_agent_tim
+    mock_func = lambda ctx, *args, **kwargs: (ctx, args, kwargs)  # pylint: disable=C3001
+    mock_context = MagicMock(spec=click.Context)
+
+    decorated_func = load_aea_ctx(mock_func)
+    result = decorated_func(mock_context, "arg1", "arg2", kwarg1="value1", kwarg2="value2")
+
+    ctx, args, kwargs = result
+    assert ctx.aea_ctx.agent_config.name == "tim"
+    assert args == ("arg1", "arg2")
+    assert kwargs == {"kwarg1": "value1", "kwarg2": "value2"}
+
+
+def test_load_aea_ctx_without_config_fails():
+    """Test load_aea_ctx fails without aea-config.yaml in local directory."""
+
+    mock_func = lambda ctx, *args, **kwargs: (ctx, args, kwargs)  # pylint: disable=C3001
+    mock_context = MagicMock(spec=click.Context)
+
+    decorated_func = load_aea_ctx(mock_func)
+    with pytest.raises(FileNotFoundError):
+        decorated_func(mock_context, "arg1", "arg2", kwarg1="value1", kwarg2="value2")

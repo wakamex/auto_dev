@@ -2,22 +2,38 @@
 Contract functions.
 """
 from dataclasses import dataclass
+from enum import Enum
 from string import Template
 from typing import Any
 
-from auto_dev.contracts.contract_templates import READ_FUNCTION_TEMPLATE
+from auto_dev.contracts.contract_templates import READ_FUNCTION_TEMPLATE, WRITE_FUNCTION_TEMPLATE
 from auto_dev.contracts.utils import SOLIDITY_TO_PYTHON_TYPES
 
 
+class FunctionType(Enum):
+    """Enum for function types."""
+
+    READ = "read"
+    WRITE = "write"
+
+
+FUNCTION_TO_TEMPLATE_MAPPING = {
+    FunctionType.READ: READ_FUNCTION_TEMPLATE,
+    FunctionType.WRITE: WRITE_FUNCTION_TEMPLATE,
+}
+
+
 @dataclass
-class ReadContractFunction:
+class ContractFunction:
     """A class to scaffold a read function."""
 
     w3_function: Any
+    function_type: FunctionType
 
     def __str__(self) -> Template:
         """String representation."""
-        return READ_FUNCTION_TEMPLATE.format(  # noqa: E1101
+        template = FUNCTION_TO_TEMPLATE_MAPPING[self.function_type]
+        return template.format(  # noqa: E1101
             function_name=self.function_name,
             function_arguments_with_types=self.function_arguments_with_types,
             function_arguments=self.function_arguments,
