@@ -6,7 +6,7 @@ Function class.
 from dataclasses import dataclass
 from typing import Any, Dict
 
-from auto_dev.contracts.contract_templates import READ_FUNCTION_TEMPLATE
+from auto_dev.contracts.contract_functions import FUNCTION_TO_TEMPLATE_MAPPING, FunctionType
 from auto_dev.contracts.variable import Variable
 from auto_dev.utils import camel_to_snake
 
@@ -18,6 +18,7 @@ class Function:
     """
 
     abi: Dict[str, Any]
+    function_type: FunctionType
 
     def to_string(self):
         """
@@ -27,7 +28,8 @@ class Function:
         returns = spacer.join([param.to_str_return() for param in self.outputs])
         args = spacer.join([param.to_str_arg() for param in self.inputs])
         params = spacer.join([param.to_str_params() for param in self.inputs])
-        return READ_FUNCTION_TEMPLATE.substitute(
+        function_template = FUNCTION_TO_TEMPLATE_MAPPING[self.function_type]
+        return function_template.substitute(
             name=self.name if self.name != "" else "constructor",
             camel_name=self.camel_case_name if self.name != "" else "constructor",
             params=params,

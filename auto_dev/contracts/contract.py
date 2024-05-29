@@ -9,7 +9,7 @@ import yaml
 from web3 import Web3
 
 from auto_dev.constants import DEFAULT_ENCODING
-from auto_dev.contracts.contract_functions import ReadContractFunction
+from auto_dev.contracts.contract_functions import ContractFunction, FunctionType
 from auto_dev.contracts.function import Function
 from auto_dev.utils import snake_to_camel
 
@@ -40,12 +40,11 @@ class Contract:
         for function in w3_contract.all_functions():
             mutability = function.abi['stateMutability']
             if mutability in ['view', "pure"]:
-                queue = self.read_functions
+                self.read_functions.append(Function(function.abi, FunctionType.READ))
             elif mutability in ['nonpayable', 'payable']:
-                queue = self.write_functions
+                self.write_functions.append(Function(function.abi, FunctionType.WRITE))
             else:
                 raise ValueError(f"Function {function} has unknown state mutability: {mutability}")
-            queue.append(Function(function.abi))
 
     def __init__(self, author: str, name: str, abi: dict, address: str, web3: Optional[Web3] = None):
         """
@@ -117,7 +116,8 @@ class Contract:
         )
 
         read_functions = "\n".join([function.to_string() for function in self.read_functions])
-        contract_py += read_functions
+        write_functions = "\n".join([function.to_string() for function in self.write_functions])
+        contract_py += read_functions + write_functions
 
         with contract_py_path.open("w", encoding=DEFAULT_ENCODING) as file_pointer:
             file_pointer.write(contract_py)
@@ -144,7 +144,7 @@ class Contract:
         """
         Scaffold a read function.
         """
-        return ReadContractFunction(function)
+        return ContractFunction(function, FunctionType.READ)
 
     def process(self):
         """

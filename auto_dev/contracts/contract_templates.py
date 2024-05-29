@@ -33,40 +33,7 @@ class $NAME\Contract(Contract):
 
     contract_id = PUBLIC_ID
 
-    @classmethod
-    def get_raw_transaction(
-        cls, ledger_api: LedgerApi, contract_address: str, **kwargs: Any
-    ) -> Optional[JSONLike]:
-        \"\"\"Get raw transaction.\"\"\"
-        raise NotImplementedError
-
-    @classmethod
-    def get_raw_message(
-        cls, ledger_api: LedgerApi, contract_address: str, **kwargs: Any
-    ) -> Optional[bytes]:
-        \"\"\"Get raw message.\"\"\"
-        raise NotImplementedError
-
-    @classmethod
-    def get_state(
-        cls, ledger_api: LedgerApi, contract_address: str, **kwargs: Any
-    ) -> Optional[JSONLike]:
-        \"\"\"Get state.\"\"\"
-        raise NotImplementedError
-
-    @classmethod
-    def get_deploy_transaction(
-        cls, ledger_api: LedgerApi, deployer_address: str, **kwargs: Any
-    ) -> Optional[JSONLike]:
-        \"\"\"Get deploy transaction.\"\"\"
-        Get deploy transaction.
-
-        :param ledger_api: ledger API object.
-        :param deployer_address: the deployer address.
-        :param kwargs: the keyword arguments.
-        :return: an optional JSON-like object.
-        \"\"\"
-        return super().get_deploy_transaction(ledger_api, deployer_address, **kwargs)
+    y_transaction(ledger_api, deployer_address, **kwargs)
 $READ_ONLY_FUNCTIONS
 $WRITE_FUNCTIONS
 """
@@ -89,6 +56,21 @@ READ_FUNCTION_TEMPLATE: Template = Template(
             $returns
         }
 
+"""
+)
+WRITE_FUNCTION_TEMPLATE: Template = Template(
+    """
+    @classmethod
+    def $name(
+        cls,
+        ledger_api: LedgerApi,
+        contract_address: str,
+        $params
+        ) -> JSONLike:
+        \"\"\"Handler method for the '$name' requests.\"\"\"
+        instance = cls.get_instance(ledger_api, contract_address)
+        tx = instance.functions.$camel_name($args)
+        return tx
 """
 )
 

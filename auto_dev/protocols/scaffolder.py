@@ -44,11 +44,13 @@ def read_protocol(filepath: str) -> ProtocolSpecification:
         content = remove_prefix(content.split('```')[1], "yaml")
 
     # use ProtocolGenerator to validate the specification
+
     with tempfile.NamedTemporaryFile(mode='w', delete=False) as temp_file:
         Path(temp_file.name).write_text(content, encoding=DEFAULT_ENCODING)
         ProtocolGenerator(temp_file.name)
 
     metadata, custom_types, speech_acts = yaml.safe_load_all(content)
+
     return ProtocolSpecification(metadata, custom_types, speech_acts)
 
 
