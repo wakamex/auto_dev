@@ -41,7 +41,7 @@ class BlockExplorer:
         """
 
         web3 = Web3(Web3.HTTPProvider('http://127.0.0.1:8545'))
-        check_address = web3.toChecksumAddress(address)
+        check_address = web3.to_checksum_address(address)
         url = self.url + "/api?module=contract&action=getabi&address=" + str(check_address)
         response = self._authenticated_request(url)
         if response.json()['status'] != '1':
