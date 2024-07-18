@@ -8,6 +8,7 @@ from typing import Tuple
 
 from aea.cli.utils.config import get_default_author_from_cli_config
 
+import toml
 from auto_dev.cli import cli
 from auto_dev.utils import change_dir
 
@@ -25,9 +26,14 @@ class BaseTestRepo:
         return ("repo", self.repo_name, "-t", self.type_of_repo)
 
     @property
+    def parent_dir(self):
+        """Parent directory of newly scaffolded repo."""
+        return Path.cwd()
+
+    @property
     def repo_path(self):
         """Path of newly scaffolded repo."""
-        return Path.cwd() / self.repo_name
+        return self.parent_dir / self.repo_name
 
     def test_repo_new(self, cli_runner, test_clean_filesystem):
         """Test the format command works with the current package."""
@@ -132,3 +138,26 @@ class TestRepoAutonomy(BaseTestRepo):
         assert result.exit_code == 0, result.output
         expected_path = self.repo_path / "scripts" / "run_single_agent.sh"
         assert expected_path.exists()
+
+
+    def test_pyproject_versions(self, ):
+        """Test the pyproject.toml versions are updated"""
+
+        # We read in the pyproject.toml file and check the versions
+        current_pyproject = self.parent_dir / "pyproject.toml" 
+        repo_pyproject = self.parent_dir / 'auto_dev'/ 'data'/ 'repo' / 'templates' / 'autonomy'/ "pyproject.toml.template"
+
+        auto_dev_deps = toml.loads(current_pyproject.read_text())['tool']['poetry']['dependencies']
+        repo_deps = toml.loads(repo_pyproject.read_text())['tool']['poetry']['dependencies']
+
+        errors = []
+        for key in auto_dev_deps:
+            if key not in repo_deps:
+                continue
+            if auto_dev_deps[key] == repo_deps[key]:
+                continue
+            val = f"{key} New: {auto_dev_deps[key]} old: {repo_deps[key]}"
+            errors.append(val)
+        assert not errors, errors
+
+
