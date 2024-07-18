@@ -20,6 +20,8 @@ from aea.configurations.constants import (
     SERVICE,
     SERVICES,
     SKILLS,
+    CUSTOM,
+    CUSTOMS
 )
 from aea.helpers.cid import to_v1
 from aea_cli_ipfs.ipfs_utils import IPFSTool
@@ -66,12 +68,25 @@ def get_metadata(root, name, hash_, target_id):
     - connections
     - skills
     - agents
+    - customs
 
     """
 
     split_name = name.split('/')
-    file_name = split_name[0] if split_name[0] != "agent" else "aea-config"
     package_type, author, package_name, version = split_name
+
+    file_name = split_name[0] if split_name[0] != "agent" else "aea-config"
+    file_name = split_name[0] if split_name[0] != "agent" else "aea-config"
+
+    if package_type == AGENT:
+        file_name = DEFAULT_AEA_CONFIG_FILE.split(".")[0]
+    elif package_type == CUSTOM:
+        file_name = "component"
+    else:
+        file_name = f"{package_type}"
+
+
+
 
     data = read_yaml_file(root + f"/packages/{author}/{package_type}s/{package_name}/{file_name}.yaml")
     name_ = f"{package_type}/{author}/{package_name}:{version}"
@@ -143,6 +158,9 @@ def generate(root, target_name, target_id, strict, all):  # pylint: disable=rede
         metadata = get_metadata(root, name, hash_, target_id)
         id_to_metadata[target_id] = metadata
 
+    if not id_to_metadata:
+        click.echo("No packages found in packages.json")
+        sys.exit(1)
     for _, target_metadata in id_to_metadata.items():
         target_metadata = id_to_metadata.get(target_id, None)
         if not target_metadata:
@@ -154,6 +172,7 @@ def generate(root, target_name, target_id, strict, all):  # pylint: disable=rede
             sys.exit(1)
         write_json_file(root + f"/mints/{target_id}.json", metadata)
         click.echo(f"Metadata generated successfully! Saved to: {root}/mints/{target_id}.json")
+        
 
 
 # we will be minting compoenents sequentially as some components depend on others.
@@ -174,6 +193,7 @@ dependency_order = [
     PROTOCOLS,
     CONTRACTS,
     CONNECTIONS,
+    CUSTOMS,
     SKILLS,
     AGENTS,
     SERVICES,
@@ -198,8 +218,11 @@ def build_dependency_tree_for_component(component) -> List[str]:
         file_name = DEFAULT_AEA_CONFIG_FILE
     elif component_type == SERVICE:
         file_name = "service.yaml"
+    elif component_type == CUSTOM:
+        file_name = "component.yaml"
     else:
         file_name = f"{component_type}.yaml"
+
 
     component_path = f"packages/{public_id.author}/{component_type}s/{public_id.name}/{file_name}"
     component_data = read_yaml_file(component_path)
@@ -353,6 +376,8 @@ def check_component_status(component_id):
 # we have an additional command for generate-all that will generate all the metadata for the packages.
 # we will need to read in the packages.json file and then generate the metadata for each package.
 # we will need to check if the package is already minted.
+
+
 
 
 metadata.add_command(generate)
