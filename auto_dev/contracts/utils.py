@@ -52,4 +52,6 @@ PARAM_TO_STR_MAPPING = {
     ParamType.TUPLE_ARRAY: "Tuple[...]",
     ParamType.UINT32_ARRAY: "List[int]",
     ParamType.INT16: "int",
+    ParamType.UNINT32: "int",
+    ParamType.UINT8_ARRAY: "List[int]",
 }
