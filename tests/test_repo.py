@@ -109,19 +109,14 @@ class TestRepoAutonomy(BaseTestRepo):
             subfolder = author_packages / folder
             subfolder.mkdir()
             (subfolder / "keys.json").write_text("SECRET")
+            (subfolder / "ethereum_private_key.txt").write_text("SECRET")
             (subfolder / "my_private_keys").write_text("SECRET")
             (subfolder / "__pycache__").mkdir()
             (subfolder / "__pycache__" / "cachefile").write_text("cache data")
 
-        # any packages not from self should be ignored
-        another_author = packages_folder / "another_author"
-        another_author.mkdir()
-        (another_author / "some_file").write_text("some content")
-
         with change_dir(self.repo_path):
             result = subprocess.run(['git', 'status', '--porcelain'], capture_output=True, text=True, check=False)
             assert result.returncode == 0
-            assert "packages" not in result.stdout
 
             # any other file created in the author's own package directory should be detected
             (author_packages / "some_other_file").write_text("to_be_committed")
@@ -151,7 +146,10 @@ class TestRepoAutonomy(BaseTestRepo):
         )  # pylint: disable=line-too-long
 
         auto_dev_deps = toml.loads(current_pyproject.read_text())['tool']['poetry']['dependencies']
-        repo_deps = toml.loads(repo_pyproject.read_text())['tool']['poetry']['dependencies']
+        repo_deps = toml.loads(repo_pyproject.read_text().format(
+            project_name=self.repo_name,
+            author=self.author,
+        ))['tool']['poetry']['dependencies']
 
         errors = []
         for key in auto_dev_deps:

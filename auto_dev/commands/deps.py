@@ -172,6 +172,7 @@ def deps(
     """
     We update the dependencies.
     """
+    ctx.obj["LOGGER"].info("Updating the dependencies... 📝")
 
 @click.option(
     "-p",
@@ -225,7 +226,7 @@ def generate_gitignore(
         # we check if the path is in the gitignore file.
         if str(path) in current_gitignore:
             continue
-        with open(".gitignore", "a") as file_pointer:
+        with open(".gitignore", "a", encoding=DEFAULT_ENCODING) as file_pointer:
             file_pointer.write(f"\n{path}")
     ctx.obj["LOGGER"].info("Done. 😎")
 
