@@ -23,5 +23,5 @@ fi
 
 echo "Done installing host dependencies"
 poetry install
-poetry run aea init --remote
+poetry run aea init --remote --author eighballer
 echo "Done installing dependencies"
