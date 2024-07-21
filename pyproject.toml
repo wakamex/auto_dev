@@ -72,6 +72,7 @@ pycryptodome = "==3.18.0"
 
 autoflake8 = "^0.4.1"
 rich-click = "^1.8.2"
+tbump = "^6.11.0"
 
 [tool.poetry.dev-dependencies]
 responses = "^0.23.1"
@@ -86,6 +87,7 @@ mkdocs-autorefs = "^0.4.1"
 [tool.poetry.extras]
 all = [
   "pytest",
+  "tbump",
   "black",
   "isort",
   "mypy",
@@ -111,5 +113,3 @@ adev = "auto_dev.cli:cli"
 extras = ["all"]
 version = "^8.4.1"
 
-[tool.poetry.group.dev.dependencies]
-twine = "^4.0.2"
