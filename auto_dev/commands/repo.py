@@ -98,7 +98,6 @@ def repo(ctx, name, type_of_repo):
     Path(name).mkdir(exist_ok=False)
 
     with change_dir(name):
-
         execute_commands("git init", "git checkout -b main", verbose=verbose, logger=logger)
         assert (Path.cwd() / ".git").exists()
 

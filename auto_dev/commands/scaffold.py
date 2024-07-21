@@ -27,6 +27,7 @@ from auto_dev.utils import camel_to_snake, load_aea_ctx, remove_suffix
 
 cli = build_cli()
 
+
 # we have a new command group called scaffold.
 @cli.group()
 def scaffold():
