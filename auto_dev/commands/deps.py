@@ -164,7 +164,15 @@ def main(
 cli = build_cli()
 
 
-@cli.command()
+@cli.group()
+@click.pass_context
+def deps(
+    ctx: click.Context,
+) -> None:
+    """
+    We update the dependencies.
+    """
+
 @click.option(
     "-p",
     "--parent-repo",
@@ -185,8 +193,9 @@ cli = build_cli()
     default=False,
     help="Auto confirm the changes.",
 )
+@deps.command()
 @click.pass_context
-def deps(
+def update(
     ctx: click.Context,
     parent_repo: Path,
     child_repo: Path,
@@ -198,6 +207,28 @@ def deps(
     logger = ctx.obj["LOGGER"]
     logger.info("Updating the dependencies... 📝")
     main(parent_repo=parent_repo, child_repo=child_repo, auto_confirm=auto_confirm, logger=logger)
+
+# We have a command to generate the gitignore file.
+@deps.command()
+@click.pass_context
+def generate_gitignore(
+    ctx: click.Context,
+) -> None:
+    """
+    We generate the gitignore file.
+    """
+    package_dict = get_package_json(repo=Path())
+    third_party_packages = package_dict.get("third_party", {})
+    third_party_paths = [from_key_to_path(key) for key in third_party_packages.keys()]
+    current_gitignore = Path(".gitignore").read_text(encoding=DEFAULT_ENCODING)
+    for path in third_party_paths:
+        # we check if the path is in the gitignore file.
+        if str(path) in current_gitignore:
+            continue
+        with open(".gitignore", "a") as file_pointer:
+            file_pointer.write(f"\n{path}")
+    ctx.obj["LOGGER"].info("Done. 😎")
+
 
 
 if __name__ == "__main__":
