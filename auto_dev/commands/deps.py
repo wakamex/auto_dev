@@ -174,6 +174,7 @@ def deps(
     """
     ctx.obj["LOGGER"].info("Updating the dependencies... 📝")
 
+
 @click.option(
     "-p",
     "--parent-repo",
@@ -209,6 +210,7 @@ def update(
     logger.info("Updating the dependencies... 📝")
     main(parent_repo=parent_repo, child_repo=child_repo, auto_confirm=auto_confirm, logger=logger)
 
+
 # We have a command to generate the gitignore file.
 @deps.command()
 @click.pass_context
@@ -229,7 +231,6 @@ def generate_gitignore(
         with open(".gitignore", "a", encoding=DEFAULT_ENCODING) as file_pointer:
             file_pointer.write(f"\n{path}")
     ctx.obj["LOGGER"].info("Done. 😎")
-
 
 
 if __name__ == "__main__":

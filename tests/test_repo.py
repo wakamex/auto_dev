@@ -146,10 +146,14 @@ class TestRepoAutonomy(BaseTestRepo):
         )  # pylint: disable=line-too-long
 
         auto_dev_deps = toml.loads(current_pyproject.read_text())['tool']['poetry']['dependencies']
-        repo_deps = toml.loads(repo_pyproject.read_text().format(
-            project_name=self.repo_name,
-            author=self.author,
-        ))['tool']['poetry']['dependencies']
+        repo_deps = toml.loads(
+            repo_pyproject.read_text().format(
+                project_name=self.repo_name,
+                author=self.author,
+            )
+        )[
+            'tool'
+        ]['poetry']['dependencies']
 
         errors = []
         for key in auto_dev_deps:
