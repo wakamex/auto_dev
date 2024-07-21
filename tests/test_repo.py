@@ -6,9 +6,9 @@ import subprocess
 from pathlib import Path
 from typing import Tuple
 
+import toml
 from aea.cli.utils.config import get_default_author_from_cli_config
 
-import toml
 from auto_dev.cli import cli
 from auto_dev.utils import change_dir
 
@@ -139,13 +139,16 @@ class TestRepoAutonomy(BaseTestRepo):
         expected_path = self.repo_path / "scripts" / "run_single_agent.sh"
         assert expected_path.exists()
 
-
-    def test_pyproject_versions(self, ):
+    def test_pyproject_versions(
+        self,
+    ):
         """Test the pyproject.toml versions are updated"""
 
         # We read in the pyproject.toml file and check the versions
-        current_pyproject = self.parent_dir / "pyproject.toml" 
-        repo_pyproject = self.parent_dir / 'auto_dev'/ 'data'/ 'repo' / 'templates' / 'autonomy'/ "pyproject.toml.template"
+        current_pyproject = self.parent_dir / "pyproject.toml"
+        repo_pyproject = (
+            self.parent_dir / 'auto_dev' / 'data' / 'repo' / 'templates' / 'autonomy' / "pyproject.toml.template"
+        )  # pylint: disable=line-too-long
 
         auto_dev_deps = toml.loads(current_pyproject.read_text())['tool']['poetry']['dependencies']
         repo_deps = toml.loads(repo_pyproject.read_text())['tool']['poetry']['dependencies']
@@ -159,5 +162,3 @@ class TestRepoAutonomy(BaseTestRepo):
             val = f"{key} New: {auto_dev_deps[key]} old: {repo_deps[key]}"
             errors.append(val)
         assert not errors, errors
-
-

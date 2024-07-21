@@ -1,6 +1,7 @@
 """
 Conftest for testing command-line interfaces.
 """
+# pylint: disable=W0135
 
 import os
 from pathlib import Path
@@ -23,7 +24,7 @@ def test_filesystem():
 @pytest.fixture
 def test_clean_filesystem():
     """Fixture for invoking command-line interfaces."""
-    with isolated_filesystem() as directory:  # pylint: disable=W0135
+    with isolated_filesystem() as directory:
         yield directory
 
 
