@@ -1,16 +1,8 @@
-.*
-!.gitignore
-!.dockerignore
-!.env.template
-!.bumpversion.cfg
-
 __pycache__
+.env
 
 *private_key*
 keys.json
-
-packages/*
-!packages/{author}
 
 agent/
 service/
