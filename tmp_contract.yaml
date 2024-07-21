@@ -1,4 +1,4 @@
-block_explorer_url: "https://api.polygonscan.com"
+block_explorer_url: "https://api-sepolia.etherscan.io"
 
 contracts:
-    unitroller: "0x8849f1a0cB6b5D6076aB150546EddEe193754F1C"
+    chronicle_price_feed: "0xdd6D76262Fd7BdDe428dcfCd94386EbAe0151603"
