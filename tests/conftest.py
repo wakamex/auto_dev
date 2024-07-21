@@ -23,7 +23,7 @@ def test_filesystem():
 @pytest.fixture
 def test_clean_filesystem():
     """Fixture for invoking command-line interfaces."""
-    with isolated_filesystem() as directory:
+    with isolated_filesystem() as directory:  # pylint: disable=W0135
         yield directory
 
 

@@ -211,7 +211,6 @@ def load_aea_ctx(func: Callable[[click.Context, ..., Any], Any]) -> Callable[[cl
     """Load aea Context and AgentConfig if aea-config.yaml exists"""
 
     def wrapper(ctx: click.Context, *args, **kwargs):
-
         aea_config = Path("aea-config.yaml")
         if not aea_config.exists():
             raise FileNotFoundError(f"Could not find {aea_config}")

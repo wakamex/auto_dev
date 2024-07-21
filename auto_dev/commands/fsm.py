@@ -14,6 +14,7 @@ logger = get_logger()
 
 cli = build_cli(plugins=False)
 
+
 # we have a fsm command group
 @cli.group()
 def fsm():
