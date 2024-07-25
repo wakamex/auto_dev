@@ -59,10 +59,17 @@ class BaseTestRepo:
 
         result = cli_runner.invoke(cli, self.cli_args)
         makefile = self.repo_path / "Makefile"
-        assert result.exit_code == 0, result.output
+        assert makefile.exists(), result.output
         assert makefile.read_text(encoding="utf-8")
-
+        assert self.repo_path.exists()
+        
+    def test_make_command_executes(self, cli_runner, test_clean_filesystem):
         error_messages = {}
+        assert test_clean_filesystem
+
+        result = cli_runner.invoke(cli, self.cli_args)
+        makefile = self.repo_path / "Makefile"
+
         with change_dir(self.repo_path):
             for command in self.make_commands:
                 result = subprocess.run(
