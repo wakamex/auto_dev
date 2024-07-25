@@ -1,8 +1,18 @@
 #! /bin/bash
 set -e
 unset VIRTUAL_ENV 
+
 poetry -v run echo "Installing dependencies"
-executable=$(echo $(echo /home/$(whoami)/.cache/pypoetry/virtualenvs/$(poetry env list |head -n 1| awk '{print $1}'))/bin/pip)
+
+
+OS=$(uname)
+if [ "$OS" = "Darwin" ]; then
+    CACHE_DIR="/Users/$(whoami)/Library/Caches/pypoetry/virtualenvs"
+else
+    CACHE_DIR="/home/$(whoami)/.cache/pypoetry/virtualenvs"
+fi
+
+executable=$(echo $(echo $CACHE_DIR/$(poetry env list |head -n 1| awk '{print $1}'))/bin/pip)
 echo "Executing using :${executable}"
 echo "Installing host dependencies"
 
