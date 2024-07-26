@@ -9,6 +9,8 @@ from typing import Optional
 import requests
 from docker import DockerClient
 from docker.models.containers import Container
+import platform
+import subprocess
 
 
 @dataclass
@@ -53,19 +55,39 @@ class DockerFork:
     def run(self):
         """Run the docker container in a background process."""
         client = DockerClient.from_env()
+
+        is_amd64 = platform.machine().lower() in ["x86_64", "amd64"]
+
+        try:
+            if is_amd64:
+                subprocess.run(
+                    ["docker", "pull", "--platform", "linux/amd64", "ghcr.io/foundry-rs/foundry:latest"],
+                    check=True
+                )
+            else:
+                client.images.pull("ghcr.io/foundry-rs/foundry:latest")
+        except Exception as e:
+            raise Exception(f"Failed to pull Docker image: {e}")
+
         cmd = self.run_command.format(fork_url=self.fork_url, fork_block_number=self.fork_block_number, port=self.port)
 
-        self.container = client.containers.run(
-            image="ghcr.io/foundry-rs/foundry:latest",
-            entrypoint="/usr/local/bin/anvil",
-            command=cmd,
-            ports={f"{self.port}/tcp": self.port},
-            environment={"RUST_BACKTRACE": "1"},
-            detach=True,
-        )
+        run_kwargs = {
+            "image": "ghcr.io/foundry-rs/foundry:latest",
+            "entrypoint": "/usr/local/bin/anvil",
+            "command": cmd,
+            "ports": {f"{self.port}/tcp": self.port},
+            "environment": {"RUST_BACKTRACE": "1"},
+            "detach": True,
+        }
+
+        if is_amd64:
+            run_kwargs["platform"] = "linux/amd64"
+
+        self.container = client.containers.run(**run_kwargs)
+
         wait = 0
         while not self.is_ready():
             time.sleep(1)
             wait += 1
-            if wait > 5:
+            if wait > 8:
                 raise TimeoutError("Docker fork did not start in time.")
