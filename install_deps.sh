@@ -103,10 +103,21 @@ install_tool() {
     echo "$tool installed successfully"
 }
 
+
+function verify() {
+    if [ $? -ne 0 ]; then
+        echo "Failed to install $1" >&2
+        exit 1
+    fi
+}
 # Main execution
 main() {
     install_tool "protoc" || exit 1
     install_tool "protolint" || exit 1
+
+    verify "protoc"
+    verify "protolint"
+
     echo "Installation completed successfully!"
 }
 
