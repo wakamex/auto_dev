@@ -139,6 +139,7 @@ main() {
     verify "poetry"
     verify "protoc"
     verify "protolint"
+    verify "docker"
 
     install_poetry_deps
 
