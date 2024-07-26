@@ -107,18 +107,59 @@ install_tool() {
 function verify() {
     if [ $? -ne 0 ]; then
         echo "Failed to install $1" >&2
+        echo 'Please make sure you have the required dependencies installed.' >&2
         exit 1
     fi
+}
+
+function install_poetry_deps() {
+    local os
+    local executable
+
+    os=$(uname)
+    if [ "$os" = "Darwin" ]; then
+        CACHE_DIR="/Users/$(whoami)/Library/Caches/pypoetry/virtualenvs"
+    else
+        CACHE_DIR="/home/$(whoami)/.cache/pypoetry/virtualenvs"
+    fi
+    executable=$(echo $(echo $CACHE_DIR/$(poetry env list |head -n 1| awk '{print $1}'))/bin/pip)
+    echo "Executing using :${executable}"
+    echo "Installing host python dependencies"
+
+    # we need to check if the python version is <3.11
+    # if it is, we need to install cython<3.0.0
+
+    python_version=$(python -c 'import sys; print(".".join(map(str, sys.version_info[:2])))')
+    python_version=$(echo $python_version | awk '{print $1+0.0}')
+
+    if (( $(echo "$python_version < 3.11" |bc -l) )); then
+        echo "Python version is <3.11, installing cython<3.0.0"
+        ${executable} install 'cython<3.0.0' pyyaml==5.4.1 --no-build-isolation -v 
+    else
+        echo "Python version is >=3.11, continuing"
+    fi
+
+    echo "Done installing host python dependencies!"
+    echo "Installing package dependencies"
+    poetry install || exit 1
+    echo checking if aea is installed
+    poetry run aea --version || exit 1
+    echo "Done installing dependencies"
 }
 # Main execution
 main() {
     install_tool "protoc" || exit 1
     install_tool "protolint" || exit 1
 
+    verify "poetry"
     verify "protoc"
     verify "protolint"
 
+    install_poetry_deps
+
     echo "Installation completed successfully!"
+    echo 'Initializing the author and remote for aea'
+    poetry run aea init --remote --author ci 
 }
 
 main

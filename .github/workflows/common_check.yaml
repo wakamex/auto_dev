@@ -37,16 +37,10 @@ jobs:
       - name: Install CI dependencies
         run: |
           bash install_deps.sh
-          # wget https://github.com/protocolbuffers/protobuf/releases/download/v24.3/protoc-24.3-linux-x86_64.zip
-          # unzip protoc-24.3-linux-x86_64.zip -d protoc
-          # sudo mv protoc/bin/protoc /usr/local/bin/protoc
-          # wget https://github.com/yoheimuta/protolint/releases/download/v0.27.0/protolint_0.27.0_Linux_x86_64.tar.gz && \
-          # tar -xvf protolint_0.27.0_Linux_x86_64.tar.gz && \
-          # sudo mv protolint /usr/local/bin/protolint
 
-      - name: Install Adev
-        run: |
-          bash auto_dev/data/repo/templates/autonomy/install.sh
+      # - name: Install Adev
+      #   run: |
+      #     bash auto_dev/data/repo/templates/autonomy/install.sh
 
       - name: Format
         run: |
