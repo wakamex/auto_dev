@@ -103,8 +103,9 @@ def isolated_filesystem(copy_cwd: bool = False):
     And to navigate to it and then to clean it up.
     """
     original_path = Path.cwd()
-    with tempfile.TemporaryDirectory() as temp_dir:
-        os.chdir(temp_dir)
+    with tempfile.TemporaryDirectory(dir=tempfile.gettempdir()) as temp_dir:
+        temp_dir_path = Path(temp_dir).resolve()
+        os.chdir(temp_dir_path)
         if copy_cwd:
             # we copy the content of the original directory into the temporary one
             for file_name in os.listdir(original_path):
@@ -112,10 +113,10 @@ def isolated_filesystem(copy_cwd: bool = False):
                     continue
                 file_path = Path(original_path, file_name)
                 if file_path.is_file():
-                    shutil.copy(file_path, temp_dir)
+                    shutil.copy(file_path, temp_dir_path)
                 elif file_path.is_dir():
                     shutil.copytree(file_path, Path(temp_dir, file_name))
-        yield str(Path(temp_dir))
+        yield str(Path(temp_dir_path))
     os.chdir(original_path)
 
 
