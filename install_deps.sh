@@ -130,15 +130,15 @@ function install_poetry_deps() {
     # we need to check if the python version is <3.11
     # if it is, we need to install cython<3.0.0
 
-    python_version=$(python -c 'import sys; print(".".join(map(str, sys.version_info[:2])))')
-    python_version=$(echo $python_version | awk '{print $1+0.0}')
+    # python_version=$(python -c 'import sys; print(".".join(map(str, sys.version_info[:2])))')
+    # python_version=$(echo $python_version | awk '{print $1+0.0}')
 
-    if (( $(echo "$python_version < 3.11" |bc -l) )); then
-        echo "Python version is <3.11, installing cython<3.0.0"
-        ${executable} install 'cython<3.0.0' pyyaml==5.4.1 --no-build-isolation -v > /dev/null || exit 1
-    else
-        echo "Python version is >=3.11, continuing"
-    fi
+    # if (( $(echo "$python_version < 3.11" |bc -l) )); then
+    #     echo "Python version is <3.11, installing cython<3.0.0"
+    #     ${executable} install 'cython<3.0.0' pyyaml==5.4.1 --no-build-isolation -v > /dev/null || exit 1
+    # else
+    #     echo "Python version is >=3.11, continuing"
+    # fi
 
     echo "Done installing host python dependencies!"
     echo "Installing package dependencies via poetry..."
