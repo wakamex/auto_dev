@@ -34,13 +34,9 @@ jobs:
           virtualenvs-create: true
           installer-parallel: true
 
-      - name: Install CI dependencies
+      - name: Install Adev
         run: |
-          bash install_deps.sh
-
-      # - name: Install Adev
-      #   run: |
-      #     bash auto_dev/data/repo/templates/autonomy/install.sh
+          bash auto_dev/data/repo/templates/autonomy/install.sh
 
       - name: Format
         run: |
