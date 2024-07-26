@@ -123,7 +123,6 @@ function install_poetry_deps() {
         CACHE_DIR="/home/$(whoami)/.cache/pypoetry/virtualenvs"
     fi
     # We create a virtual environment to install the dependencies
-    poetry env use $(poetry env list |head -n 1| awk '{print $1}') || exit 1
     executable=$(echo $(echo $CACHE_DIR/$(poetry env list |head -n 1| awk '{print $1}'))/bin/pip)
     echo "Executing using :${executable}"
     echo "Installing host python dependencies"
@@ -136,7 +135,7 @@ function install_poetry_deps() {
 
     if (( $(echo "$python_version < 3.11" |bc -l) )); then
         echo "Python version is <3.11, installing cython<3.0.0"
-        ${executable} install 'cython<3.0.0' pyyaml==5.4.1 --no-build-isolation -v 
+        ${executable} install 'cython<3.0.0' pyyaml==5.4.1 --no-build-isolation -v > /dev/null || exit 1
     else
         echo "Python version is >=3.11, continuing"
     fi
@@ -161,7 +160,7 @@ main() {
 
     echo "Installation completed successfully!"
     echo 'Initializing the author and remote for aea'
-    poetry run aea init --remote --author ci 
+    poetry run aea init --remote --author ci > /dev/null || exit 1
     echo '🎉You are ready to BUILD!🚀'
 }
 
