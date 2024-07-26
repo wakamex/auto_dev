@@ -65,8 +65,8 @@ class DockerFork:
                 )
             else:
                 client.images.pull("ghcr.io/foundry-rs/foundry:latest")
-        except Exception as e:
-            raise RuntimeError(f"Failed to pull Docker image: {str(e)}") from e
+        except Exception as error:
+            raise RuntimeError(f"Failed to pull Docker image: {str(error)}") from error
 
         cmd = self.run_command.format(fork_url=self.fork_url, fork_block_number=self.fork_block_number, port=self.port)
 
