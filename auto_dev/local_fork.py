@@ -2,6 +2,8 @@
 Module to run a docker container with a fork of the mainnet.
 """
 
+import platform
+import subprocess
 import time
 from dataclasses import dataclass
 from typing import Optional
@@ -9,8 +11,6 @@ from typing import Optional
 import requests
 from docker import DockerClient
 from docker.models.containers import Container
-import platform
-import subprocess
 
 
 @dataclass
@@ -61,13 +61,12 @@ class DockerFork:
         try:
             if is_amd64:
                 subprocess.run(
-                    ["docker", "pull", "--platform", "linux/amd64", "ghcr.io/foundry-rs/foundry:latest"],
-                    check=True
+                    ["docker", "pull", "--platform", "linux/amd64", "ghcr.io/foundry-rs/foundry:latest"], check=True
                 )
             else:
                 client.images.pull("ghcr.io/foundry-rs/foundry:latest")
         except Exception as e:
-            raise Exception(f"Failed to pull Docker image: {e}")
+            raise RuntimeError(f"Failed to pull Docker image: {str(e)}") from e
 
         cmd = self.run_command.format(fork_url=self.fork_url, fork_block_number=self.fork_block_number, port=self.port)
 
