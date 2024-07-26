@@ -27,12 +27,19 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+
       - name: Install and configure Poetry
         uses: snok/install-poetry@v1
         with:
           version: ${{ matrix.poetry-version }}
           virtualenvs-create: true
           installer-parallel: true
+
+      - name: Setup docker (missing on MacOS)
+        if: runner.os == 'macos-latest'
+        run: |
+          brew install docker
+          colima start
 
       - name: Install Adev
         run: |
@@ -49,3 +56,5 @@ jobs:
       - name: Tests
         run: |
           poetry run adev -v test -p .
+
+
