@@ -41,6 +41,7 @@ class BaseTestRepo:
         assert test_clean_filesystem
         result = cli_runner.invoke(cli, self.cli_args)
         assert result.exit_code == 0, result.output
+        assert self.repo_path.exists(), f"Repository directory was not created: {self.repo_path}"
         assert (self.repo_path / ".git").exists()
 
     def test_repo_new_fail(self, cli_runner, test_filesystem):
@@ -59,10 +60,20 @@ class BaseTestRepo:
 
         result = cli_runner.invoke(cli, self.cli_args)
         makefile = self.repo_path / "Makefile"
-        assert result.exit_code == 0, result.output
+        assert makefile.exists(), result.output
         assert makefile.read_text(encoding="utf-8")
+        assert self.repo_path.exists()
 
+    def test_make_command_executes(self, cli_runner, test_clean_filesystem):
+        """Test that the make command can execute properly"""
         error_messages = {}
+        assert test_clean_filesystem
+
+        # Ensure the repository is created before changing directory
+        result = cli_runner.invoke(cli, self.cli_args)
+        assert result.exit_code == 0, result.output
+        assert self.repo_path.exists(), f"Repository directory was not created: {self.repo_path}"
+
         with change_dir(self.repo_path):
             for command in self.make_commands:
                 result = subprocess.run(

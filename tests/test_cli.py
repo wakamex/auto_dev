@@ -19,12 +19,12 @@ def test_lint_fails(cli_runner, test_filesystem):
 def test_lints_self(cli_runner, test_filesystem):
     """Test the lint command works with the current package."""
     assert os.getcwd() == test_filesystem
-    result = cli_runner.invoke(cli, ["lint", "-p", "."])
+    result = cli_runner.invoke(cli, ["-v", "lint", "-p", "."])
     assert result.exit_code == 0, result.output
 
 
 def test_formats_self(cli_runner, test_filesystem):
     """Test the format command works with the current package."""
     assert os.getcwd() == test_filesystem
-    result = cli_runner.invoke(cli, ["fmt", "-p", "."])
+    result = cli_runner.invoke(cli, ["-v", "fmt", "-p", "."])
     assert result.exit_code == 0, result.output
