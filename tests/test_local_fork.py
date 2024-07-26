@@ -22,6 +22,7 @@ def local_fork():
     fork.stop()
 
 
+@pytest.mark.skip(reason="Doesn't work on Mac OS / docker --version 24 pip show docker 6.1.2")
 def test_local_fork(local_fork):
     """Test that the local fork is running."""
     assert local_fork.is_ready()
