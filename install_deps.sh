@@ -142,10 +142,10 @@ function install_poetry_deps() {
     fi
 
     echo "Done installing host python dependencies!"
-    echo "Installing package dependencies"
-    poetry install || exit 1
+    echo "Installing package dependencies via poetry..."
+    poetry install > /dev/null || exit 1
     echo checking if aea is installed
-    poetry run aea --version || exit 1
+    poetry run aea --version > /dev/null || exit 1
     echo "Done installing dependencies"
 }
 # Main execution
