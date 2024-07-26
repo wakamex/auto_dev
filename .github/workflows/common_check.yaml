@@ -36,7 +36,7 @@ jobs:
           installer-parallel: true
 
       - name: Setup docker (missing on MacOS)
-        if: runner.os == 'macos-latest'
+        if: runner.os == 'macos'
         run: |
           brew install docker
           colima start
