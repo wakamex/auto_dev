@@ -39,6 +39,7 @@ jobs:
         if: runner.os == 'macos'
         run: |
           brew install docker
+          docker run hello-world
 
       - name: Install Adev
         run: |
