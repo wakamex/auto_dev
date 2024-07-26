@@ -124,7 +124,6 @@ function install_poetry_deps() {
     fi
     # We create a virtual environment to install the dependencies
     executable=$(echo $(echo $CACHE_DIR/$(poetry env list |head -n 1| awk '{print $1}'))/bin/pip)
-    echo "Executing using :${executable}"
     echo "Installing host python dependencies"
 
     # we need to check if the python version is <3.11
