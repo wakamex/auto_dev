@@ -39,7 +39,6 @@ jobs:
         if: runner.os == 'macos'
         run: |
           brew install docker
-          colima start
 
       - name: Install Adev
         run: |
