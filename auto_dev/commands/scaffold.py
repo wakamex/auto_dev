@@ -12,7 +12,6 @@ Also contains a Contract, which we will use to allow the user to;
 from pathlib import Path
 
 import rich_click as click
-import os
 import yaml
 from aea.configurations.constants import DEFAULT_AEA_CONFIG_FILE, PROTOCOL_LANGUAGE_PYTHON, SUPPORTED_PROTOCOL_LANGUAGES
 from aea.configurations.data_types import PublicId
@@ -21,19 +20,11 @@ from auto_dev.base import build_cli
 from auto_dev.cli_executor import CommandExecutor
 from auto_dev.connections.scaffolder import ConnectionScaffolder
 from auto_dev.constants import BASE_FSM_SKILLS, DEFAULT_ENCODING
-from auto_dev.handler.scaffolder import (
-    load_spec_file,
-    save_file,
-    create_dialogues,
-    generate_handler_code,
-    move_and_update_my_model,
-    remove_behaviours,
-    update_skill_yaml
-    )
 from auto_dev.contracts.block_explorer import BlockExplorer
 from auto_dev.contracts.contract_scafolder import ContractScaffolder
+from auto_dev.handler.scaffolder import HandlerScaffolder
 from auto_dev.protocols.scaffolder import ProtocolScaffolder
-from auto_dev.utils import camel_to_snake, load_aea_ctx, remove_suffix
+from auto_dev.utils import camel_to_snake, change_dir, load_aea_ctx, remove_suffix
 
 cli = build_cli()
 
@@ -185,69 +176,25 @@ def connection(  # pylint: disable=R0914
 @click.argument("spec_file", type=click.Path(exists=True))
 @click.option("--author", default="eightballer", help="Author of the skill")
 @click.option("--output", default="my_api_skill", help="Name of API skill")
-def handler(spec_file, author, output):
+@click.pass_context
+def handler(ctx, spec_file, author, output):
     """Generate an AEA handler from an OpenAPI 3 specification."""
 
-    if not Path(DEFAULT_AEA_CONFIG_FILE).exists():
-        raise ValueError(f"No {DEFAULT_AEA_CONFIG_FILE} found in current directory")
+    logger = ctx.obj["LOGGER"]
+    verbose = ctx.obj["VERBOSE"]
 
-    command = CommandExecutor(f"aea scaffold skill {output}".split(" "))
-    command.execute(verbose=True)
-    os.chdir(f"skills/{output}")
+    scaffolder = HandlerScaffolder(spec_file, author, output, logger=logger, verbose=verbose)
+    handler_code = scaffolder.generate()
 
-    spec_file_path = Path("../..") / spec_file
-
-    try:
-        spec = load_spec_file(spec_file_path)
-    except Exception as e:
-        click.secho(f"Error reading specification file: {e}", fg="red", err=True)
-        return 1
-
-    try:
-        handler_code = generate_handler_code(spec, author)
-    except Exception as e:
-        click.secho(f"Error generating handler: {e}", fg="red", err=True)
-        return 1
-
-    output_path = Path('handlers.py')
-    try:
-        save_file(output_path, handler_code)
-        click.secho(f"Handler code written to {output_path}", fg="green")
-    except Exception as e:
-        click.secho(f"Error writing handler code to {output_path}: {e}", fg="red", err=True)
-        return 1
-    else:
-        click.secho(handler_code, fg="blue")
-
+    with change_dir(f"skills/{output}"):
+        output_path = Path('handlers.py')
+        scaffolder.save_handler(output_path, handler_code)
         skill_yaml_file = "skill.yaml"
 
-    try:
-        update_skill_yaml(skill_yaml_file)
-        click.secho(f"Updated skill.yaml", fg="green")
-    except Exception as e:
-        click.secho(f"Error updating skill.yaml: {e}", fg="red", err=True)
-        return 1
-
-    try:
-        move_and_update_my_model(spec)
-        click.secho("Updated and moved my_model.py to strategy.py", fg="green")
-    except Exception as e:
-        click.secho(f"Error updating my_model.py: {e}", fg="red", err=True)
-        return 1
-
-    try:
-        remove_behaviours()
-        click.secho("Removed behaviours.py", fg="green")
-    except Exception as e:
-        click.secho(f"Error removing behaviours.py: {e}", fg="red", err=True)
-        return 1
-
-    try:
-        create_dialogues(spec)
-        click.secho("Created dialogues.py", fg="green")
-    except Exception as e:
-        click.secho(f"Error creating dialogues.py: {e}", fg="red", err=True)
-        return 1
+        scaffolder.update_skill_yaml(skill_yaml_file)
+        scaffolder.move_and_update_my_model()
+        scaffolder.remove_behaviours()
+        scaffolder.create_dialogues()
 
     return 0
 

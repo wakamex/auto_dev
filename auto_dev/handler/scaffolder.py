@@ -1,9 +1,15 @@
 """Handler scaffolder."""
 
 import os
-import yaml
-from pathlib import Path
 
+import yaml
+
+from auto_dev.cli_executor import CommandExecutor
+from auto_dev.commands.metadata import read_yaml_file
+from auto_dev.constants import DEFAULT_ENCODING
+from auto_dev.utils import get_logger
+
+HTTP_PROTOCOL = "eightballer/http:0.1.0:bafybeia2yjjpa57ihbfru54lvq3rru5vtaomyor3fn4zz4ziiaum5yywje"
 
 HANDLER_HEADER_TEMPLATE = """
 # -*- coding: utf-8 -*-
@@ -166,182 +172,153 @@ class HttpDialogues(Model, BaseHttpDialogues):
 """
 
 
-def load_spec_file(spec_file: str):
+class HandlerScaffolder:
     """
-    Reads the specified YAML file and returns its contents as a dictionary.
-
-    :param spec_file: The path to the YAML file to read.
-    :return: The contents of the YAML file as a dictionary.
+    Handler Scaffolder
     """
-    with open(spec_file, "r") as stream:
-        try:
-            return yaml.safe_load(stream)
-        except yaml.YAMLError as exc:
-            raise ValueError(f"Error parsing YAML: {exc}")
 
+    def __init__(self, spec_file_path: str, author: str, output: str, logger, verbose: bool = True):
+        """Initialize HandlerScaffolder."""
 
-def save_file(path: Path, content: str) -> None:
+        self.logger = logger or get_logger()
+        self.verbose = verbose
+        self.author = author
+        self.output = output
+        self.spec_file_path = spec_file_path
+        self.logger.info(f"Read OpenAPI specification: {spec_file_path}")
+
+    def generate(self) -> None:
+        """Generate handler."""
+
+        skill_cmd = f"aea scaffold skill {self.output}".split(" ")
+        if not CommandExecutor(skill_cmd).execute(verbose=self.verbose):
+            raise ValueError("Failed to scaffold skill.")
+
+        openapi_spec = read_yaml_file(self.spec_file_path)
+        handler_methods = []
+
+        for path, path_spec in openapi_spec.get('paths', {}).items():
+            for method, operation in path_spec.items():  # noqa
+                method_name: str = f"handle_{method.lower()}_{path.lstrip('/').replace('/', '_').replace('{', '').replace('}', '')}"  # noqa
+                params = []
+                if "{" in path:
+                    params.append("id")
+                if method.lower() in ["post", "put", "patch"]:
+                    params.append("body")
+
+                param_str: str = ", ".join(["self"] + params)
+
+                method_code: str = f"""
+        def {method_name}({param_str}):
+            \"\"\"
+            Handle {method.upper()} request for {path}
+            \"\"\"
+            # TODO: Implement {method.upper()} logic for {path}
+            raise NotImplementedError
     """
-    Writes the given content to the specified file.
+                handler_methods.append(method_code)
 
-    :param path: The path to the file to write to.
-    :param content: The content to write to the file.
-    """
-    print(path)
-    with open(path, "w") as f:
-        try:
-            f.write(content)
-        except Exception as e:
-            raise ValueError(f"Error writing to file: {e}")
+        all_methods: str = "\n".join(handler_methods)
 
+        handler_code: str = HANDLER_HEADER_TEMPLATE.format(
+            author=self.author, skill_name=openapi_spec["info"]["title"].replace(" ", "_")
+        )
 
-def prompt_user(message: str) -> bool:
-    """
-    Prompts the user for a yes or no response.
+        main_handler: str = f"""
+        def handle(self, message: HttpMessage) -> None:
+            \"\"\"Handle incoming HTTP messages\"\"\"
+            method = message.method
+            url = message.url
+            body = message.body
 
-    :param message: The message to display to the user.
-    :return: True if user responds with 'y' or 'yes', False otherwise.
-    """
-    valid_responses = {"y", "yes", "n", "no"}
-    while True:
-        response: str = input(f"{message} (y/n): ").lower().strip()
-        if response in valid_responses:
-            return response in {"y", "yes"}
-        print("Invalid response. Please enter 'y' or 'n'.")
+            path_parts = url.split('/')
+            path = '/' + '/'.join(path_parts[1:])
 
-
-def generate_handler_code(spec, author: str) -> str:
-    """
-    Generate the handler code based on the OpenAPI spec
-    """
-    paths = spec["paths"]
-    handler_methods = []
-
-    for path, path_spec in paths.items():
-        for method, operation in path_spec.items():
-            method_name: str = f"handle_{method.lower()}_{path.lstrip('/').replace('/', '_').replace('{', '').replace('}', '')}"
-            params: List[str] = []
-            if "{" in path:
-                params.append("id")
-            if method.lower() in ["post", "put", "patch"]:
-                params.append("body")
-
-            param_str: str = ", ".join(["self"] + params)
-
-            method_code: str = f"""
-    def {method_name}({param_str}):
-        \"\"\"
-        Handle {method.upper()} request for {path}
-        \"\"\"
-        # TODO: Implement {method.upper()} logic for {path}
-        raise NotImplementedError
-"""
-            handler_methods.append(method_code)
-
-    all_methods: str = "\n".join(handler_methods)
-
-    handler_code: str = HANDLER_HEADER_TEMPLATE.format(
-        author=author, skill_name=spec["info"]["title"].replace(" ", "_")
-    )
-
-    main_handler: str = f"""
-    def handle(self, message: HttpMessage) -> None:
-        \"\"\"Handle incoming HTTP messages\"\"\"
-        method = message.method
-        url = message.url
-        body = message.body
-
-        path_parts = url.split('/')
-        path = '/' + '/'.join(path_parts[1:])
-        
-        if '{{' in path:
-            id_index = path_parts.index([part for part in path_parts if '{{' in part][0])
-            id = path_parts[id_index]
-            path = '/' + '/'.join(path_parts[1:id_index] + ['{{'+ path_parts[id_index][1:-1] + '}}'] + path_parts[id_index+1:])
-        
-        handler_method = getattr(self, f"handle_{{method.lower()}}_{{path.lstrip('/').replace('/', '_').replace('{', '').replace('}', '')}}", None)
-        
-        if handler_method:
-            kwargs = {{'body': body}} if method.lower() in ['post', 'put', 'patch'] else {{}}
             if '{{' in path:
-                kwargs['id'] = id
-            return handler_method(**kwargs)
-        
-        return self.handle_unexpected_message(message)
-    
-{all_methods}
+                id_index = path_parts.index([part for part in path_parts if '{{' in part][0])
+                id = path_parts[id_index]
+                path = '/' + '/'.join(path_parts[1:id_index] + ['{{'+ path_parts[id_index][1:-1] + '}}'] + path_parts[id_index+1:])
 
-{UNEXPECTED_MESSAGE_HANDLER_TEMPLATE}
-"""
+            handler_method = getattr(self, f"handle_{{method.lower()}}_{{path.lstrip('/').replace('/', '_').replace('{', '').replace('}', '')}}", None)
 
-    handler_code += main_handler
-    return handler_code
+            if handler_method:
+                kwargs = {{'body': body}} if method.lower() in ['post', 'put', 'patch'] else {{}}
+                if '{{' in path:
+                    kwargs['id'] = id
+                return handler_method(**kwargs)
 
+            return self.handle_unexpected_message(message)
 
-def update_skill_yaml(skill_yaml_file):
+    {all_methods}
+
+    {UNEXPECTED_MESSAGE_HANDLER_TEMPLATE}
     """
-    Update the skill.yaml file
-    """
 
-    with open(skill_yaml_file, "r") as f:
-        skill_yaml = yaml.safe_load(f)
+        handler_code += main_handler
+        return handler_code
 
-    print(skill_yaml)
-    skill_yaml["protocols"] = [
-        "eightballer/http:0.1.0:bafybeia2yjjpa57ihbfru54lvq3rru5vtaomyor3fn4zz4ziiaum5yywje",
-    ]
-    skill_yaml["behaviours"] = {}
-    del skill_yaml["handlers"]
-    skill_yaml["handlers"] = {
-        "http_handler": {
-            "args": {},
-            "class_name": "HttpHandler",
+    def save_handler(self, path, content):
+        """Save handler to file."""
+        with open(path, "w", encoding=DEFAULT_ENCODING) as f:
+            try:
+                f.write(content)
+            except Exception as e:
+                raise ValueError(f"Error writing to file: {e}") from e
+
+    def update_skill_yaml(self, file):
+        """
+        Update the skill.yaml file
+        """
+        skill_yaml = read_yaml_file(file)
+
+        skill_yaml["protocols"] = [HTTP_PROTOCOL]
+        skill_yaml["behaviours"] = {}
+        del skill_yaml["handlers"]
+        skill_yaml["handlers"] = {
+            "http_handler": {
+                "args": {},
+                "class_name": "HttpHandler",
+            }
         }
-    }
-    skill_yaml["models"] = {
-        "strategy": {
-            "args": {},
-            "class_name": "Strategy",
-        },
-        "http_dialogues": {
-            "args": {},
-            "class_name": "HttpDialogues",
-        },
-    }
+        skill_yaml["models"] = {
+            "strategy": {
+                "args": {},
+                "class_name": "Strategy",
+            },
+            "http_dialogues": {
+                "args": {},
+                "class_name": "HttpDialogues",
+            },
+        }
 
-    with open(skill_yaml_file, "w") as f:
-        yaml.safe_dump(skill_yaml, f, sort_keys=False)
+        with open(file, "w", encoding=DEFAULT_ENCODING) as f:
+            yaml.safe_dump(skill_yaml, f, sort_keys=False)
 
+    def move_and_update_my_model(self):
+        """
+        Reads in the my_model.py file and updates it.
+        We replace the name MyModel with the name Strategy.
+        """
+        with open("my_model.py", "r", encoding=DEFAULT_ENCODING) as f:
+            strategy_code: str = f.read()
+        strategy_code = strategy_code.replace("MyModel", "Strategy")
 
-def move_and_update_my_model(spec) -> None:
-    """
-    Reads in the my_model.py file and updates it.
-    We replace the name MyModel with the name Strategy.
-    """
+        os.remove("my_model.py")
 
-    with open("my_model.py", "r") as f:
-        strategy_code: str = f.read()
-    strategy_code = strategy_code.replace("MyModel", "Strategy")
+        strategy_file = "strategy.py"
+        with open(strategy_file, "w", encoding=DEFAULT_ENCODING) as f:
+            f.write(strategy_code)
 
-    # we now remove the my_model.py file
-    os.remove("my_model.py")
-    # we now create the strategy.py file
-    strategy_file = "strategy.py"
-    with open(strategy_file, "w") as f:
-        f.write(strategy_code)
+    def remove_behaviours(self):
+        """
+        Remove the behaviours
+        """
+        os.remove("behaviours.py")
 
-
-def remove_behaviours() -> None:
-    """
-    Remove the behaviours
-    """
-    os.remove("behaviours.py")
-
-
-def create_dialogues(spec) -> None:
-    """
-    Create the dialogues
-    """
-    dialogues_file = "dialogues.py"
-    with open(dialogues_file, "w") as f:
-        f.write(DIALOGUES_CODE)
+    def create_dialogues(self):
+        """
+        Create the dialogues
+        """
+        dialogues_file = "dialogues.py"
+        with open(dialogues_file, "w", encoding=DEFAULT_ENCODING) as f:
+            f.write(DIALOGUES_CODE)

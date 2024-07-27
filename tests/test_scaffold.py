@@ -5,11 +5,13 @@ import sys
 from pathlib import Path
 
 import pytest
+import yaml
 from aea.cli import cli as aea_cli
 
 from auto_dev.cli import cli
 from auto_dev.constants import DEFAULT_ENCODING
 from auto_dev.protocols.scaffolder import read_protocol
+from auto_dev.utils import change_dir
 
 FSM_SPEC = Path("auto_dev/data/fsm/fsm_specification.yaml").absolute()
 
@@ -52,6 +54,43 @@ def test_scaffold_protocol(cli_runner, dummy_agent_tim, caplog):
     original_content = path.read_text(encoding=DEFAULT_ENCODING)
     readme_path = dummy_agent_tim / "protocols" / protocol.metadata["name"] / "README.md"
     assert original_content in readme_path.read_text(encoding=DEFAULT_ENCODING)
+
+
+def test_scaffold_handler(cli_runner, dummy_agent_tim):
+    """Test scaffold handler"""
+
+    assert Path.cwd() == Path(dummy_agent_tim)
+    openapi_spec_path = "../tests/data/dummy_openapi.yaml"
+    output = "my_dummy_skill"
+
+    command = ["scaffold", "handler", str(openapi_spec_path), "--output", str(output)]
+    result = cli_runner.invoke(cli, command)
+
+    assert result.exit_code == 0, result.output
+
+    with change_dir(f"skills/{output}"):
+        # check if files are created/modified as expected
+        assert not (Path.cwd() / "behaviours.py").exists()
+        assert (Path.cwd() / "strategy.py").exists()
+        assert (Path.cwd() / "dialogues.py").exists()
+        assert (Path.cwd() / "handlers.py").exists()
+
+        # check content of handlers.py
+        handlers_content = (Path.cwd() / "handlers.py").read_text()
+        assert "class HttpHandler(Handler):" in handlers_content
+        assert "def handle_get_users(self):" in handlers_content
+        assert "def handle_post_users(self, body):" in handlers_content
+        assert "def handle_get_users_userId(self, id):" in handlers_content
+
+        # check skill.yaml
+        with open(Path.cwd() / "skill.yaml", "r", encoding=DEFAULT_ENCODING) as f:
+            skill_yaml = yaml.safe_load(f)
+        assert "eightballer/http:0.1.0" in skill_yaml["protocols"][0]
+        assert "behaviours" in skill_yaml and not skill_yaml["behaviours"]
+        assert "handlers" in skill_yaml and "http_handler" in skill_yaml["handlers"]
+        assert "models" in skill_yaml
+        assert "strategy" in skill_yaml["models"]
+        assert "http_dialogues" in skill_yaml["models"]
 
 
 class TestScaffoldConnection:
