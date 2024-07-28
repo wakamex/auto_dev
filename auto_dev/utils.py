@@ -92,7 +92,7 @@ def get_paths(path: Optional[str] = None, changed_only: bool = False):
         packages = reduce(lambda x, y: x + y, python_files)
     if not packages:
         return []
-    
+
     def filter_git_interferace_files(file_path: str):
         regexs = [
             'M  ',
