@@ -45,10 +45,10 @@ jobs:
           virtualenvs-create: true
           installer-parallel: true
 
-      - name: Setup docker (missing on MacOS)
-        if: runner.os == 'macos'
-        run: |
-          brew install --cask docker
+      # - name: Setup docker (missing on MacOS)
+      #   if: runner.os == 'macos'
+      #   run: |
+      #     brew install --cask docker
 
       - name: Install Adev
         run: |
