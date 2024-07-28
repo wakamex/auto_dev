@@ -22,8 +22,7 @@ jobs:
     strategy:
       matrix:
         python-versions:
-        - 3.8
-        - 3.9
+        - 3.10
         os:
         - ubuntu-20.04
     runs-on: ubuntu-20.04
@@ -37,16 +36,8 @@ jobs:
 
       - name: Install ci dependencies
         run: |
-          make are_deps_dirty && exit 0
-          python -m pip install --upgrade pip
-          pip install poetry tox-gh-actions tox-poetry
-
-      - name: Install application deps
-        run: |
-          make are_deps_dirty && exit 0
-          poetry install
+          make install
 
       - name: Lock application deps
         run: |
-          make are_deps_dirty || poetry lock
-          echo "No change in dependencies not locking."
+          poetry lock
