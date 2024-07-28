@@ -45,7 +45,7 @@ jobs:
 
       - name: Install Adev
         run: |
-          bash auto_dev/data/repo/templates/autonomy/install.sh
+          make install
 
       - name: Format
         run: |

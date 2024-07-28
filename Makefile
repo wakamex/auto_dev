@@ -1,3 +1,5 @@
+install:
+	poetry run bash auto_dev/data/repo/templates/autonomy/install.sh
 lint:
 	poetry run adev -v -n 0 lint -p . -co
 
