@@ -15,10 +15,7 @@ docs:
 all: fmt lint test
 
 submit: install fmt lint test
-	date=$(shell date)
-	git add .
-	git commit -m "Auto commit at $(date)"
-	git push
+	date=$(shell date) && git add . && git commit -m "Auto commit at $(date)" && git push
 
 dev:
 	echo 'Starting dev mode...'
