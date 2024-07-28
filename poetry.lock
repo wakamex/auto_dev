@@ -3291,7 +3291,6 @@ colorama = {version = ">=0.4.5", markers = "sys_platform == \"win32\""}
 dill = [
     {version = ">=0.2", markers = "python_version < \"3.11\""},
     {version = ">=0.3.6", markers = "python_version >= \"3.11\""},
-    {version = ">=0.3.7", markers = "python_version >= \"3.12\""},
 ]
 isort = ">=4.2.5,<5.13.0 || >5.13.0,<6"
 mccabe = ">=0.6,<0.8"
@@ -4793,5 +4792,5 @@ doc = []
 
 [metadata]
 lock-version = "2.0"
-python-versions = ">=3.9,<4.0"
-content-hash = "525fd52af909f6ab3cc5bc8bfa645c9689870890a6a9d6cb66de8fe72e5c750b"
+python-versions = ">=3.9,<=3.11"
+content-hash = "c80297ef6b5b737987bd5ba692edecb831179c9cea1078292855ec9834ac3353"
