@@ -9,6 +9,10 @@ on:
   pull_request:
     branches: [ master, main ]
 
+  pull_request_target:
+    paths-ignore: # dont run all this workflow if only the dependencies are changed as we do a lock in dependencies
+      - 'pyproject.toml'
+
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
