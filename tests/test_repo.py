@@ -176,14 +176,9 @@ class TestRepoAutonomy(BaseTestRepo):
             errors.append(val)
         assert not errors, errors
 
-
     def test_lockfile_versions(self):
         """Test the poetry.lock versions are updated"""
 
         current_lockfile = self.parent_dir / "poetry.lock"
-        repo_lockfile = (
-            self.parent_dir / 'auto_dev' / 'data' / 'repo' / 'templates' / 'autonomy' / "poetry.lock.template"
-        )
+        repo_lockfile = self.parent_dir / 'auto_dev' / 'data' / 'repo' / 'templates' / 'autonomy' / "poetry.lock"
         assert current_lockfile.read_text() == repo_lockfile.read_text()
-
-
