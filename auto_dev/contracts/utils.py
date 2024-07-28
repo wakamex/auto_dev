@@ -43,6 +43,7 @@ PARAM_TO_STR_MAPPING = {
     ParamType.INT256: "int",
     ParamType.ADDRESS_ARRAY: "List[Address]",
     ParamType.STRING: "str",
+    ParamType.STRING_ARRAY: "List[str]",
     ParamType.UINT128: "int",
     ParamType.UINT24: "int",
     ParamType.INT24: "int",
