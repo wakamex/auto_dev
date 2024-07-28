@@ -132,6 +132,16 @@ function install_poetry_deps() {
     echo "Done installing dependencies"
 }
 # Main execution
+
+
+function set_env_file () {
+    if [ ! -f ".env" ]; then
+        echo "Setting up .env file"
+        cp .env.template .env
+    fi
+}
+
+
 main() {
     install_tool "protoc" || exit 1
     install_tool "protolint" || exit 1
@@ -146,6 +156,9 @@ main() {
     echo "Installation completed successfully!"
     echo 'Initializing the author and remote for aea'
     poetry run aea init --remote --author ci > /dev/null || exit 1
+    echo 'Done initializing the author and remote for aea'
+    echo 'Setting up the .env file from .env.example'
+    set_env_file
     echo '🎉You are ready to BUILD!🚀'
 }
 
