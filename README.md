@@ -35,15 +35,5 @@ adev release
 
 
 # Project Status Badges
-
-[![Build Status](https://img.shields.io/github/actions/workflow/status/8ball030/auto_dev/build.yaml?branch=main)](https://github.com/8ball030/auto_dev/actions/workflows/build.yaml)
-[![Coverage Status](https://img.shields.io/codecov/c/github/8ball030/auto_dev)](https://codecov.io/gh/8ball030/auto_dev)
-[![Code Quality](https://img.shields.io/scrutinizer/quality/g/8ball030/auto_dev)](https://scrutinizer-ci.com/g/8ball030/auto_dev/)
-[![Dependencies](https://img.shields.io/librariesio/release/npm/auto_dev)](https://libraries.io/npm/auto_dev)
-[![Version](https://img.shields.io/github/v/release/8ball030/auto_dev)](https://github.com/8ball030/auto_dev/releases)
-[![License](https://img.shields.io/github/license/8ball030/auto_dev)](https://github.com/8ball030/auto_dev/blob/main/LICENSE)
-[![Contributors](https://img.shields.io/github/contributors/8ball030/auto_dev)](https://github.com/8ball030/auto_dev/graphs/contributors)
-[![Open Issues](https://img.shields.io/github/issues/8ball030/auto_dev)](https://github.com/8ball030/auto_dev/issues)
-[![Pull Requests](https://img.shields.io/github/issues-pr/8ball030/auto_dev)](https://github.com/8ball030/auto_dev/pulls)
-[![Downloads](https://img.shields.io/github/downloads/8ball030/auto_dev/total)](https://github.com/8ball030/auto_dev/releases)
+[![Code Quality](https://github.com/8ball030/auto_dev/actions/workflows/common_check.yaml/badge.svg)](https://github.com/8ball030/auto_dev/actions/workflows/common_check.yaml)
 
