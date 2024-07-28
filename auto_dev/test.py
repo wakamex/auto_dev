@@ -1,7 +1,7 @@
 """
 Module for testing the project.
 """
-from .cli_executor import CommandExecutor
+from auto_dev.cli_executor import CommandExecutor
 
 
 def test_path(
