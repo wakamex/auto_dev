@@ -1,7 +1,7 @@
 """
 Module for testing the project.
 """
-import sys
+from multiprocessing import cpu_count
 from .cli_executor import CommandExecutor
 
 
@@ -10,7 +10,7 @@ def test_path(path: str, verbose: bool = False) -> bool:
     Check the path for linting errors.
     :param path: The path to check
     """
-    available_cores = sys.cpu_count()
+    available_cores = cpu_count()
     command = CommandExecutor(
         [
             "poetry",
