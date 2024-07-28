@@ -132,7 +132,7 @@ function install_poetry_deps() {
     fi
 
     echo "Installing package dependencies via poetry..."
-    poetry install >> logs/install.log || exit 1
+    poetry install > /dev/null || exit 1
     echo checking if aea is installed
     poetry run aea --version > /dev/null || exit 1
     echo "Done installing dependencies"
