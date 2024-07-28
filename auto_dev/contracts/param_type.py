@@ -27,6 +27,7 @@ class ParamType(Enum):
     INT80_ARRAY = "int80[]"
     ADDRESS_ARRAY = "address[]"
     STRING = "string"
+    STRING_ARRAY = "string[]"
     TUPLE_ARRAY = "tuple[]"
     UINT32_ARRAY = "uint32[]"
     INT24 = "int24"
