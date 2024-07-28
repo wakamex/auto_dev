@@ -67,7 +67,7 @@ grpcio = "==1.53.2"
 asn1crypto = "<1.5.0,>=1.4.0"
 
 eth-utils = "==2.2.0"
-eth-abi = "==4.0.0"
+eth-abi = "==5.0.1"
 pycryptodome = "==3.18.0"
 
 autoflake8 = "^0.4.1"
