@@ -37,9 +37,12 @@ def test(ctx, path):
         results[packages[package]] = result
         logger.info(f"{'👌' if result else '❗'} - {packages[package]}")
 
+    raises = []
     for package in results.items():
         if not package:
-            raise click.ClickException(f"Package: {package} failed testing")
+            raises.append(package)
+    if raises:
+        raise click.ClickException(f"Package: {package} failed testing")
     # if any of the results are false, we need to raise an exception
     for package, result in results.items():
         if not result:
