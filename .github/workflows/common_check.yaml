@@ -12,6 +12,7 @@ on:
   pull_request_target:
     paths-ignore: # dont run all this workflow if only the dependencies are changed as we do a lock in dependencies
       - 'pyproject.toml'
+      - 'poetry.lock'
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
