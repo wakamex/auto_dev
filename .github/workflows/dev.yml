@@ -35,6 +35,13 @@ jobs:
         with:
           python-version: ${{ matrix.python-versions }}
 
+      - name: Install and configure Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: ${{ matrix.poetry-version }}
+          virtualenvs-create: true
+          installer-parallel: true
+
       - name: Install ci dependencies
         run: |
           make install
