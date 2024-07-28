@@ -137,7 +137,7 @@ function install_poetry_deps() {
 function set_env_file () {
     if [ ! -f ".env" ]; then
         echo "Setting up .env file"
-        cp .env.example .env
+        cp .env.template .env
     fi
 }
 
