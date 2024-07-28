@@ -37,3 +37,10 @@ adev release
 # Project Status Badges
 [![Code Quality](https://github.com/8ball030/auto_dev/actions/workflows/common_check.yaml/badge.svg)](https://github.com/8ball030/auto_dev/actions/workflows/common_check.yaml)
 
+[![Last Commit](https://img.shields.io/github/last-commit/8ball030/auto_dev)](https://github.com/8ball030/auto_dev/commits/main)
+
+[![Activity](https://img.shields.io/github/commit-activity/m/8ball030/auto_dev)](https://github.com/8ball030/auto_dev/commits/main)
+
+[![Closed Issues](https://img.shields.io/github/issues-closed/8ball030/auto_dev)](https://github.com/8ball030/auto_dev/issues?q=is%3Aissue+is%3Aclosed)
+
+[![Commit Activity](https://gh-card.dev/repos/8ball030/auto_dev.svg)](https://github.com/8ball030/auto_dev)
