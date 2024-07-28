@@ -4,7 +4,7 @@ requires = ["poetry-core>=1.0.0", "setuptools"]
 
 [tool.poetry]
 name = "autonomy_dev"
-version = "0.2.47"
+version = "0.2.48"
 homepage = "https://github.com/8ball030/auto_dev"
 description = "A collection of tooling to enable open source development of autonomy tools"
 authors = ["8Baller <8ball030@gmail.com>"]
@@ -63,7 +63,7 @@ tomte = {version = "==0.2.17", extras = ["cli", "tests", "ledgers", "black"]}
 py-multibase = "==1.0.3"
 py-multicodec = "==0.2.1"
 py-eth-sig-utils = "*"
-grpcio = "==1.53.0"
+grpcio = "==1.53.2"
 asn1crypto = "<1.5.0,>=1.4.0"
 
 eth-utils = "==2.2.0"
