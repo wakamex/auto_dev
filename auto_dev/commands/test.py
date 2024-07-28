@@ -42,7 +42,9 @@ def test(ctx, path):
         if not result:
             raises.append(package)
     if raises:
-        raise click.ClickException(f"Package: {package} failed testing")
+        for package in raises:
+            logger.error(f"❗ - {package}")
+        raise click.ClickException("Testing failed! ❌")
     click.echo("Testing completed successfully! ✅")
 
 
