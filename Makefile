@@ -13,3 +13,8 @@ docs:
 	poetry run mkdocs build
 
 all: fmt lint test
+
+
+dev:
+	echo 'Starting dev mode...'
+	poetry run bash scripts/dev.sh
