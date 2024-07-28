@@ -40,7 +40,7 @@ def test(ctx, path, watch):
         raise click.ClickException(f"Unable to get packages are you in the right directory? {error}")
     results = {}
     for package in track(range(len(packages)), description="Testing..."):
-        result = test_path(str(packages[package]), verbose=verbose, watch=watch
+        result = test_path(str(packages[package]), verbose=verbose, watch=watch)
         results[packages[package]] = result
         logger.info(f"{'👌' if result else '❗'} - {packages[package]}")
 
