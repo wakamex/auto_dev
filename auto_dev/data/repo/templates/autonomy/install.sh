@@ -125,8 +125,14 @@ function install_poetry_deps() {
     # We create a virtual environment to install the dependencies
     executable=$(echo $(echo $CACHE_DIR/$(poetry env list |head -n 1| awk '{print $1}'))/bin/pip)
 
+    echo "Using virtual environment: $executable"
+
+    if [ ! -f "$executable" ]; then
+        echo "No virtual environment! Creating one..."
+    fi
+
     echo "Installing package dependencies via poetry..."
-    poetry install > /dev/null || exit 1
+    poetry install >> logs/install.log || exit 1
     echo checking if aea is installed
     poetry run aea --version > /dev/null || exit 1
     echo "Done installing dependencies"
