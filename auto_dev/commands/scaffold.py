@@ -40,13 +40,14 @@ def scaffold():
 @click.argument("address", default=None, required=False)
 @click.argument("name", default=None, required=False)
 @click.option("--from-file", default=None, help="Ingest a file containing a list of addresses and names.")
+@click.option("--from-abi", default=None, help="Ingest an ABI file to scaffold a contract.")
 @click.option("--block-explorer-url", default="https://api.etherscan.io/api")
-@click.option("--block-explorer-api-key", required=True)
+@click.option("--block-explorer-api-key", default=None)
 @click.option("--read-functions", default=None, help="Comma separated list of read functions to scaffold.")
 @click.option("--write-functions", default=None, help="Comma separated list of write functions to scaffold.")
 @click.pass_context
 def contract(  # pylint: disable=R0914
-    ctx, address, name, block_explorer_url, block_explorer_api_key, read_functions, write_functions, from_file
+    ctx, address, name, block_explorer_url, block_explorer_api_key, read_functions, write_functions, from_abi, from_file
 ):
     """
     Scaffold a contract.
@@ -70,6 +71,14 @@ def contract(  # pylint: disable=R0914
             )
 
         return
+    if from_abi is not None:
+        logger.info(f"Using ABI file: {from_abi}")
+        scaffolder = ContractScaffolder(block_explorer=None)
+        new_contract = scaffolder.from_abi(from_abi, address, name)
+        breakpoint()
+        logger.info(f"New contract scaffolded at {new_contract.path}")
+        return
+    
     logger.info(f"Using block explorer url: {block_explorer_url}")
     logger.info(f"Scaffolding contract at address: {address} with name: {name}")
 

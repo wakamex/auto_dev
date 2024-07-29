@@ -1,11 +1,13 @@
 """
 Contract scaffolder.
 """
+import json
 import os
 import shutil
 from dataclasses import dataclass
 
 from auto_dev.cli_executor import CommandExecutor
+from auto_dev.constants import DEFAULT_ENCODING
 from auto_dev.contracts.block_explorer import BlockExplorer
 from auto_dev.contracts.contract import Contract
 from auto_dev.utils import isolated_filesystem
@@ -19,6 +21,14 @@ class ContractScaffolder:
 
     block_explorer: BlockExplorer
     author: str = "eightballer"
+
+    def from_abi(self, path, address: str, name: str):
+        """
+        Scaffold a contract from a file.
+        """
+        with open(path, 'r', encoding=DEFAULT_ENCODING) as file:
+            abi = json.load(file)
+        return Contract(abi=abi, name=name, address=address, author=self.author)
 
     def from_block_explorer(self, address: str, name: str):
         """
