@@ -6,8 +6,15 @@ on:
   # Triggers the workflow on push or pull request events but only for the master branch
   push:
     branches: [ master, main ]
+    paths-ignore: # dont run all this workflow if only the dependencies are changed as we do a lock in dependencies
+      - 'pyproject.toml'
+      - 'poetry.lock'
   pull_request:
     branches: [ master, main ]
+    paths-ignore: # dont run all this workflow if only the dependencies are changed as we do a lock in dependencies
+      - 'pyproject.toml'
+      - 'poetry.lock'
+
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -21,7 +28,7 @@ jobs:
         python-version:
         - "3.9"
         - "3.10"
-        - "3.11.5"
+        # - "3.11" # upstream issues with open-autonomy
         poetry-version: ["1.3.2"]
         os: [ubuntu-20.04, macos-latest]
     runs-on: ${{ matrix.os }}
@@ -38,14 +45,14 @@ jobs:
           virtualenvs-create: true
           installer-parallel: true
 
-      - name: Setup docker (missing on MacOS)
-        if: runner.os == 'macos'
-        run: |
-          brew install --cask docker
+      # - name: Setup docker (missing on MacOS)
+      #   if: runner.os == 'macos'
+      #   run: |
+      #     brew install --cask docker
 
       - name: Install Adev
         run: |
-          bash auto_dev/data/repo/templates/autonomy/install.sh
+          make install
 
       - name: Format
         run: |

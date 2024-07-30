@@ -19,8 +19,15 @@ cli = build_cli()
     type=click.Path(exists=True, file_okay=False),
     default=None,
 )
+@click.option(
+    "-w",
+    "--watch",
+    help="Watch the files for changes.",
+    is_flag=True,
+    default=False,
+)
 @click.pass_context
-def test(ctx, path):
+def test(ctx, path, watch):
     """
     Runs the test tooling
     """
@@ -33,18 +40,18 @@ def test(ctx, path):
         raise click.ClickException(f"Unable to get packages are you in the right directory? {error}")
     results = {}
     for package in track(range(len(packages)), description="Testing..."):
-        result = test_path(str(packages[package]), verbose=verbose)
+        result = test_path(str(packages[package]), verbose=verbose, watch=watch)
         results[packages[package]] = result
         logger.info(f"{'👌' if result else '❗'} - {packages[package]}")
 
-    for package in results.items():
-        if not package:
-            raise click.ClickException(f"Package: {package} failed testing")
-    # if any of the results are false, we need to raise an exception
+    raises = []
     for package, result in results.items():
         if not result:
-            raise click.ClickException(f"Failed testing package: {package} 🚨")
-
+            raises.append(package)
+    if raises:
+        for package in raises:
+            logger.error(f"❗ - {package}")
+        raise click.ClickException("Testing failed! ❌")
     click.echo("Testing completed successfully! ✅")
 
 
