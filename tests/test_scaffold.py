@@ -11,7 +11,6 @@ from aea.cli import cli as aea_cli
 from auto_dev.cli import cli
 from auto_dev.constants import DEFAULT_ENCODING
 from auto_dev.protocols.scaffolder import read_protocol
-from auto_dev.utils import change_dir
 
 FSM_SPEC = Path("auto_dev/data/fsm/fsm_specification.yaml").absolute()
 
@@ -68,29 +67,30 @@ def test_scaffold_handler(cli_runner, dummy_agent_tim):
 
     assert result.exit_code == 0, result.output
 
-    with change_dir(f"skills/{output}"):
-        # check if files are created/modified as expected
-        assert not (Path.cwd() / "behaviours.py").exists()
-        assert (Path.cwd() / "strategy.py").exists()
-        assert (Path.cwd() / "dialogues.py").exists()
-        assert (Path.cwd() / "handlers.py").exists()
+    skill_path = Path(dummy_agent_tim) / "skills" / output
 
-        # check content of handlers.py
-        handlers_content = (Path.cwd() / "handlers.py").read_text()
-        assert "class HttpHandler(Handler):" in handlers_content
-        assert "def handle_get_users(self):" in handlers_content
-        assert "def handle_post_users(self, body):" in handlers_content
-        assert "def handle_get_users_userId(self, id):" in handlers_content
+    # check if files are created/modified as expected
+    assert not (skill_path / "behaviours.py").exists()
+    assert (skill_path / "strategy.py").exists()
+    assert (skill_path / "dialogues.py").exists()
+    assert (skill_path / "handlers.py").exists()
 
-        # check skill.yaml
-        with open(Path.cwd() / "skill.yaml", "r", encoding=DEFAULT_ENCODING) as f:
-            skill_yaml = yaml.safe_load(f)
-        assert "eightballer/http:0.1.0" in skill_yaml["protocols"][0]
-        assert "behaviours" in skill_yaml and not skill_yaml["behaviours"]
-        assert "handlers" in skill_yaml and "http_handler" in skill_yaml["handlers"]
-        assert "models" in skill_yaml
-        assert "strategy" in skill_yaml["models"]
-        assert "http_dialogues" in skill_yaml["models"]
+    # check content of handlers.py
+    handlers_content = (skill_path / "handlers.py").read_text()
+    assert "class HttpHandler(Handler):" in handlers_content
+    assert "def handle_get_users(self):" in handlers_content
+    assert "def handle_post_users(self, body):" in handlers_content
+    assert "def handle_get_users_userId(self, id):" in handlers_content
+
+    # check skill.yaml
+    with open(skill_path / "skill.yaml", "r", encoding=DEFAULT_ENCODING) as f:
+        skill_yaml = yaml.safe_load(f)
+    assert "eightballer/http:0.1.0" in skill_yaml["protocols"][0]
+    assert "behaviours" in skill_yaml and not skill_yaml["behaviours"]
+    assert "handlers" in skill_yaml and "http_handler" in skill_yaml["handlers"]
+    assert "models" in skill_yaml
+    assert "strategy" in skill_yaml["models"]
+    assert "http_dialogues" in skill_yaml["models"]
 
 
 class TestScaffoldConnection:
