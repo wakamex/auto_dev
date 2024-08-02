@@ -29,6 +29,8 @@ class Formatter:
             data=open(path, "rb").read(),
             timeout=150,
         )
+        if verbose:
+            print(result.json())
         return result.json()['result']
 
     def _format_path(self, path, verbose=False):
