@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 import pkg_resources
 import rich_click as click
+
 from auto_dev.constants import DEFAULT_ENCODING, PLUGIN_FOLDER
 from auto_dev.utils import get_logger
 

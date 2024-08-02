@@ -9,6 +9,7 @@ from typing import Any
 
 import rich_click as click
 import toml
+
 from auto_dev.base import build_cli
 from auto_dev.cli_executor import CommandExecutor
 from auto_dev.constants import DEFAULT_ENCODING
