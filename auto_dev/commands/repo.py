@@ -14,6 +14,7 @@ from pathlib import Path
 
 import rich_click as click
 from aea.cli.utils.config import get_default_author_from_cli_config
+
 from auto_dev.base import build_cli
 from auto_dev.cli_executor import CommandExecutor
 from auto_dev.constants import DEFAULT_ENCODING, SAMPLE_PYTHON_CLI_FILE, SAMPLE_PYTHON_MAIN_FILE, TEMPLATE_FOLDER
