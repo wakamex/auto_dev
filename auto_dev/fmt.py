@@ -8,6 +8,7 @@ import requests
 from rich.progress import track
 
 from auto_dev.cli_executor import CommandExecutor
+from auto_dev.constants import DEFAULT_ENCODING
 
 
 class Formatter:
@@ -33,7 +34,13 @@ class Formatter:
         if verbose:
             print(result.json())
 
-        
+        if result.json():
+            is_ok = result.json().get("result", False)
+            if not is_ok:
+                if 'new_data' in result.json():
+                    with open(path, "w", encoding=DEFAULT_ENCODING) as file:
+                        file.write(result.json()['new_data'])
+
         return result.json()['result']
 
     def _format_path(self, path, verbose=False):
