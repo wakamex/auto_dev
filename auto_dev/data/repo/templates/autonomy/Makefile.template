@@ -57,6 +57,6 @@ tests:
 	poetry run adev -v test
 
 install:
-    bash scripts/install.sh
+	poetry bash scripts/install.sh
 
 all: fmt lint test hashes

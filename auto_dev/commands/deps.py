@@ -36,7 +36,6 @@ from typing import Dict
 
 import rich_click as click
 import yaml
-
 from auto_dev.base import build_cli
 from auto_dev.constants import DEFAULT_ENCODING
 
