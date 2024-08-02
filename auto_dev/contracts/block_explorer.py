@@ -6,9 +6,8 @@ import json
 from dataclasses import dataclass
 
 import requests
-from web3 import Web3
-
 from auto_dev.constants import DEFAULT_TIMEOUT
+from web3 import Web3
 
 
 @dataclass

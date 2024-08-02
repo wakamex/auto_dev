@@ -11,7 +11,6 @@ import yaml
 from aea import AEA_DIR
 from aea.configurations.data_types import PublicId
 from aea.helpers.yaml_utils import yaml_dump
-
 from auto_dev.cli_executor import CommandExecutor
 from auto_dev.constants import AEA_CONFIG, DEFAULT_ENCODING
 from auto_dev.data.connections.template import CONNECTION_TEMPLATE
