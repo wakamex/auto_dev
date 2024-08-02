@@ -5,9 +5,10 @@ Module to format the code.
 from multiprocessing import Pool
 
 import requests
+from rich.progress import track
+
 from auto_dev.cli_executor import CommandExecutor
 from auto_dev.constants import DEFAULT_ENCODING
-from rich.progress import track
 
 
 class Formatter:
