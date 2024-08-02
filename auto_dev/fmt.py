@@ -4,6 +4,7 @@ Module to format the code.
 
 from multiprocessing import Pool
 
+import requests
 from rich.progress import track
 
 from auto_dev.cli_executor import CommandExecutor
@@ -12,14 +13,25 @@ from auto_dev.cli_executor import CommandExecutor
 class Formatter:
     """Formatter class to run the formatter."""
 
-    def __init__(self, verbose):
+    def __init__(self, verbose, remote):
         self.verbose = verbose
+        self.remote = remote
 
     def format(self, path):
         """Format the path."""
-        return self.format_path(path, verbose=self.verbose)
+        func = self._format_path if not self.remote else self._remote_format_path
+        return func(path, verbose=self.verbose)
 
-    def format_path(self, path, verbose=False):
+    def _remote_format_path(self, path, verbose=False):
+        """Format the path."""
+        result = requests.post(
+            "http://localhost:26659/format",
+            data=open(path, "rb").read(),
+            timeout=150,
+        )
+        return result.json()['result']
+
+    def _format_path(self, path, verbose=False):
         """Format the path."""
 
         results = all(
