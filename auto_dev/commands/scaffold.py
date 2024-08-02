@@ -15,7 +15,6 @@ import rich_click as click
 import yaml
 from aea.configurations.constants import DEFAULT_AEA_CONFIG_FILE, PROTOCOL_LANGUAGE_PYTHON, SUPPORTED_PROTOCOL_LANGUAGES
 from aea.configurations.data_types import PublicId
-
 from auto_dev.base import build_cli
 from auto_dev.cli_executor import CommandExecutor
 from auto_dev.connections.scaffolder import ConnectionScaffolder

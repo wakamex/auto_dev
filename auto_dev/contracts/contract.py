@@ -6,12 +6,11 @@ from pathlib import Path
 from typing import List, Optional
 
 import yaml
-from web3 import Web3
-
 from auto_dev.constants import DEFAULT_ENCODING
 from auto_dev.contracts.contract_functions import ContractFunction, FunctionType
 from auto_dev.contracts.function import Function
 from auto_dev.utils import snake_to_camel
+from web3 import Web3
 
 
 class Contract:

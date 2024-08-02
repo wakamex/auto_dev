@@ -2,11 +2,10 @@
 Test command cli module.
 """
 import rich_click as click
-from rich.progress import track
-
 from auto_dev.base import build_cli
 from auto_dev.test import test_path
 from auto_dev.utils import get_packages
+from rich.progress import track
 
 cli = build_cli()
 

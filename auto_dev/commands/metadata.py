@@ -25,10 +25,9 @@ from aea.configurations.constants import (
 )
 from aea.helpers.cid import to_v1
 from aea_cli_ipfs.ipfs_utils import IPFSTool
-from rich import print_json
-
 from auto_dev.base import build_cli
 from auto_dev.constants import DEFAULT_ENCODING
+from rich import print_json
 
 cli = build_cli()
 
