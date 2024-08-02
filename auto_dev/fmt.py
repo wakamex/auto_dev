@@ -5,10 +5,9 @@ Module to format the code.
 from multiprocessing import Pool
 
 import requests
-from rich.progress import track
-
 from auto_dev.cli_executor import CommandExecutor
 from auto_dev.constants import DEFAULT_ENCODING
+from rich.progress import track
 
 
 class Formatter:
@@ -115,6 +114,7 @@ def single_thread_fmt(paths, verbose, logger, remote=False):
             logger.info(f"Formatting: {path}")
         result = formatter.format(path)
         if not result:
+            logger.error(f"Failed to format {path} remotely, trying locally")
             result = local_formatter.format(path)
         results[package] = result
     return results
