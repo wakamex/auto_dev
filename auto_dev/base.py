@@ -59,8 +59,9 @@ def build_cli(plugins=False):
     )
     @click.option("-n", "--num-processes", default=1, help="Number of processes to use for linting", type=int)
     @click.option("--version", is_flag=True, help="Print the version and exit")
+    @click.option("--remote", is_flag=True, help="Use the remote server wherever possible")
     @click.pass_context
-    def cli(ctx, log_level=False, verbose=False, num_processes=1, version=False):
+    def cli(ctx, log_level=False, verbose=False, num_processes=1, version=False, remote=False):
         """Cli development tooling."""
         if version:
             version = pkg_resources.get_distribution("autonomy-dev").version
@@ -69,6 +70,7 @@ def build_cli(plugins=False):
         ctx.obj = {}
         ctx.obj["VERBOSE"] = verbose
         ctx.obj["LOGGER"] = get_logger(log_level=log_level)
+        ctx.obj["REMOTE"] = remote
         if num_processes == 0:
             # we use all available cores
             num_processes = os.cpu_count()
