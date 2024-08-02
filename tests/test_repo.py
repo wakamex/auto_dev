@@ -101,7 +101,7 @@ class TestRepoAutonomy(BaseTestRepo):
 
     author = get_default_author_from_cli_config()
     type_of_repo = "autonomy"
-    make_commands = "fmt", "test", "lint", "hashes"
+    make_commands = "fmt", "tests", "lint", "hashes"
 
     def test_gitignore(self, cli_runner, test_clean_filesystem):
         """Test the .gitignore works as expected"""
