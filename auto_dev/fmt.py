@@ -5,10 +5,9 @@ Module to format the code.
 from multiprocessing import Pool
 
 import requests
-from rich.progress import track
-
 from auto_dev.cli_executor import CommandExecutor
 from auto_dev.constants import DEFAULT_ENCODING
+from rich.progress import track
 
 
 class Formatter:
@@ -40,8 +39,10 @@ class Formatter:
                 if 'new_data' in result.json():
                     with open(path, "w", encoding=DEFAULT_ENCODING) as file:
                         file.write(result.json()['new_data'])
-
-        return result.json()['result']
+                    return True
+                return False
+            return True
+        return False
 
     def _format_path(self, path, verbose=False):
         """Format the path."""
