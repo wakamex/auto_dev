@@ -16,6 +16,7 @@ class Formatter:
     def __init__(self, verbose, remote):
         self.verbose = verbose
         self.remote = remote
+        print("Remote: ", remote)
 
     def format(self, path):
         """Format the path."""
@@ -31,6 +32,8 @@ class Formatter:
         )
         if verbose:
             print(result.json())
+
+        
         return result.json()['result']
 
     def _format_path(self, path, verbose=False):

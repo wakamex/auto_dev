@@ -53,7 +53,7 @@ lint:
 fmt: 
 	poetry run adev -n 0 fmt
 
-test:
+tests:
 	poetry run adev -v test
 
 install:
