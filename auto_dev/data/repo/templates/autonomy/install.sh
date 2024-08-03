@@ -133,14 +133,14 @@ function install_poetry_deps() {
         echo "No virtual environment! Creating one..."
     else
         echo "Virtual environment found!"
-        $pip_executable install poetry > /dev/null || exit 1
+        $pip_executable install poetry  || exit 1
     fi
 
     echo "Installing package dependencies via poetry..."
-    $poetry_executable lock --no-update > /dev/null || exit 1
-    $poetry_executable install > /dev/null || exit 1
+    $poetry_executable lock --no-update  || exit 1
+    $poetry_executable install  || exit 1
     echo checking if aea is installed
-    $poetry_executable run aea --version > /dev/null || exit 1
+    $poetry_executable run aea --version || exit 1
     echo "Done installing dependencies"
 }
 # Main execution
