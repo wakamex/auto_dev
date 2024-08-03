@@ -2,6 +2,7 @@
 Module for testing the project.
 """
 from auto_dev.cli_executor import CommandExecutor
+from multiprocessing import cpu_count
 
 
 def test_path(
@@ -13,6 +14,7 @@ def test_path(
     Check the path for linting errors.
     :param path: The path to check
     """
+    available_cores = cpu_count()
     command = CommandExecutor(
         [
             "poetry",
@@ -20,6 +22,8 @@ def test_path(
             "pytest",
             str(path),
             "-vv",
+            "-n",
+            str(available_cores),
         ]
         + (["-ff"] if watch else [])
     )
