@@ -20,3 +20,8 @@ submit: install fmt lint test
 dev:
 	echo 'Starting dev mode...'
 	poetry run bash scripts/dev.sh
+
+new_env:
+	git pull
+	poetry env remove --all
+	make install
