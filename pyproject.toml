@@ -84,7 +84,7 @@ mkdocs-material = "^8.4.0"
 mkdocs-material-extensions = "^1.0.3"
 mkdocstrings-python = "^0.10.0"
 twine = "^5.1.1"
-mkdocs-autorefs = "^0.4.1"
+mkdocs-autorefs = "^1.0.1"
 
 [tool.poetry.extras]
 all = [
