@@ -250,7 +250,10 @@ def write_to_file(file_path: str, content: Union[str | dict, list], file_type: s
             if file_type == "text":
                 f.write(content)
             elif file_type == "yaml":
-                yaml.dump(content, f, default_flow_style=False, sort_keys=False)
+                if isinstance(content, list):
+                    yaml.dump_all(content, f, default_flow_style=False, sort_keys=False)
+                else:
+                    yaml.dump(content, f, default_flow_style=False, sort_keys=False)
             elif file_type == "json":
                 json.dump(content, f, separators=(',', ':'))
             else:
