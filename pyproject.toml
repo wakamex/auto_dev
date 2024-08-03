@@ -68,7 +68,7 @@ asn1crypto = "<1.5.0,>=1.4.0"
 
 eth-utils = "==2.2.0"
 eth-abi = "==5.1.0"
-pycryptodome = "==3.19.1"
+pycryptodome = "==3.20.0"
 
 autoflake8 = "^0.4.1"
 rich-click = "^1.8.2"
