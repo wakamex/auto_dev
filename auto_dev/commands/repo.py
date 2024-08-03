@@ -105,7 +105,11 @@ def repo(ctx, name, type_of_repo):
         scaffolder.scaffold()
         if type_of_repo == "autonomy":
             logger.info("Installing host deps. This may take a while!")
-            execute_commands( "bash ./install.sh", verbose=verbose, logger=logger,)
+            execute_commands(
+                "bash ./install.sh",
+                verbose=verbose,
+                logger=logger,
+            )
             logger.info("Initialising autonomy packages.")
             execute_commands("autonomy packages init", verbose=verbose, logger=logger)
         elif type_of_repo == "python":
