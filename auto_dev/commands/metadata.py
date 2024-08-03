@@ -160,7 +160,7 @@ def generate(root, target_name, target_id, strict, all):  # pylint: disable=rede
         if strict and not render_metadata(target_metadata):
             click.echo("Metadata generation failed. Please fix the errors above and try again.")
             sys.exit(1)
-        write_to_file(root + f"/mints/{target_id}.json", metadata, filetype="json")
+        write_to_file(root + f"/mints/{target_id}.json", metadata, file_type="json")
         click.echo(f"Metadata generated successfully! Saved to: {root}/mints/{target_id}.json")
 
 
