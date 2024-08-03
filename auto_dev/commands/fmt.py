@@ -17,7 +17,7 @@ cli = build_cli()
     "-p",
     "--path",
     help="Path to code to format. If not provided will format all packages.",
-    type=click.Path(exists=True, file_okay=False),
+    type=click.Path(exists=True, file_okay=True, dir_okay=True),
     default=None,
 )
 @click.option(
