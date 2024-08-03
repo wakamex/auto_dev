@@ -36,14 +36,13 @@ class Formatter:
             print(result.json())
 
         if result.json():
-            is_ok = result.json().get("result", False)
-            if not is_ok:
-                if 'new_data' in result.json():
-                    with open(path, "w", encoding=DEFAULT_ENCODING) as file:
-                        file.write(result.json()['new_data'])
-                    return True
-                return False
-            return True
+            if 'new_data' in result.json():
+                with open(path, "w", encoding=DEFAULT_ENCODING) as file:
+                    file.write(result.json()['new_data'])
+                return True
+            if 'result' in result.json():
+                return result.json()['result']
+
         return False
 
     def _format_path(self, path, verbose=False):

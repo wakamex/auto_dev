@@ -78,6 +78,9 @@ def get_paths(path: Optional[str] = None, changed_only: bool = False):
         raise FileNotFoundError("No path was provided and no default packages file found")
     packages = get_packages() if not path else [Path(path)]
 
+    if path and Path(path).is_file():
+        return [path]
+
     if changed_only:
         all_changed_files = []
         for package in packages:
