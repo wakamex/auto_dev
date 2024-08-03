@@ -78,6 +78,9 @@ def get_paths(path: Optional[str] = None, changed_only: bool = False):
         raise FileNotFoundError("No path was provided and no default packages file found")
     packages = get_packages() if not path else [Path(path)]
 
+    if path and Path(path).is_file():
+        return [path]
+
     if changed_only:
         all_changed_files = []
         for package in packages:
@@ -101,6 +104,7 @@ def get_paths(path: Optional[str] = None, changed_only: bool = False):
             if regex in file_path:
                 return file_path.replace(regex, "")
         return file_path
+
     python_files = [f for f in packages if "__pycache__" not in f and f.endswith(".py")]
     python_files = [filter_git_interferace_files(f) for f in python_files]
     return python_files
@@ -238,3 +242,24 @@ def load_aea_ctx(func: Callable[[click.Context, ..., Any], Any]) -> Callable[[cl
     wrapper.__name__ = func.__name__
 
     return wrapper
+
+
+def write_to_file(file_path: str, content: Union[str | dict, list], file_type: str = "text") -> None:
+    """
+    Write content to a file.
+    """
+    try:
+        with open(file_path, "w", encoding=DEFAULT_ENCODING) as f:
+            if file_type == "text":
+                f.write(content)
+            elif file_type == "yaml":
+                if isinstance(content, list):
+                    yaml.dump_all(content, f, default_flow_style=False, sort_keys=False)
+                else:
+                    yaml.dump(content, f, default_flow_style=False, sort_keys=False)
+            elif file_type == "json":
+                json.dump(content, f, separators=(',', ':'))
+            else:
+                raise ValueError(f"Invalid file_type: {file_type}. Supported types are 'text', 'yaml', and 'json'.")
+    except Exception as e:
+        raise ValueError(f"Error writing to file {file_path}: {e}") from e
