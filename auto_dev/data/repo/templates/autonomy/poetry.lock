@@ -282,14 +282,14 @@ pyflakes = ">=2.3.0"
 
 [[package]]
 name = "autonomy-dev"
-version = "0.2.61"
+version = "0.2.63"
 description = "A collection of tooling to enable open source development of autonomy tools"
 category = "main"
 optional = false
 python-versions = "<3.12,>=3.9"
 files = [
-    {file = "autonomy_dev-0.2.61-py3-none-any.whl", hash = "sha256:2079d3dde691da1e52ee173f5aab5e480e73eae08f304159c42677e04bb4758e"},
-    {file = "autonomy_dev-0.2.61.tar.gz", hash = "sha256:dd8c1b587ac201917a68f2c57b1dfd2bfe22c406f6921069427112f1cc45db5c"},
+    {file = "autonomy_dev-0.2.63-py3-none-any.whl", hash = "sha256:0b93369177ad4556b6b56f8145be4c2b201c95aea3082ab376b269112c77d3c0"},
+    {file = "autonomy_dev-0.2.63.tar.gz", hash = "sha256:9ee33fc17fb35b8c2122cf9e804c64aa328e874d1d1ddd904185c77b170fe0e9"},
 ]
 
 [package.dependencies]
@@ -4415,4 +4415,4 @@ doc = []
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.12"
-content-hash = "47753383d1f0cf55f159b6472ce7801d68cd8c31027350359d80899599ace251"
+content-hash = "d79e7892e1476e3fd0b4a2bc70adceb9171725ced98af366add5cdf6bad250c5"
