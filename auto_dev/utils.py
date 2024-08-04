@@ -11,7 +11,7 @@ from contextlib import contextmanager
 from functools import reduce
 from glob import glob
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, Union
 
 import rich_click as click
 import yaml
