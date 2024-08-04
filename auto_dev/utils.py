@@ -254,7 +254,7 @@ def load_aea_ctx(func: Callable[[click.Context, ..., Any], Any]) -> Callable[[cl
     return wrapper
 
 
-def write_to_file(file_path: str, content: Union[str | dict, list], file_type: str = "text") -> None:
+def write_to_file(file_path: str, content: Any, file_type: str = "text") -> None:
     """
     Write content to a file.
     """
