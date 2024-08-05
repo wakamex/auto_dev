@@ -66,7 +66,7 @@ py-eth-sig-utils = "*"
 grpcio = "==1.65.1"
 asn1crypto = "<1.5.0,>=1.4.0"
 
-eth-utils = "==2.2.0"
+eth-utils = "==2.3.1"
 eth-abi = "==5.1.0"
 pycryptodome = "==3.20.0"
 
