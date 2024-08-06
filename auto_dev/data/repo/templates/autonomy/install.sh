@@ -93,9 +93,17 @@ install_tool() {
     esac
 
     if [ "$tool" = "protoc" ]; then
-        sudo mv bin/protoc /usr/local/bin/protoc
+        if ! command -v protoc &> /dev/null; then
+            sudo mv bin/protoc /usr/local/bin/protoc
+        else
+            echo "protoc is already installed, skipping..."
+        fi
     elif [ "$tool" = "protolint" ]; then
-        sudo mv protolint /usr/local/bin/protolint
+        if ! command -v protolint &> /dev/null; then
+            sudo mv protolint /usr/local/bin/protolint
+        else
+            echo "protolint is already installed, skipping..."
+        fi
     fi
 
     cd - > /dev/null
@@ -114,13 +122,10 @@ function verify() {
 
 function install_poetry_deps() {
     local os
-    local pip_executable
-    local poetry_executable
-
 
     echo "Installing package dependencies via poetry..."
     poetry install 
-    echo checking if aea is installed
+    echo "Checking if aea is installed"
     poetry run aea --version
     echo "Done installing dependencies"
 }
