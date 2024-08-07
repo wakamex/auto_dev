@@ -177,13 +177,13 @@ class HandlerScaffolder:
     Handler Scaffolder
     """
 
-    def __init__(self, spec_file_path: str, author: str, output: str, logger, verbose: bool = True):
+    def __init__(self, spec_file_path: str, author: str, sanitized_output: str, logger, verbose: bool = True):
         """Initialize HandlerScaffolder."""
 
         self.logger = logger or get_logger()
         self.verbose = verbose
         self.author = author
-        self.output = output
+        self.output = sanitized_output
         self.spec_file_path = spec_file_path
         self.logger.info(f"Read OpenAPI specification: {spec_file_path}")
 
@@ -203,7 +203,7 @@ class HandlerScaffolder:
                 params = []
                 if "{" in path:
                     params.append("id")
-                if method.lower() in ["post", "put", "patch"]:
+                if method.lower() in ["post", "put", "patch", "delete"]:
                     params.append("body")
 
                 param_str: str = ", ".join(["self"] + params)
@@ -242,7 +242,7 @@ class HandlerScaffolder:
             handler_method = getattr(self, f"handle_{{method.lower()}}_{{path.lstrip('/').replace('/', '_').replace('{', '').replace('}', '')}}", None)
 
             if handler_method:
-                kwargs = {{'body': body}} if method.lower() in ['post', 'put', 'patch'] else {{}}
+                kwargs = {{'body': body}} if method.lower() in ['post', 'put', 'patch', 'delete'] else {{}}
                 if '{{' in path:
                     kwargs['id'] = id
                 return handler_method(**kwargs)

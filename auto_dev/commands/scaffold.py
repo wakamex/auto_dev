@@ -183,10 +183,12 @@ def handler(ctx, spec_file, author, output):
     logger = ctx.obj["LOGGER"]
     verbose = ctx.obj["VERBOSE"]
 
-    scaffolder = HandlerScaffolder(spec_file, author, output, logger=logger, verbose=verbose)
+    sanitized_output = output.replace("-", "_").replace(" ", "_")
+
+    scaffolder = HandlerScaffolder(spec_file, author, sanitized_output, logger=logger, verbose=verbose)
     handler_code = scaffolder.generate()
 
-    with change_dir(f"skills/{output}"):
+    with change_dir(f"skills/{sanitized_output}"):
         output_path = Path('handlers.py')
         scaffolder.save_handler(output_path, handler_code)
         skill_yaml_file = "skill.yaml"
