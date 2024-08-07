@@ -32,8 +32,6 @@ src = "auto_dev/data/repo/templates/autonomy/pyproject.toml.template"
 # run after the files have been patched
 # and before the git commit is made
 
-[[before_commit]]
-name = "Ensure lock of generated repo"
 
   
 
