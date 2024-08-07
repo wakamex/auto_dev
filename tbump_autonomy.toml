@@ -26,16 +26,13 @@ tag_template = "v{new_version}"
 src = "pyproject.toml"
 
 
-[[file]]
-src = "auto_dev/data/repo/templates/autonomy/pyproject.toml.template"
-
 # You can specify a list of commands to
 # run after the files have been patched
 # and before the git commit is made
 
 [[before_commit]]
 name = "Ensure lock of generated repo"
-cmd = "bash scripts/check_generated.sh && poetry lock
+cmd = "bash scripts/check_generated.sh && poetry lock"
 
   
 
