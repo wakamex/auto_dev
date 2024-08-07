@@ -209,12 +209,12 @@ class HandlerScaffolder:
                 param_str: str = ", ".join(["self"] + params)
 
                 method_code: str = f"""
-        def {method_name}({param_str}):
-            \"\"\"
-            Handle {method.upper()} request for {path}
-            \"\"\"
-            # TODO: Implement {method.upper()} logic for {path}
-            raise NotImplementedError
+    def {method_name}({param_str}):
+        \"\"\"
+        Handle {method.upper()} request for {path}
+        \"\"\"
+        # TODO: Implement {method.upper()} logic for {path}
+        raise NotImplementedError
     """
                 handler_methods.append(method_code)
 
@@ -225,29 +225,29 @@ class HandlerScaffolder:
         )
 
         main_handler: str = f"""
-        def handle(self, message: HttpMessage) -> None:
-            \"\"\"Handle incoming HTTP messages\"\"\"
-            method = message.method
-            url = message.url
-            body = message.body
+    def handle(self, message: HttpMessage) -> None:
+        \"\"\"Handle incoming HTTP messages\"\"\"
+        method = message.method
+        url = message.url
+        body = message.body
 
-            path_parts = url.split('/')
-            path = '/' + '/'.join(path_parts[1:])
+        path_parts = url.split('/')
+        path = '/' + '/'.join(path_parts[1:])
 
+        if '{{' in path:
+            id_index = path_parts.index([part for part in path_parts if '{{' in part][0])
+            id = path_parts[id_index]
+            path = '/' + '/'.join(path_parts[1:id_index] + ['{{'+ path_parts[id_index][1:-1] + '}}'] + path_parts[id_index+1:])
+
+        handler_method = getattr(self, f"handle_{{method.lower()}}_{{path.lstrip('/').replace('/', '_').replace('{', '').replace('}', '')}}", None)
+
+        if handler_method:
+            kwargs = {{'body': body}} if method.lower() in ['post', 'put', 'patch', 'delete'] else {{}}
             if '{{' in path:
-                id_index = path_parts.index([part for part in path_parts if '{{' in part][0])
-                id = path_parts[id_index]
-                path = '/' + '/'.join(path_parts[1:id_index] + ['{{'+ path_parts[id_index][1:-1] + '}}'] + path_parts[id_index+1:])
+                kwargs['id'] = id
+            return handler_method(**kwargs)
 
-            handler_method = getattr(self, f"handle_{{method.lower()}}_{{path.lstrip('/').replace('/', '_').replace('{', '').replace('}', '')}}", None)
-
-            if handler_method:
-                kwargs = {{'body': body}} if method.lower() in ['post', 'put', 'patch', 'delete'] else {{}}
-                if '{{' in path:
-                    kwargs['id'] = id
-                return handler_method(**kwargs)
-
-            return self.handle_unexpected_message(message)
+        return self.handle_unexpected_message(message)
 
     {all_methods}
 
