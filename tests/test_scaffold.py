@@ -1,5 +1,6 @@
 """Tests for the scaffold command"""
 
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -13,6 +14,25 @@ from auto_dev.constants import DEFAULT_ENCODING
 from auto_dev.protocols.scaffolder import read_protocol
 
 FSM_SPEC = Path("auto_dev/data/fsm/fsm_specification.yaml").absolute()
+
+
+def get_yaml_files(directory):
+    """Get all yaml files in a directory"""
+    return [f for f in os.listdir(directory) if f.endswith('.yaml')]
+
+
+def get_paths_from_yaml(yaml_file):
+    """Get all paths from a yaml file"""
+    with open(yaml_file, 'r', encoding=DEFAULT_ENCODING) as f:
+        spec = yaml.safe_load(f)
+
+    paths = []
+    for path, methods in spec.get('paths', {}).items():
+        for method in methods:
+            handler_name = path.replace('{', '').replace('}', '')
+            handler_name = f"handle_{method.lower()}_{handler_name.lstrip('/').replace('/', '_')}"
+            paths.append(handler_name)
+    return paths
 
 
 @pytest.mark.skip(reason="Needs chain contracts update")
@@ -55,34 +75,62 @@ def test_scaffold_protocol(cli_runner, dummy_agent_tim, caplog):
     assert original_content in readme_path.read_text(encoding=DEFAULT_ENCODING)
 
 
-def test_scaffold_handler(cli_runner, dummy_agent_tim):
+def test_scaffold_handler(cli_runner, dummy_agent_tim, openapi_test_case):
     """Test scaffold handler"""
+    openapi_file, expected_handlers = openapi_test_case
+    openapi_spec_path, sanitized_output = prepare_scaffold_inputs(openapi_file, dummy_agent_tim)
 
-    assert Path.cwd() == Path(dummy_agent_tim)
-    openapi_spec_path = "../tests/data/dummy_openapi.yaml"
-    output = "my_dummy_skill"
-
-    command = ["scaffold", "handler", str(openapi_spec_path), "--output", str(output)]
-    result = cli_runner.invoke(cli, command)
-
+    result = run_scaffold_command(cli_runner, openapi_spec_path, sanitized_output)
     assert result.exit_code == 0, result.output
 
-    skill_path = Path(dummy_agent_tim) / "skills" / output
+    skill_path = Path(dummy_agent_tim) / "skills" / sanitized_output
+    verify_scaffolded_files(skill_path)
+    verify_handlers_content(skill_path, expected_handlers)
+    verify_dynamic_handlers(openapi_spec_path, expected_handlers, openapi_file)
+    verify_skill_yaml(skill_path)
 
-    # check if files are created/modified as expected
+
+def prepare_scaffold_inputs(openapi_file, dummy_agent_tim):
+    """Prepare inputs for scaffold command"""
+    assert Path.cwd() == Path(dummy_agent_tim)
+    openapi_spec_path = f"../tests/data/openapi_examples/{openapi_file}"
+    output = f"skill_{openapi_file.replace('.yaml', '').replace('.yml', '')}"
+    sanitized_output = output.replace("-", "_").replace(" ", "_")
+    return openapi_spec_path, sanitized_output
+
+
+def run_scaffold_command(cli_runner, openapi_spec_path, sanitized_output):
+    """Run scaffold command"""
+    command = ["scaffold", "handler", str(openapi_spec_path), "--output", str(sanitized_output)]
+    return cli_runner.invoke(cli, command)
+
+
+def verify_scaffolded_files(skill_path):
+    """Verify if expected files are created/modified"""
     assert not (skill_path / "behaviours.py").exists()
     assert (skill_path / "strategy.py").exists()
     assert (skill_path / "dialogues.py").exists()
     assert (skill_path / "handlers.py").exists()
 
-    # check content of handlers.py
+
+def verify_handlers_content(skill_path, expected_handlers):
+    """Verify content of handlers.py"""
     handlers_content = (skill_path / "handlers.py").read_text()
     assert "class HttpHandler(Handler):" in handlers_content
-    assert "def handle_get_users(self):" in handlers_content
-    assert "def handle_post_users(self, body):" in handlers_content
-    assert "def handle_get_users_userId(self, id):" in handlers_content
+    for handler in expected_handlers:
+        assert f"def {handler}(" in handlers_content, f"Handler method for '{handler}' not found"
 
-    # check skill.yaml
+
+def verify_dynamic_handlers(openapi_spec_path, expected_handlers, openapi_file):
+    """Verify dynamically generated handlers"""
+    dynamic_handlers = get_paths_from_yaml(openapi_spec_path)
+    assert set(expected_handlers) == set(
+        dynamic_handlers
+    ), f"Mismatch between expected and dynamically generated handlers for {openapi_file}"
+
+
+def verify_skill_yaml(skill_path):
+    """Verify content of skill.yaml"""
     with open(skill_path / "skill.yaml", "r", encoding=DEFAULT_ENCODING) as f:
         skill_yaml = yaml.safe_load(f)
     assert "eightballer/http:0.1.0" in skill_yaml["protocols"][0]
