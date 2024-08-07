@@ -2,7 +2,7 @@
 # github_url = "https://github.com/<user or organization>/<project>/"
 
 [version]
-current = "0.2.64"
+current = "1.55.0"
 
 # Example of a semver regexp.
 # Make sure this matches current_version before
@@ -16,7 +16,7 @@ regex = '''
   '''
 
 [git]
-message_template = "Bump to {new_version}"
+message_template = "Bump aea to {new_version}"
 tag_template = "v{new_version}"
 
 # For each file to patch, add a [[file]] config
@@ -25,7 +25,6 @@ tag_template = "v{new_version}"
 [[file]]
 src = "pyproject.toml"
 
-
 [[file]]
 src = "auto_dev/data/repo/templates/autonomy/pyproject.toml.template"
 
@@ -33,9 +32,6 @@ src = "auto_dev/data/repo/templates/autonomy/pyproject.toml.template"
 # run after the files have been patched
 # and before the git commit is made
 
-[[before_commit]]
-name = "Ensure lock of generated repo"
-cmd = "bash scripts/check_generated.sh"
 
   
 
