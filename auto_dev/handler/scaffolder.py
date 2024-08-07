@@ -65,22 +65,6 @@ class HttpHandler(Handler):
 
 """
 
-HANDLER_METHOD_TEMPLATE = """
-    def handle(self, message):
-        "main handler method"
-        url = message.url
-        parts = url.split('/')
-        if len(parts) == 3:
-            route = parts[-2]
-            id = parts[-1]
-            body = json.loads(message.body.decode("utf-8"))
-            return self.handle_post(route, id, body)
-        elif len(parts) == 2:
-            route = parts[1]
-            return self.handle_get(route)
-        return self.handle_unexpected_message(message)
-        {unexpected_message_handler}
-"""
 
 PATH_FILTER_TEMPLATE = """
         if filter == "{path}":
@@ -171,6 +155,35 @@ class HttpDialogues(Model, BaseHttpDialogues):
 
 """
 
+MAIN_HANDLER_TEMPLATE = """
+    def handle(self, message: HttpMessage) -> None:
+        \"\"\"Handle incoming HTTP messages\"\"\"
+        method = message.method
+        url = message.url
+        body = message.body
+
+        path_parts = url.split('/')
+        path = '/' + '/'.join(path_parts[1:])
+
+        if '{{' in path:
+            id_index = path_parts.index([part for part in path_parts if '{{' in part][0])
+            id = path_parts[id_index]
+            path = '/' + '/'.join(path_parts[1:id_index] + ['{{'+ path_parts[id_index][1:-1] + '}}'] + path_parts[id_index+1:])
+
+        handler_method = getattr(self, f"handle_{{method.lower()}}_{{path.lstrip('/').replace('/', '_').replace('{{', '').replace('}}', '')}}", None)
+
+        if handler_method:
+            kwargs = {{'body': body}} if method.lower() in ['post', 'put', 'patch', 'delete'] else {{}}
+            if '{{' in path:
+                kwargs['id'] = id
+            return handler_method(**kwargs)
+
+        return self.handle_unexpected_message(message)
+
+{all_methods}
+
+{unexpected_message_handler}
+"""
 
 class HandlerScaffolder:
     """
@@ -223,37 +236,10 @@ class HandlerScaffolder:
         handler_code: str = HANDLER_HEADER_TEMPLATE.format(
             author=self.author, skill_name=openapi_spec["info"]["title"].replace(" ", "_")
         )
-
-        main_handler: str = f"""
-    def handle(self, message: HttpMessage) -> None:
-        \"\"\"Handle incoming HTTP messages\"\"\"
-        method = message.method
-        url = message.url
-        body = message.body
-
-        path_parts = url.split('/')
-        path = '/' + '/'.join(path_parts[1:])
-
-        if '{{' in path:
-            id_index = path_parts.index([part for part in path_parts if '{{' in part][0])
-            id = path_parts[id_index]
-            path = '/' + '/'.join(path_parts[1:id_index] + ['{{'+ path_parts[id_index][1:-1] + '}}'] + path_parts[id_index+1:])
-
-        handler_method = getattr(self, f"handle_{{method.lower()}}_{{path.lstrip('/').replace('/', '_').replace('{', '').replace('}', '')}}", None)
-
-        if handler_method:
-            kwargs = {{'body': body}} if method.lower() in ['post', 'put', 'patch', 'delete'] else {{}}
-            if '{{' in path:
-                kwargs['id'] = id
-            return handler_method(**kwargs)
-
-        return self.handle_unexpected_message(message)
-
-    {all_methods}
-
-    {UNEXPECTED_MESSAGE_HANDLER_TEMPLATE}
-    """
-
+        main_handler: str = MAIN_HANDLER_TEMPLATE.format(
+            all_methods=all_methods,
+            unexpected_message_handler=UNEXPECTED_MESSAGE_HANDLER_TEMPLATE
+        )
         handler_code += main_handler
         return handler_code
 
