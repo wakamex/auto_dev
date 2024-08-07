@@ -22,6 +22,8 @@ class CommandExecutor:
         """Initialize the command executor."""
         self.command = command
         self.cwd = str(cwd) if cwd else '.'
+        self.stdout = []
+        self.stderr = []
 
     def execute(self, stream=False, verbose: bool = True, shell: bool = False):
         """Execute the command."""
@@ -45,6 +47,8 @@ class CommandExecutor:
                 if len(result.stderr) > 0:
                     logger.error(result.stderr.decode("utf-8"))
 
+            self.stdout = result.stdout.decode("utf-8").splitlines()
+            self.stderr = result.stderr.decode("utf-8").splitlines()
             if result.returncode != 0:
                 if verbose:
                     logger.error("Command failed with return code: %s", result.returncode)
@@ -67,8 +71,13 @@ class CommandExecutor:
                 shell=shell,
             ) as process:
                 for stdout_line in iter(process.stdout.readline, ""):  # type: ignore
+                    self.stdout.append(stdout_line.strip())
                     if verbose:
                         logger.info(stdout_line.strip())
+                for stderr_line in iter(process.stderr.readline, ""):
+                    self.stderr.append(stderr_line.strip())
+                    if verbose:
+                        logger.error(stderr_line.strip())
                 process.stdout.close()  # type: ignore
                 return_code = process.wait()
                 if return_code != 0:

@@ -23,7 +23,7 @@ class BaseTestRepo:
     @property
     def cli_args(self):
         """CLI arguments"""
-        return ("repo", self.repo_name, "-t", self.type_of_repo)
+        return ["adev", "repo", self.repo_name, "-t", self.type_of_repo]
 
     @property
     def parent_dir(self):
@@ -39,8 +39,9 @@ class BaseTestRepo:
         """Test the format command works with the current package."""
 
         assert test_clean_filesystem
-        result = cli_runner.invoke(cli, self.cli_args)
-        assert result.exit_code == 0, result.output
+        runner = cli_runner(self.cli_args)
+        result = runner.execute(cli, self.cli_args)
+        assert result, (runner.stdout, '\n'.join(runner.stderr))
         assert self.repo_path.exists(), f"Repository directory was not created: {self.repo_path}"
         assert (self.repo_path / ".git").exists()
 

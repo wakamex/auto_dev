@@ -25,7 +25,7 @@ def execute_commands(*commands: str, verbose: bool, logger, shell: bool = False)
     """Execute commands."""
     for command in commands:
         cli_executor = CommandExecutor(command=command.split(" "))
-        result = cli_executor.execute(stream=True, verbose=verbose, shell=shell)
+        result = cli_executor.execute(stream=False, verbose=verbose, shell=shell)
         if not result:
             logger.error(f"Command failed: {command}")
             sys.exit(1)
@@ -107,7 +107,7 @@ def repo(ctx, name, type_of_repo):
             logger.info("Installing host deps. This may take a while!")
             execute_commands(
                 "bash ./install.sh",
-                verbose=verbose,
+                verbose=False,
                 logger=logger,
             )
             logger.info("Initialising autonomy packages.")
