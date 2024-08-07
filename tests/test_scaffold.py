@@ -18,7 +18,7 @@ FSM_SPEC = Path("auto_dev/data/fsm/fsm_specification.yaml").absolute()
 
 def get_yaml_files(directory):
     """Get all yaml files in a directory"""
-    return [f for f in os.listdir(directory) if f.endswith('.yaml')]
+    return [str(f) for f in Path(directory).glob('*.yaml')]
 
 
 def get_paths_from_yaml(yaml_file):
