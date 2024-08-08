@@ -9,7 +9,6 @@ from typing import Tuple
 import toml
 from aea.cli.utils.config import get_default_author_from_cli_config
 
-from auto_dev.cli import cli
 from auto_dev.utils import change_dir
 
 
@@ -23,7 +22,7 @@ class BaseTestRepo:
     @property
     def cli_args(self):
         """CLI arguments"""
-        return ("repo", self.repo_name, "-t", self.type_of_repo)
+        return ["adev", "repo", self.repo_name, "-t", self.type_of_repo]
 
     @property
     def parent_dir(self):
@@ -39,8 +38,9 @@ class BaseTestRepo:
         """Test the format command works with the current package."""
 
         assert test_clean_filesystem
-        result = cli_runner.invoke(cli, self.cli_args)
-        assert result.exit_code == 0, result.output
+        runner = cli_runner(self.cli_args)
+        result = runner.execute()
+        assert result, runner.output
         assert self.repo_path.exists(), f"Repository directory was not created: {self.repo_path}"
         assert (self.repo_path / ".git").exists()
 
@@ -48,17 +48,18 @@ class BaseTestRepo:
         """Test the format command works with the current package."""
 
         assert test_filesystem
-
         self.repo_path.mkdir()
-        result = cli_runner.invoke(cli, self.cli_args)
-        assert result.exit_code == 1, result.output
+        runner = cli_runner(self.cli_args)
+        result = runner.execute()
+        assert runner.return_code == 1, result.output
 
     def test_makefile(self, cli_runner, test_clean_filesystem):
         """Test scaffolding of Makefile"""
-
         assert test_clean_filesystem
 
-        result = cli_runner.invoke(cli, self.cli_args)
+        runner = cli_runner(self.cli_args)
+        result = runner.execute(self.cli_args)
+        assert result, (runner.stdout, '\n'.join(runner.stderr))
         makefile = self.repo_path / "Makefile"
         assert makefile.exists(), result.output
         assert makefile.read_text(encoding="utf-8")
@@ -70,8 +71,9 @@ class BaseTestRepo:
         assert test_clean_filesystem
 
         # Ensure the repository is created before changing directory
-        result = cli_runner.invoke(cli, self.cli_args)
-        assert result.exit_code == 0, result.output
+        runner = cli_runner(self.cli_args)
+        result = runner.execute()
+        assert result, runner.output
         assert self.repo_path.exists(), f"Repository directory was not created: {self.repo_path}"
 
         with change_dir(self.repo_path):
@@ -84,8 +86,8 @@ class BaseTestRepo:
                     text=True,
                     check=False,
                 )
-                if not result.returncode == 0:
-                    error_messages[command] = result.stderr
+                if not runner.return_code == 0:
+                    error_messages[command] = runner.stderr
         assert not error_messages
 
 
@@ -107,9 +109,9 @@ class TestRepoAutonomy(BaseTestRepo):
         """Test the .gitignore works as expected"""
 
         assert test_clean_filesystem
-
-        result = cli_runner.invoke(cli, self.cli_args)
-        assert result.exit_code == 0, result.output
+        runner = cli_runner(self.cli_args)
+        result = runner.execute()
+        assert runner.return_code == 0, runner.output
 
         packages_folder = self.repo_path / "packages"
         author_packages = packages_folder / self.author
@@ -139,9 +141,10 @@ class TestRepoAutonomy(BaseTestRepo):
         """Test the scripts/run_single_agent.sh is generated"""
 
         assert test_clean_filesystem
+        runner = cli_runner(self.cli_args)
+        result = runner.execute()
 
-        result = cli_runner.invoke(cli, self.cli_args)
-        assert result.exit_code == 0, result.output
+        assert runner.return_code == 0, result.output
         expected_path = self.repo_path / "scripts" / "run_single_agent.sh"
         assert expected_path.exists()
 
