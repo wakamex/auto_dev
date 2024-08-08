@@ -87,6 +87,7 @@ def repo():
 
 
 @repo.command()
+@click.argument("name", type=str, required=True)
 @click.option(
     "-t",
     "--type-of-repo",
@@ -94,7 +95,6 @@ def repo():
     type=click.Choice(TEMPLATES),
     required=True,
 )
-@click.argument("name", type=str, required=True)
 @click.pass_context
 def scaffold(ctx, name, type_of_repo):
     """Create a new repo and scaffold necessary files."""
