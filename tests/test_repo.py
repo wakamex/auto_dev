@@ -57,9 +57,9 @@ class BaseTestRepo:
     def test_makefile(self, cli_runner, test_clean_filesystem):
         """Test scaffolding of Makefile"""
 
-        assert test_clean_filesystem
-
-        result = cli_runner.invoke(cli, self.cli_args)
+        runner = cli_runner(self.cli_args)
+        result = runner.execute(cli, self.cli_args)
+        assert result, (runner.stdout, '\n'.join(runner.stderr))
         makefile = self.repo_path / "Makefile"
         assert makefile.exists(), result.output
         assert makefile.read_text(encoding="utf-8")
@@ -71,8 +71,9 @@ class BaseTestRepo:
         assert test_clean_filesystem
 
         # Ensure the repository is created before changing directory
-        result = cli_runner.invoke(cli, self.cli_args)
-        assert result.exit_code == 0, result.output
+        runner = cli_runner(self.cli_args)
+        result = runner.execute(cli, self.cli_args)
+        assert result, result.output
         assert self.repo_path.exists(), f"Repository directory was not created: {self.repo_path}"
 
         with change_dir(self.repo_path):

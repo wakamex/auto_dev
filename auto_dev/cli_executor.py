@@ -49,6 +49,7 @@ class CommandExecutor:
 
             self.stdout = result.stdout.decode("utf-8").splitlines()
             self.stderr = result.stderr.decode("utf-8").splitlines()
+            self.return_code = result.returncode
             if result.returncode != 0:
                 if verbose:
                     logger.error("Command failed with return code: %s", result.returncode)
@@ -79,12 +80,23 @@ class CommandExecutor:
                     if verbose:
                         logger.error(stderr_line.strip())
                 process.stdout.close()  # type: ignore
-                return_code = process.wait()
-                if return_code != 0:
+                self.return_code = process.wait()
+                if self.return_code != 0:
                     if verbose:
-                        logger.error("Command failed with return code: %s", return_code)
+                        logger.error("Command failed with return code: %s", self.return_code)
                     return False
                 return True
         except Exception as error:  # pylint: disable=broad-except
             logger.error("Command failed: %s", error)
             return False
+
+    @property
+    def output(self):
+        """Return the output."""
+        fmt = f"Command: {' '.join(self.command)}\n"
+        fmt += f"Return Code: {self.return_code}\n"
+        fmt += "Stdout:\n"
+        fmt += "\n\t".join(self.stdout)
+        fmt += "\nStderr:\n"
+        fmt += "\n\t".join(self.stderr)
+        return fmt
