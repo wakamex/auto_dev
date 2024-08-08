@@ -24,6 +24,8 @@ class CommandExecutor:
         self.cwd = str(cwd) if cwd else '.'
         self.stdout = []
         self.stderr = []
+        self.return_code = None
+        self.exception = None
 
     def execute(self, stream=False, verbose: bool = True, shell: bool = False):
         """Execute the command."""
@@ -57,6 +59,7 @@ class CommandExecutor:
             return True
         except Exception as error:  # pylint: disable=broad-except
             logger.error("Command failed: %s", error)
+            self.exception = error
             return False
 
     def _execute_stream(self, verbose: bool = True, shell: bool = False):
@@ -88,6 +91,7 @@ class CommandExecutor:
                 return True
         except Exception as error:  # pylint: disable=broad-except
             logger.error("Command failed: %s", error)
+            self.exception = error
             return False
 
     @property

@@ -16,7 +16,7 @@ cli = build_cli()
     "-p",
     "--path",
     help="Path to directory to test. If not provided will test all packages.",
-    type=click.Path(exists=True, file_okay=False),
+    type=click.Path(exists=True, file_okay=True),
     default=None,
 )
 @click.option(
@@ -51,7 +51,7 @@ def test(ctx, path, watch):
             raises.append(package)
     if raises:
         for package in raises:
-            click.error(f"❗ - {package}")
+            click.echo(f"❗ - {package}")
         raise click.ClickException("Testing failed! ❌")
     click.echo("Testing completed successfully! ✅")
 
