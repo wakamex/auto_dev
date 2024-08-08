@@ -267,8 +267,10 @@ def test_write_to_file_invalid_type(temp_dir):
     file_path = temp_dir / "test.invalid"
     content = "Some content"
 
-    with pytest.raises(AttributeError, match="INVALID"):
-        write_to_file(str(file_path), content, FileType.INVALID)
+    invalid_file_type = "INVALID"
+
+    with pytest.raises(ValueError, match="Invalid file_type"):
+        write_to_file(str(file_path), content, invalid_file_type)
 
 
 def test_write_to_file_exception(temp_dir):
