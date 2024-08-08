@@ -25,12 +25,16 @@ from .constants import AUTONOMY_PACKAGES_FILE, DEFAULT_ENCODING
 
 def get_logger(name=__name__, log_level="INFO"):
     """Get the logger."""
-    msg_format = "%(message)s"
+    # We use the fancy rich logging handler and the fancy formatter
     handler = RichHandler(
         rich_tracebacks=True,
         markup=True,
     )
-    logging.basicConfig(level="NOTSET", format=msg_format, datefmt="[%X]", handlers=[handler])
+    # We set the time to just the 24 hours minutes and seconds
+    datefmt = "%H:%M:%S"
+    logging.basicConfig(level="NOTSET", 
+                        datefmt=datefmt,
+                        handlers=[handler])
 
     log = logging.getLogger(name)
     log.setLevel(log_level)
