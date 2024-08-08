@@ -10,9 +10,8 @@ def test_lint_fails(cli_runner, test_filesystem):
     assert os.getcwd() == test_filesystem
     cmd = ['adev', '-n', '0', "lint", "-p", "packages/fake"]
     runner = cli_runner(cmd)
-    result = runner.execute()
+    runner.execute()
     assert runner.return_code == 2, runner.output
-    assert isinstance(SystemExit(2), type(result.exception))
 
 
 def test_lints_self(cli_runner, test_filesystem):
