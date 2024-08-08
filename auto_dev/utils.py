@@ -274,6 +274,6 @@ def write_to_file(file_path: str, content: Any, file_type: FileType = FileType.T
             elif file_type == FileType.JSON:
                 json.dump(content, f, separators=(',', ':'))
             else:
-                raise ValueError(f"Invalid file_type: {file_type}. Supported types are 'text', 'yaml', and 'json'.")
+                raise ValueError(f"Invalid file_type, must be one of {list(FileType)}.")
     except Exception as e:
         raise ValueError(f"Error writing to file {file_path}: {e}") from e
