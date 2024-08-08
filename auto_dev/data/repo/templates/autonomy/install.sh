@@ -117,12 +117,12 @@ function install_poetry_deps() {
     local pip_executable
     local poetry_executable
     local host_poetry_executable
-    host_poetry_executable=$(echo -n $(poetry env info | grep Executable |head -n 1 | gawk -F: '{ print $2 }') | xargs)
+    host_poetry_executable=$(echo -n $(poetry env info | grep Executable |head -n 1 | awk -F: '{ print $2 }') | xargs)
     echo "Host poetry executable: $host_poetry_executable"
     echo "Setting up new poetry environment..."
 
     poetry env use $(which python)
-    poetry_executable=$(echo -n $(poetry env info | grep Executable |head -n 1 | gawk -F: '{ print $2 }') | xargs)
+    poetry_executable=$(echo -n $(poetry env info | grep Executable |head -n 1 | awk -F: '{ print $2 }') | xargs)
     echo "New poetry executable:   $poetry_executable"
     echo "Installing package dependencies via poetry..."
     echo "Using poetry executable: $poetry_executable"
