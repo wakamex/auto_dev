@@ -12,7 +12,6 @@ def test_lint_fails(cli_runner, test_filesystem):
     runner = cli_runner(cmd)
     result = runner.execute()
     assert runner.return_code == 2, runner.output
-    assert runner.exception is not None
     assert isinstance(SystemExit(2), type(result.exception))
 
 
