@@ -25,9 +25,11 @@ def execute_commands(*commands: str, verbose: bool, logger, shell: bool = False)
     """Execute commands."""
     for command in commands:
         cli_executor = CommandExecutor(command=command.split(" "))
-        result = cli_executor.execute(stream=True, verbose=verbose, shell=shell)
+        result = cli_executor.execute(stream=False, verbose=verbose, shell=shell)
         if not result:
             logger.error(f"Command failed: {command}")
+            logger.error(f"{cli_executor.stdout}")
+            logger.error(f"{cli_executor.stderr}")
             sys.exit(1)
 
 
