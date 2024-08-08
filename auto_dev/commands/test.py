@@ -16,7 +16,7 @@ cli = build_cli()
     "-p",
     "--path",
     help="Path to directory to test. If not provided will test all packages.",
-    type=click.Path(exists=True, file_okay=False),
+    type=click.Path(exists=True, file_okay=True),
     default=None,
 )
 @click.option(
@@ -32,8 +32,9 @@ def test(ctx, path, watch):
     Runs the test tooling
     """
     verbose = ctx.obj["VERBOSE"]
-    logger = ctx.obj["LOGGER"]
-    logger.info(f"Testing path: `{path if path else 'All dev packages/packages.json'}` ⌛")
+    click.echo(
+        f"Testing path: `{path if path else 'All dev packages/packages.json'}` ⌛",
+    )
     try:
         packages = get_packages() if not path else [path]
     except Exception as error:
@@ -42,7 +43,7 @@ def test(ctx, path, watch):
     for package in track(range(len(packages)), description="Testing..."):
         result = test_path(str(packages[package]), verbose=verbose, watch=watch)
         results[packages[package]] = result
-        logger.info(f"{'👌' if result else '❗'} - {packages[package]}")
+        click.echo(f"{'👌' if result else '❗'} - {packages[package]}")
 
     raises = []
     for package, result in results.items():
@@ -50,7 +51,7 @@ def test(ctx, path, watch):
             raises.append(package)
     if raises:
         for package in raises:
-            logger.error(f"❗ - {package}")
+            click.echo(f"❗ - {package}")
         raise click.ClickException("Testing failed! ❌")
     click.echo("Testing completed successfully! ✅")
 
