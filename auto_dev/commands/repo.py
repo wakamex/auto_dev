@@ -227,7 +227,7 @@ def update_deps(ctx, lock: bool):
     ]
     commands_to_results = {}
     with Progress() as progress:
-        task = progress.add_task("[cyan]Executing commands dependencies...", total=len(commands))
+        task = progress.add_task("[cyan]Executing commands to lock upstream dependencies...", total=len(commands))
         for command in commands:
             cli_executor = CommandExecutor(command.split(" "))
             result = cli_executor.execute(stream=False, verbose=verbose)
