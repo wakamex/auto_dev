@@ -1,8 +1,8 @@
 """Handler scaffolder."""
 
-import yaml
 from pathlib import Path
 
+import yaml
 from aea.configurations.base import PublicId
 
 from auto_dev.cli_executor import CommandExecutor
@@ -186,6 +186,7 @@ MAIN_HANDLER_TEMPLATE = """
 {unexpected_message_handler}
 """
 
+
 class HandlerScaffolder:
     """
     Handler Scaffolder
@@ -198,8 +199,8 @@ class HandlerScaffolder:
         logger,
         verbose: bool = True,
         new_skill: bool = False,
-        auto_confirm: bool = False
-        ):
+        auto_confirm: bool = False,
+    ):
         """Initialize HandlerScaffolder."""
 
         self.logger = logger or get_logger()
@@ -254,12 +255,9 @@ class HandlerScaffolder:
 
         all_methods: str = "\n".join(handler_methods)
 
-        handler_code: str = HANDLER_HEADER_TEMPLATE.format(
-            author=self.author, skill_name=self.output
-        )
+        handler_code: str = HANDLER_HEADER_TEMPLATE.format(author=self.author, skill_name=self.output)
         main_handler: str = MAIN_HANDLER_TEMPLATE.format(
-            all_methods=all_methods,
-            unexpected_message_handler=UNEXPECTED_MESSAGE_HANDLER_TEMPLATE
+            all_methods=all_methods, unexpected_message_handler=UNEXPECTED_MESSAGE_HANDLER_TEMPLATE
         )
         handler_code += main_handler
         return handler_code
@@ -301,7 +299,6 @@ class HandlerScaffolder:
         with open(file, "w", encoding=DEFAULT_ENCODING) as f:
             yaml.safe_dump(skill_yaml, f, sort_keys=False)
 
-
     def move_and_update_my_model(self):
         """
         Reads in the my_model.py file and updates it.
@@ -314,13 +311,14 @@ class HandlerScaffolder:
             strategy_code = my_model_file.read_text(encoding=DEFAULT_ENCODING)
             strategy_code = strategy_code.replace("MyModel", "Strategy")
 
-            if self.confirm_action(f"Are you sure you want to remove the file '{my_model_file}' and create '{strategy_file}'?"):
+            if self.confirm_action(
+                f"Are you sure you want to remove the file '{my_model_file}' and create '{strategy_file}'?"
+            ):
                 my_model_file.unlink()
                 strategy_file.write_text(strategy_code, encoding=DEFAULT_ENCODING)
                 print(f"'{my_model_file}' removed and '{strategy_file}' created.")
             else:
                 print("Operation cancelled.")
-
 
     def remove_behaviours(self):
         """
@@ -345,6 +343,9 @@ class HandlerScaffolder:
             f.write(DIALOGUES_CODE)
 
     def fingerprint(self):
+        """
+        Fingerprint the skill
+        """
         skill_id = PublicId(self.author, self.output, "0.1.0")
         cli_executor = CommandExecutor(f"aea fingerprint skill {skill_id}".split())
         result = cli_executor.execute(verbose=True)
@@ -352,21 +353,24 @@ class HandlerScaffolder:
             raise ValueError(f"Fingerprinting failed: {skill_id}")
 
     def aea_install(self):
+        """
+        Install the aea
+        """
         install_cmd = ["aea", "install"]
-        # breakpoint()
         if not CommandExecutor(install_cmd).execute(verbose=self.verbose):
             raise ValueError(f"Failed to execute {install_cmd}.")
 
     def add_protocol(self):
+        """
+        Add the protocol"""
         protocol_cmd = f"aea add protocol {HTTP_PROTOCOL}".split(" ")
         if not CommandExecutor(protocol_cmd).execute(verbose=self.verbose):
             raise ValueError(f"Failed to add {HTTP_PROTOCOL}.")
 
-    
     def confirm_action(self, message):
         """Prompt the user for confirmation before performing an action."""
         if self.auto_confirm:
             self.logger.info(f"Auto confirming: {message}")
             return True
         response = input(f"{message} (y/n): ").lower().strip()
-        return response == 'y' or response == 'yes'
+        return response in ('y', 'yes')

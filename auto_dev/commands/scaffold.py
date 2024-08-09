@@ -175,9 +175,7 @@ def connection(  # pylint: disable=R0914
 @scaffold.command()
 @click.argument("spec_file", type=click.Path(exists=True), required=True)
 @click.argument("public_id", type=PublicId.from_str, required=True)
-# @click.option("--author", default="eightballer", help="Author of the skill")
-# @click.option("--output", default="my_api_skill", help="Name of API skill")
-@click.option("--new-skill", is_flag=True, default=False, help="Create a new skill, otherwise augment the existing skill")
+@click.option("--new-skill", is_flag=True, default=False, help="Create a new skill")
 @click.option("--auto-confirm", is_flag=True, default=False, help="Auto confirm all actions")
 @click.pass_context
 def handler(ctx, spec_file, public_id, new_skill, auto_confirm):
@@ -186,25 +184,17 @@ def handler(ctx, spec_file, public_id, new_skill, auto_confirm):
     logger = ctx.obj["LOGGER"]
     verbose = ctx.obj["VERBOSE"]
 
-    # sanitized_output = output.replace("-", "_").replace(" ", "_")
-
     if not Path(DEFAULT_AEA_CONFIG_FILE).exists():
         raise ValueError(f"No {DEFAULT_AEA_CONFIG_FILE} found in current directory")
 
     scaffolder = HandlerScaffolder(
-        spec_file,
-        public_id,
-        # sanitized_output,
-        logger=logger,
-        verbose=verbose,
-        new_skill=new_skill,
-        auto_confirm=auto_confirm
-        )
+        spec_file, public_id, logger=logger, verbose=verbose, new_skill=new_skill, auto_confirm=auto_confirm
+    )
     if auto_confirm:
         scaffolder.confirm_action = lambda _: True
     if new_skill:
         scaffolder.create_new_skill()
-    
+
     handler_code = scaffolder.generate()
     if handler_code is None:
         logger.error("Handler generation failed. Exiting.")
@@ -220,11 +210,9 @@ def handler(ctx, spec_file, public_id, new_skill, auto_confirm):
         scaffolder.remove_behaviours()
         scaffolder.create_dialogues()
 
-    # breakpoint()
     scaffolder.fingerprint()
     scaffolder.aea_install()
     scaffolder.add_protocol()
-    # breakpoint()
 
     return 0
 
