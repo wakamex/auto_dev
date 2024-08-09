@@ -1,19 +1,17 @@
 """Tests for the scaffold command"""
 
-import os
 import subprocess
 import sys
 from pathlib import Path
-from unittest.mock import patch, MagicMock
 
 import pytest
 import yaml
 from aea.cli import cli as aea_cli
+from aea.configurations.base import PublicId
 
 from auto_dev.cli import cli
 from auto_dev.constants import DEFAULT_ENCODING
 from auto_dev.protocols.scaffolder import read_protocol
-from auto_dev.handler.scaffolder import HandlerScaffolder
 
 FSM_SPEC = Path("auto_dev/data/fsm/fsm_specification.yaml").absolute()
 
@@ -84,13 +82,13 @@ def test_scaffold_protocol(cli_runner, dummy_agent_tim, caplog):
 def test_scaffold_handler(cli_runner, dummy_agent_tim, openapi_test_case):
     """Test scaffold handler"""
     openapi_file, expected_handlers = openapi_test_case
-    openapi_spec_path, sanitized_output = prepare_scaffold_inputs(openapi_file, dummy_agent_tim)
+    openapi_spec_path, public_id = prepare_scaffold_inputs(openapi_file, dummy_agent_tim)
 
-    runner = run_scaffold_command(cli_runner, openapi_spec_path, sanitized_output, auto_confirm=True)
-    
+    runner = run_scaffold_command(cli_runner, openapi_spec_path, public_id, new_skill=True, auto_confirm=True)
+
     assert runner.return_code == 0, runner.output
 
-    skill_path = Path(dummy_agent_tim) / "skills" / sanitized_output
+    skill_path = Path(dummy_agent_tim) / "skills" / public_id.name
     verify_scaffolded_files(skill_path)
     verify_handlers_content(skill_path, expected_handlers)
     verify_dynamic_handlers(openapi_spec_path, expected_handlers, openapi_file)
@@ -101,16 +99,19 @@ def prepare_scaffold_inputs(openapi_file, dummy_agent_tim):
     """Prepare inputs for scaffold command"""
     assert Path.cwd() == Path(dummy_agent_tim)
     openapi_spec_path = f"../tests/data/openapi_examples/{openapi_file}"
-    output = f"skill_{openapi_file.replace('.yaml', '').replace('.yml', '')}"
-    sanitized_output = output.replace("-", "_").replace(" ", "_")
-    return openapi_spec_path, sanitized_output
+    skill_name = f"skill_{openapi_file.replace('.yaml', '').replace('.yml', '')}"
+    sanitized_skill_name = skill_name.replace("-", "_").replace(" ", "_")
+    public_id = PublicId("dummy_author", sanitized_skill_name, "0.1.0")
+    return openapi_spec_path, public_id
 
 
-def run_scaffold_command(cli_runner, openapi_spec_path, sanitized_output, auto_confirm):
+def run_scaffold_command(cli_runner, openapi_spec_path, public_id, new_skill, auto_confirm):
     """Run scaffold command"""
-    command = ["adev", "scaffold", "handler", str(openapi_spec_path), "--output", str(sanitized_output)]
+    command = ["adev", "scaffold", "handler", str(openapi_spec_path), str(public_id)]
     if auto_confirm:
         command.append("--auto-confirm")
+    if new_skill:
+        command.append("--new-skill")
     runner = cli_runner(command)
     runner.execute()
     return runner
