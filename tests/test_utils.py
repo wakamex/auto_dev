@@ -12,7 +12,7 @@ import pytest
 import rich_click as click
 import yaml
 
-from auto_dev.constants import DEFAULT_ENCODING
+from auto_dev.constants import DEFAULT_ENCODING, FileType
 from auto_dev.utils import (
     folder_swapper,
     get_logger,
@@ -233,7 +233,7 @@ def test_write_to_file_text(temp_dir):
     """Test write_to_file writes a text file."""
     file_path = temp_dir / "test.txt"
     content = "Hello, world!"
-    write_to_file(str(file_path), content, "text")
+    write_to_file(str(file_path), content, FileType.TEXT)
 
     assert file_path.exists()
     with open(file_path, "r", encoding=DEFAULT_ENCODING) as f:
@@ -244,7 +244,7 @@ def test_write_to_file_yaml(temp_dir):
     """Test write_to_file writes a YAML file."""
     file_path = temp_dir / "test.yaml"
     content = {"key": "value", "list": [1, 2, 3]}
-    write_to_file(str(file_path), content, "yaml")
+    write_to_file(str(file_path), content, FileType.YAML)
 
     assert file_path.exists()
     with open(file_path, "r", encoding=DEFAULT_ENCODING) as f:
@@ -255,7 +255,7 @@ def test_write_to_file_json(temp_dir):
     """Test write_to_file writes a JSON file."""
     file_path = temp_dir / "test.json"
     content = {"key": "value", "list": [1, 2, 3]}
-    write_to_file(str(file_path), content, "json")
+    write_to_file(str(file_path), content, FileType.JSON)
 
     assert file_path.exists()
     with open(file_path, "r", encoding=DEFAULT_ENCODING) as f:
@@ -267,8 +267,10 @@ def test_write_to_file_invalid_type(temp_dir):
     file_path = temp_dir / "test.invalid"
     content = "Some content"
 
-    with pytest.raises(ValueError, match="Invalid file_type: invalid"):
-        write_to_file(str(file_path), content, "invalid")
+    invalid_file_type = "INVALID"
+
+    with pytest.raises(ValueError, match="Invalid file_type"):
+        write_to_file(str(file_path), content, invalid_file_type)
 
 
 def test_write_to_file_exception(temp_dir):
@@ -277,4 +279,4 @@ def test_write_to_file_exception(temp_dir):
     content = "Some content"
 
     with pytest.raises(ValueError, match="Error writing to file"):
-        write_to_file(str(file_path), content, "text")
+        write_to_file(str(file_path), content, FileType.TEXT)

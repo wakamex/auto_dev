@@ -37,7 +37,7 @@ import rich_click as click
 import yaml
 
 from auto_dev.base import build_cli
-from auto_dev.constants import DEFAULT_ENCODING
+from auto_dev.constants import DEFAULT_ENCODING, FileType
 from auto_dev.utils import write_to_file
 
 PARENT = Path("repo_1")
@@ -59,7 +59,7 @@ def write_package_json(repo: Path, package_dict: Dict[str, Dict[str, str]]) -> N
     We write the package json.
     """
     package_json = repo / "packages" / "packages.json"
-    write_to_file(str(package_json), package_dict, file_type="json")
+    write_to_file(str(package_json), package_dict, FileType.JSON)
 
 
 def get_package_hashes(repo: Path) -> Dict[str, str]:

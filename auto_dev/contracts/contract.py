@@ -8,7 +8,7 @@ from typing import List, Optional
 import yaml
 from web3 import Web3
 
-from auto_dev.constants import DEFAULT_ENCODING
+from auto_dev.constants import DEFAULT_ENCODING, FileType
 from auto_dev.contracts.contract_functions import ContractFunction, FunctionType
 from auto_dev.contracts.function import Function
 from auto_dev.utils import snake_to_camel, write_to_file
@@ -73,7 +73,7 @@ class Contract:
             "deployedBytecode": "",
             "deployedLinkReferences": "",
         }
-        write_to_file(str(build_path), output, file_type="json")
+        write_to_file(str(build_path), output, FileType.JSON)
 
     def update_contract_yaml(self):
         """
@@ -86,7 +86,7 @@ class Contract:
             contract_yaml = yaml.safe_load(file_pointer)
         contract_yaml["contract_interface_paths"]["ethereum"] = f"build/{self.name}.json"
         contract_yaml["class_name"] = snake_to_camel(self.name)
-        write_to_file(str(contract_yaml_path), contract_yaml, file_type="yaml")
+        write_to_file(str(contract_yaml_path), contract_yaml, FileType.YAML)
 
     def update_contract_py(self):
         """
@@ -117,7 +117,7 @@ class Contract:
         write_functions = "\n".join([function.to_string() for function in self.write_functions])
         contract_py += read_functions + write_functions
 
-        write_to_file(str(contract_py_path), contract_py, file_type="text")
+        write_to_file(str(contract_py_path), contract_py, FileType.TEXT)
 
     def update_contract_init__(self):
         """
@@ -126,7 +126,7 @@ class Contract:
         init_py_path = self.path / "__init__.py"
         public_id = f"PublicId.from_str('{self.author}/{self.name}:0.1.0')"
         content = f"\nfrom aea.configurations.base import PublicId\n\nPUBLIC_ID = {public_id}\n"
-        write_to_file(str(init_py_path), content, file_type="text")
+        write_to_file(str(init_py_path), content, FileType.TEXT)
 
     def update_all(self):
         """
