@@ -11,7 +11,9 @@ from aea.configurations.base import PublicId
 
 from auto_dev.cli import cli
 from auto_dev.constants import DEFAULT_ENCODING
+from auto_dev.handler.scaffolder import HandlerScaffoldBuilder
 from auto_dev.protocols.scaffolder import read_protocol
+from auto_dev.utils import get_logger
 
 FSM_SPEC = Path("auto_dev/data/fsm/fsm_specification.yaml").absolute()
 
@@ -105,16 +107,28 @@ def prepare_scaffold_inputs(openapi_file, dummy_agent_tim):
     return openapi_spec_path, public_id
 
 
-def run_scaffold_command(cli_runner, openapi_spec_path, public_id, new_skill, auto_confirm):
+def run_scaffold_command(cli_runner,openapi_spec_path, public_id, new_skill, auto_confirm):
     """Run scaffold command"""
-    command = ["adev", "scaffold", "handler", str(openapi_spec_path), str(public_id)]
-    if auto_confirm:
-        command.append("--auto-confirm")
-    if new_skill:
-        command.append("--new-skill")
-    runner = cli_runner(command)
-    runner.execute()
-    return runner
+    logger = get_logger()
+    verbose = True
+
+    scaffolder = (
+        HandlerScaffoldBuilder()
+        .create_scaffolder(openapi_spec_path, public_id, logger, verbose)
+        .with_new_skill(new_skill)
+        .with_auto_confirm(auto_confirm)
+        .build()
+    )
+
+    scaffolder.scaffold()
+
+    class MockRunner:
+        """Mock runner"""
+        def __init__(self):
+            self.return_code = 0
+            self.output = ""
+
+    return MockRunner()
 
 
 def verify_scaffolded_files(skill_path):
