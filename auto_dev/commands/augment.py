@@ -10,7 +10,7 @@ import rich_click as click
 import yaml
 
 from auto_dev.base import build_cli
-from auto_dev.constants import DEFAULT_ENCODING
+from auto_dev.constants import DEFAULT_ENCODING, FileType
 from auto_dev.utils import get_logger, write_to_file
 
 logger = get_logger()
@@ -214,7 +214,7 @@ class LoggingScaffolder(BaseScaffolder):
             config = list(config)[0]
         logging_config = self.generate(handlers)
         self.aea_config[0].update(logging_config)
-        write_to_file(AEA_CONFIG, self.aea_config, file_type="yaml")
+        write_to_file(AEA_CONFIG, self.aea_config, FileType.YAML)
         self.load()
         return logging_config
 
@@ -259,7 +259,7 @@ class ConnectionScaffolder(BaseScaffolder):
             if config:
                 self.aea_config.append(config)
 
-        write_to_file(AEA_CONFIG, self.aea_config, file_type="yaml")
+        write_to_file(AEA_CONFIG, self.aea_config, FileType.YAML)
         self.load()
 
 

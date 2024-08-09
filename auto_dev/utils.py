@@ -20,7 +20,7 @@ from aea.cli.utils.context import Context
 from aea.configurations.base import AgentConfig
 from rich.logging import RichHandler
 
-from .constants import AUTONOMY_PACKAGES_FILE, DEFAULT_ENCODING
+from .constants import AUTONOMY_PACKAGES_FILE, DEFAULT_ENCODING, FileType
 
 
 def get_logger(name=__name__, log_level="INFO"):
@@ -258,22 +258,22 @@ def load_aea_ctx(func: Callable[[click.Context, ..., Any], Any]) -> Callable[[cl
     return wrapper
 
 
-def write_to_file(file_path: str, content: Any, file_type: str = "text") -> None:
+def write_to_file(file_path: str, content: Any, file_type: FileType = FileType.TEXT) -> None:
     """
     Write content to a file.
     """
     try:
         with open(file_path, "w", encoding=DEFAULT_ENCODING) as f:
-            if file_type == "text":
+            if file_type == FileType.TEXT:
                 f.write(content)
-            elif file_type == "yaml":
+            elif file_type == FileType.YAML:
                 if isinstance(content, list):
                     yaml.dump_all(content, f, default_flow_style=False, sort_keys=False)
                 else:
                     yaml.dump(content, f, default_flow_style=False, sort_keys=False)
-            elif file_type == "json":
+            elif file_type == FileType.JSON:
                 json.dump(content, f, separators=(',', ':'))
             else:
-                raise ValueError(f"Invalid file_type: {file_type}. Supported types are 'text', 'yaml', and 'json'.")
+                raise ValueError(f"Invalid file_type, must be one of {list(FileType)}.")
     except Exception as e:
         raise ValueError(f"Error writing to file {file_path}: {e}") from e
