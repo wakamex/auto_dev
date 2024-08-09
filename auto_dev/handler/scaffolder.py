@@ -1,8 +1,7 @@
 """Handler scaffolder."""
 
-import os
-
 import yaml
+from pathlib import Path
 
 from auto_dev.cli_executor import CommandExecutor
 from auto_dev.commands.metadata import read_yaml_file
@@ -190,7 +189,7 @@ class HandlerScaffolder:
     Handler Scaffolder
     """
 
-    def __init__(self, spec_file_path: str, author: str, sanitized_output: str, logger, verbose: bool = True):
+    def __init__(self, spec_file_path: str, author: str, sanitized_output: str, logger, verbose: bool = True, auto_confirm: bool = False):
         """Initialize HandlerScaffolder."""
 
         self.logger = logger or get_logger()
@@ -199,6 +198,7 @@ class HandlerScaffolder:
         self.output = sanitized_output
         self.spec_file_path = spec_file_path
         self.logger.info(f"Read OpenAPI specification: {spec_file_path}")
+        self.auto_confirm = auto_confirm
 
     def generate(self) -> None:
         """Generate handler."""
@@ -285,21 +285,34 @@ class HandlerScaffolder:
         Reads in the my_model.py file and updates it.
         We replace the name MyModel with the name Strategy.
         """
-        with open("my_model.py", "r", encoding=DEFAULT_ENCODING) as f:
-            strategy_code: str = f.read()
-        strategy_code = strategy_code.replace("MyModel", "Strategy")
+        my_model_file = Path("my_model.py")
+        strategy_file = Path("strategy.py")
 
-        os.remove("my_model.py")
+        if my_model_file.exists():
+            strategy_code = my_model_file.read_text(encoding=DEFAULT_ENCODING)
+            strategy_code = strategy_code.replace("MyModel", "Strategy")
 
-        strategy_file = "strategy.py"
-        with open(strategy_file, "w", encoding=DEFAULT_ENCODING) as f:
-            f.write(strategy_code)
+            if self.confirm_action(f"Are you sure you want to remove the file '{my_model_file}' and create '{strategy_file}'?"):
+                my_model_file.unlink()
+                strategy_file.write_text(strategy_code, encoding=DEFAULT_ENCODING)
+                print(f"'{my_model_file}' removed and '{strategy_file}' created.")
+            else:
+                print("Operation cancelled.")
+
 
     def remove_behaviours(self):
         """
-        Remove the behaviours
+        Remove the behaviours.py file.
         """
-        os.remove("behaviours.py")
+        behaviours_file = Path("behaviours.py")
+        if behaviours_file.exists():
+            if self.confirm_action(f"Are you sure you want to remove the file '{behaviours_file}'?"):
+                behaviours_file.unlink()
+                print(f"File '{behaviours_file}' removed.")
+            else:
+                print("Operation cancelled.")
+        else:
+            print(f"'{behaviours_file}' does not exist.")
 
     def create_dialogues(self):
         """
@@ -308,3 +321,11 @@ class HandlerScaffolder:
         dialogues_file = "dialogues.py"
         with open(dialogues_file, "w", encoding=DEFAULT_ENCODING) as f:
             f.write(DIALOGUES_CODE)
+    
+    def confirm_action(self, message):
+        """Prompt the user for confirmation before performing an action."""
+        if self.auto_confirm:
+            self.logger.info(f"Auto confirming: {message}")
+            return True
+        response = input(f"{message} (y/n): ").lower().strip()
+        return response == 'y' or response == 'yes'

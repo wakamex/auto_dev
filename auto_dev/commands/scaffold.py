@@ -176,8 +176,9 @@ def connection(  # pylint: disable=R0914
 @click.argument("spec_file", type=click.Path(exists=True))
 @click.option("--author", default="eightballer", help="Author of the skill")
 @click.option("--output", default="my_api_skill", help="Name of API skill")
+@click.option("--auto-confirm", is_flag=True, default=False, help="Auto confirm all actions")
 @click.pass_context
-def handler(ctx, spec_file, author, output):
+def handler(ctx, spec_file, author, output, auto_confirm):
     """Generate an AEA handler from an OpenAPI 3 specification."""
 
     logger = ctx.obj["LOGGER"]
@@ -185,7 +186,17 @@ def handler(ctx, spec_file, author, output):
 
     sanitized_output = output.replace("-", "_").replace(" ", "_")
 
-    scaffolder = HandlerScaffolder(spec_file, author, sanitized_output, logger=logger, verbose=verbose)
+    scaffolder = HandlerScaffolder(
+        spec_file,
+        author,
+        sanitized_output,
+        logger=logger,
+        verbose=verbose,
+        auto_confirm=auto_confirm
+        )
+    if auto_confirm:
+        scaffolder.confirm_action = lambda _: True
+    
     handler_code = scaffolder.generate()
 
     with change_dir(Path("skills") / sanitized_output):

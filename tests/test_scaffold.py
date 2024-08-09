@@ -4,6 +4,7 @@ import os
 import subprocess
 import sys
 from pathlib import Path
+from unittest.mock import patch, MagicMock
 
 import pytest
 import yaml
@@ -12,6 +13,7 @@ from aea.cli import cli as aea_cli
 from auto_dev.cli import cli
 from auto_dev.constants import DEFAULT_ENCODING
 from auto_dev.protocols.scaffolder import read_protocol
+from auto_dev.handler.scaffolder import HandlerScaffolder
 
 FSM_SPEC = Path("auto_dev/data/fsm/fsm_specification.yaml").absolute()
 
@@ -84,8 +86,9 @@ def test_scaffold_handler(cli_runner, dummy_agent_tim, openapi_test_case):
     openapi_file, expected_handlers = openapi_test_case
     openapi_spec_path, sanitized_output = prepare_scaffold_inputs(openapi_file, dummy_agent_tim)
 
-    result = run_scaffold_command(cli_runner, openapi_spec_path, sanitized_output)
-    assert result.exit_code == 0, result.output
+    runner = run_scaffold_command(cli_runner, openapi_spec_path, sanitized_output, auto_confirm=True)
+    
+    assert runner.return_code == 0, runner.output
 
     skill_path = Path(dummy_agent_tim) / "skills" / sanitized_output
     verify_scaffolded_files(skill_path)
@@ -103,10 +106,14 @@ def prepare_scaffold_inputs(openapi_file, dummy_agent_tim):
     return openapi_spec_path, sanitized_output
 
 
-def run_scaffold_command(cli_runner, openapi_spec_path, sanitized_output):
+def run_scaffold_command(cli_runner, openapi_spec_path, sanitized_output, auto_confirm):
     """Run scaffold command"""
-    command = ["scaffold", "handler", str(openapi_spec_path), "--output", str(sanitized_output)]
-    return cli_runner.invoke(cli, command)
+    command = ["adev", "scaffold", "handler", str(openapi_spec_path), "--output", str(sanitized_output)]
+    if auto_confirm:
+        command.append("--auto-confirm")
+    runner = cli_runner(command)
+    runner.execute()
+    return runner
 
 
 def verify_scaffolded_files(skill_path):
