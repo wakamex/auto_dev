@@ -224,6 +224,10 @@ class HandlerScaffolder:
 
     def scaffold(self):
         """Scaffold the handler."""
+
+        if not self.present_actions():
+            return
+
         if self.config.new_skill:
             self.create_new_skill()
 
@@ -408,6 +412,35 @@ class HandlerScaffolder:
             return True
         response = input(f"{message} (y/n): ").lower().strip()
         return response in ('y', 'yes')
+
+    def present_actions(self):
+        """Present the scaffold summary"""
+        actions = [
+            f"Generating handler based on OpenAPI spec: {self.config.spec_file_path}",
+            f"Saving handler to: skills/{self.config.output}/handlers.py",
+            f"Updating skill.yaml in skills/{self.config.output}/",
+            f"Moving and updating my_model.py to strategy.py in: skills/{self.config.output}/",
+            f"Removing behaviours.py in: skills/{self.config.output}/",
+            f"Creating dialogues.py in: skills/{self.config.output}/",
+            "Fingerprinting the skill",
+            "Running 'aea install'",
+            f"Adding HTTP protocol: {HTTP_PROTOCOL}",
+        ]
+
+        if self.config.new_skill:
+            actions.insert(0, f"Creating new skill: {self.config.output}")
+
+        self.logger.info("The following actions will be performed:")
+        for i, action in enumerate(actions, 1):
+            self.logger.info(f"{i}. {action}")
+
+        if not self.config.auto_confirm:
+            confirm = input("Do you want to proceed? (y/n): ").lower().strip()
+            if confirm not in ('y', 'yes'):
+                self.logger.info("Scaffolding cancelled.")
+                return False
+
+        return True
 
 
 class HandlerScaffoldBuilder:
