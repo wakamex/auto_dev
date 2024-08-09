@@ -173,28 +173,28 @@ def connection(  # pylint: disable=R0914
 
 
 @scaffold.command()
-@click.argument("spec_file", type=click.Path(exists=True))
-# @click.argument("public_id", type=PublicId.from_str, required=True)
-@click.option("--author", default="eightballer", help="Author of the skill")
-@click.option("--output", default="my_api_skill", help="Name of API skill")
+@click.argument("spec_file", type=click.Path(exists=True), required=True)
+@click.argument("public_id", type=PublicId.from_str, required=True)
+# @click.option("--author", default="eightballer", help="Author of the skill")
+# @click.option("--output", default="my_api_skill", help="Name of API skill")
 @click.option("--new-skill", is_flag=True, default=False, help="Create a new skill, otherwise augment the existing skill")
 @click.option("--auto-confirm", is_flag=True, default=False, help="Auto confirm all actions")
 @click.pass_context
-def handler(ctx, spec_file, author, output, new_skill,auto_confirm):
+def handler(ctx, spec_file, public_id, new_skill, auto_confirm):
     """Generate an AEA handler from an OpenAPI 3 specification."""
 
     logger = ctx.obj["LOGGER"]
     verbose = ctx.obj["VERBOSE"]
 
-    sanitized_output = output.replace("-", "_").replace(" ", "_")
+    # sanitized_output = output.replace("-", "_").replace(" ", "_")
 
     if not Path(DEFAULT_AEA_CONFIG_FILE).exists():
         raise ValueError(f"No {DEFAULT_AEA_CONFIG_FILE} found in current directory")
 
     scaffolder = HandlerScaffolder(
         spec_file,
-        author,
-        sanitized_output,
+        public_id,
+        # sanitized_output,
         logger=logger,
         verbose=verbose,
         new_skill=new_skill,
@@ -210,7 +210,7 @@ def handler(ctx, spec_file, author, output, new_skill,auto_confirm):
         logger.error("Handler generation failed. Exiting.")
         return 1
 
-    with change_dir(Path("skills") / sanitized_output):
+    with change_dir(Path("skills") / public_id.name):
         output_path = Path('handlers.py')
         scaffolder.save_handler(output_path, handler_code)
         skill_yaml_file = "skill.yaml"
@@ -220,9 +220,11 @@ def handler(ctx, spec_file, author, output, new_skill,auto_confirm):
         scaffolder.remove_behaviours()
         scaffolder.create_dialogues()
 
-    scaffolder.aea_install()
+    # breakpoint()
     scaffolder.fingerprint()
+    scaffolder.aea_install()
     scaffolder.add_protocol()
+    # breakpoint()
 
     return 0
 

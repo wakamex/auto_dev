@@ -191,13 +191,21 @@ class HandlerScaffolder:
     Handler Scaffolder
     """
 
-    def __init__(self, spec_file_path: str, author: str, sanitized_output: str, logger, verbose: bool = True, new_skill: bool = False, auto_confirm: bool = False):
+    def __init__(
+        self,
+        spec_file_path: str,
+        public_id,
+        logger,
+        verbose: bool = True,
+        new_skill: bool = False,
+        auto_confirm: bool = False
+        ):
         """Initialize HandlerScaffolder."""
 
         self.logger = logger or get_logger()
         self.verbose = verbose
-        self.author = author
-        self.output = sanitized_output
+        self.author = public_id.author
+        self.output = public_id.name
         self.spec_file_path = spec_file_path
         self.logger.info(f"Read OpenAPI specification: {spec_file_path}")
         self.auto_confirm = auto_confirm
@@ -214,10 +222,11 @@ class HandlerScaffolder:
     def generate(self) -> None:
         """Generate handler."""
 
-        skill_path = Path("skills") / self.output
-        if not skill_path.exists():
-            self.logger.warning(f"Skill '{self.output}' not found in the 'skills' directory. Exiting.")
-            return None
+        if not self.new_skill:
+            skill_path = Path("skills") / self.output
+            if not skill_path.exists():
+                self.logger.warning(f"Skill '{self.output}' not found in the 'skills' directory. Exiting.")
+                return None
 
         openapi_spec = read_yaml_file(self.spec_file_path)
         handler_methods = []
@@ -337,18 +346,19 @@ class HandlerScaffolder:
 
     def fingerprint(self):
         skill_id = PublicId(self.author, self.output, "0.1.0")
-        cli_executor = CommandExecutor(f"aea fingerprint skill {str(skill_id)}".split())
+        cli_executor = CommandExecutor(f"aea fingerprint skill {skill_id}".split())
         result = cli_executor.execute(verbose=True)
         if not result:
             raise ValueError(f"Fingerprinting failed: {skill_id}")
 
     def aea_install(self):
         install_cmd = ["aea", "install"]
+        # breakpoint()
         if not CommandExecutor(install_cmd).execute(verbose=self.verbose):
             raise ValueError(f"Failed to execute {install_cmd}.")
 
     def add_protocol(self):
-        protocol_cmd = ["aea", "add", "protocol", HTTP_PROTOCOL]
+        protocol_cmd = f"aea add protocol {HTTP_PROTOCOL}".split(" ")
         if not CommandExecutor(protocol_cmd).execute(verbose=self.verbose):
             raise ValueError(f"Failed to add {HTTP_PROTOCOL}.")
 
