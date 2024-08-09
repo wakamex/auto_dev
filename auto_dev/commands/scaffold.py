@@ -22,8 +22,8 @@ from auto_dev.connections.scaffolder import ConnectionScaffolder
 from auto_dev.constants import BASE_FSM_SKILLS, DEFAULT_ENCODING
 from auto_dev.contracts.block_explorer import BlockExplorer
 from auto_dev.contracts.contract_scafolder import ContractScaffolder
-from auto_dev.protocols.scaffolder import ProtocolScaffolder
 from auto_dev.handler.scaffolder import HandlerScaffoldBuilder
+from auto_dev.protocols.scaffolder import ProtocolScaffolder
 from auto_dev.utils import camel_to_snake, load_aea_ctx, remove_suffix
 
 cli = build_cli()
@@ -188,7 +188,7 @@ def handler(ctx, spec_file, public_id, new_skill, auto_confirm):
         raise ValueError(f"No {DEFAULT_AEA_CONFIG_FILE} found in current directory")
 
     scaffolder = (
-        HandlerScaffolderBuilder()
+        HandlerScaffoldBuilder()
         .create_scaffolder(spec_file, public_id, logger, verbose)
         .with_new_skill(new_skill)
         .with_auto_confirm(auto_confirm)

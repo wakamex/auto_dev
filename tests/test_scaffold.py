@@ -81,12 +81,14 @@ def test_scaffold_protocol(cli_runner, dummy_agent_tim, caplog):
     assert original_content in readme_path.read_text(encoding=DEFAULT_ENCODING)
 
 
-def test_scaffold_handler(cli_runner, dummy_agent_tim, openapi_test_case):
+def test_scaffold_handler(dummy_agent_tim, openapi_test_case):
     """Test scaffold handler"""
     openapi_file, expected_handlers = openapi_test_case
     openapi_spec_path, public_id = prepare_scaffold_inputs(openapi_file, dummy_agent_tim)
 
-    runner = run_scaffold_command(cli_runner, openapi_spec_path, public_id, new_skill=True, auto_confirm=True)
+    runner = run_scaffold_command(
+        openapi_spec_path=openapi_spec_path, public_id=public_id, new_skill=True, auto_confirm=True
+    )
 
     assert runner.return_code == 0, runner.output
 
@@ -107,7 +109,7 @@ def prepare_scaffold_inputs(openapi_file, dummy_agent_tim):
     return openapi_spec_path, public_id
 
 
-def run_scaffold_command(cli_runner,openapi_spec_path, public_id, new_skill, auto_confirm):
+def run_scaffold_command(openapi_spec_path, public_id, new_skill, auto_confirm):
     """Run scaffold command"""
     logger = get_logger()
     verbose = True
@@ -124,6 +126,7 @@ def run_scaffold_command(cli_runner,openapi_spec_path, public_id, new_skill, aut
 
     class MockRunner:
         """Mock runner"""
+
         def __init__(self):
             self.return_code = 0
             self.output = ""

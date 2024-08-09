@@ -186,6 +186,7 @@ MAIN_HANDLER_TEMPLATE = """
 {unexpected_message_handler}
 """
 
+
 class ScaffolderConfig:
     """Configuration for HandlerScaffolder."""
 
@@ -203,6 +204,7 @@ class ScaffolderConfig:
         self.verbose = verbose
         self.new_skill = new_skill
         self.auto_confirm = auto_confirm
+
 
 class HandlerScaffolder:
     """
@@ -257,7 +259,6 @@ class HandlerScaffolder:
             if not skill_path.exists():
                 self.logger.warning(f"Skill '{self.config.output}' not found in the 'skills' directory. Exiting.")
 
-
         openapi_spec = read_yaml_file(self.config.spec_file_path)
         handler_methods = []
 
@@ -284,7 +285,9 @@ class HandlerScaffolder:
 
         all_methods: str = "\n".join(handler_methods)
 
-        self.handler_code: str = HANDLER_HEADER_TEMPLATE.format(author=self.config.author, skill_name=self.config.output)
+        self.handler_code: str = HANDLER_HEADER_TEMPLATE.format(
+            author=self.config.author, skill_name=self.config.output
+        )
         main_handler: str = MAIN_HANDLER_TEMPLATE.format(
             all_methods=all_methods, unexpected_message_handler=UNEXPECTED_MESSAGE_HANDLER_TEMPLATE
         )
