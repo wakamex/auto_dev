@@ -3,12 +3,14 @@
 import yaml
 from pathlib import Path
 
+from aea.configurations.base import PublicId
+
 from auto_dev.cli_executor import CommandExecutor
 from auto_dev.commands.metadata import read_yaml_file
 from auto_dev.constants import DEFAULT_ENCODING
 from auto_dev.utils import get_logger
 
-HTTP_PROTOCOL = "eightballer/http:0.1.0:bafybeia2yjjpa57ihbfru54lvq3rru5vtaomyor3fn4zz4ziiaum5yywje"
+HTTP_PROTOCOL = "eightballer/http:0.1.0:bafybeihmhy6ax5uyjt7yxppn4viqswibcs5lsjhl3kvrsesorqe2u44jcm"
 
 HANDLER_HEADER_TEMPLATE = """
 # -*- coding: utf-8 -*-
@@ -37,7 +39,7 @@ from typing import Optional, cast
 from aea.protocols.base import Message
 from aea.skills.base import Handler
 
-from packages.{author}.protocols.http.message import HttpMessage
+from packages.eightballer.protocols.http.message import HttpMessage
 from packages.{author}.skills.{skill_name}.dialogues import HttpDialogue
 from packages.{author}.skills.{skill_name}.strategy import Strategy
 
@@ -189,7 +191,7 @@ class HandlerScaffolder:
     Handler Scaffolder
     """
 
-    def __init__(self, spec_file_path: str, author: str, sanitized_output: str, logger, verbose: bool = True, auto_confirm: bool = False):
+    def __init__(self, spec_file_path: str, author: str, sanitized_output: str, logger, verbose: bool = True, new_skill: bool = False, auto_confirm: bool = False):
         """Initialize HandlerScaffolder."""
 
         self.logger = logger or get_logger()
@@ -199,13 +201,23 @@ class HandlerScaffolder:
         self.spec_file_path = spec_file_path
         self.logger.info(f"Read OpenAPI specification: {spec_file_path}")
         self.auto_confirm = auto_confirm
+        self.new_skill = new_skill
+
+    def create_new_skill(self):
+        """
+        Create a new skill
+        """
+        skill_cmd = f"aea scaffold skill {self.output}".split(" ")
+        if not CommandExecutor(skill_cmd).execute(verbose=self.verbose):
+            raise ValueError("Failed to scaffold skill.")
 
     def generate(self) -> None:
         """Generate handler."""
 
-        skill_cmd = f"aea scaffold skill {self.output}".split(" ")
-        if not CommandExecutor(skill_cmd).execute(verbose=self.verbose):
-            raise ValueError("Failed to scaffold skill.")
+        skill_path = Path("skills") / self.output
+        if not skill_path.exists():
+            self.logger.warning(f"Skill '{self.output}' not found in the 'skills' directory. Exiting.")
+            return None
 
         openapi_spec = read_yaml_file(self.spec_file_path)
         handler_methods = []
@@ -234,7 +246,7 @@ class HandlerScaffolder:
         all_methods: str = "\n".join(handler_methods)
 
         handler_code: str = HANDLER_HEADER_TEMPLATE.format(
-            author=self.author, skill_name=openapi_spec["info"]["title"].replace(" ", "_")
+            author=self.author, skill_name=self.output
         )
         main_handler: str = MAIN_HANDLER_TEMPLATE.format(
             all_methods=all_methods,
@@ -280,6 +292,7 @@ class HandlerScaffolder:
         with open(file, "w", encoding=DEFAULT_ENCODING) as f:
             yaml.safe_dump(skill_yaml, f, sort_keys=False)
 
+
     def move_and_update_my_model(self):
         """
         Reads in the my_model.py file and updates it.
@@ -321,6 +334,24 @@ class HandlerScaffolder:
         dialogues_file = "dialogues.py"
         with open(dialogues_file, "w", encoding=DEFAULT_ENCODING) as f:
             f.write(DIALOGUES_CODE)
+
+    def fingerprint(self):
+        skill_id = PublicId(self.author, self.output, "0.1.0")
+        cli_executor = CommandExecutor(f"aea fingerprint skill {str(skill_id)}".split())
+        result = cli_executor.execute(verbose=True)
+        if not result:
+            raise ValueError(f"Fingerprinting failed: {skill_id}")
+
+    def aea_install(self):
+        install_cmd = ["aea", "install"]
+        if not CommandExecutor(install_cmd).execute(verbose=self.verbose):
+            raise ValueError(f"Failed to execute {install_cmd}.")
+
+    def add_protocol(self):
+        protocol_cmd = ["aea", "add", "protocol", HTTP_PROTOCOL]
+        if not CommandExecutor(protocol_cmd).execute(verbose=self.verbose):
+            raise ValueError(f"Failed to add {HTTP_PROTOCOL}.")
+
     
     def confirm_action(self, message):
         """Prompt the user for confirmation before performing an action."""

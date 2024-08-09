@@ -174,11 +174,13 @@ def connection(  # pylint: disable=R0914
 
 @scaffold.command()
 @click.argument("spec_file", type=click.Path(exists=True))
+# @click.argument("public_id", type=PublicId.from_str, required=True)
 @click.option("--author", default="eightballer", help="Author of the skill")
 @click.option("--output", default="my_api_skill", help="Name of API skill")
+@click.option("--new-skill", is_flag=True, default=False, help="Create a new skill, otherwise augment the existing skill")
 @click.option("--auto-confirm", is_flag=True, default=False, help="Auto confirm all actions")
 @click.pass_context
-def handler(ctx, spec_file, author, output, auto_confirm):
+def handler(ctx, spec_file, author, output, new_skill,auto_confirm):
     """Generate an AEA handler from an OpenAPI 3 specification."""
 
     logger = ctx.obj["LOGGER"]
@@ -186,18 +188,27 @@ def handler(ctx, spec_file, author, output, auto_confirm):
 
     sanitized_output = output.replace("-", "_").replace(" ", "_")
 
+    if not Path(DEFAULT_AEA_CONFIG_FILE).exists():
+        raise ValueError(f"No {DEFAULT_AEA_CONFIG_FILE} found in current directory")
+
     scaffolder = HandlerScaffolder(
         spec_file,
         author,
         sanitized_output,
         logger=logger,
         verbose=verbose,
+        new_skill=new_skill,
         auto_confirm=auto_confirm
         )
     if auto_confirm:
         scaffolder.confirm_action = lambda _: True
+    if new_skill:
+        scaffolder.create_new_skill()
     
     handler_code = scaffolder.generate()
+    if handler_code is None:
+        logger.error("Handler generation failed. Exiting.")
+        return 1
 
     with change_dir(Path("skills") / sanitized_output):
         output_path = Path('handlers.py')
@@ -208,6 +219,10 @@ def handler(ctx, spec_file, author, output, auto_confirm):
         scaffolder.move_and_update_my_model()
         scaffolder.remove_behaviours()
         scaffolder.create_dialogues()
+
+    scaffolder.aea_install()
+    scaffolder.fingerprint()
+    scaffolder.add_protocol()
 
     return 0
 
