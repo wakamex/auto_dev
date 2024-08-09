@@ -10,12 +10,15 @@ def test_path(
     path: str,
     verbose: bool = False,
     watch: bool = False,
+    multiple: bool = False,
 ) -> bool:
     """
     Check the path for linting errors.
     :param path: The path to check
     """
-    available_cores = cpu_count()
+    extra_args = []
+    if multiple:
+        extra_args = ["-n", str(cpu_count())]
     command = CommandExecutor(
         [
             "poetry",
@@ -23,10 +26,9 @@ def test_path(
             "pytest",
             str(path),
             "-vv",
-            "-n",
-            str(available_cores),
         ]
-        + (["-ff"] if watch else [])
+        + (["-w"] if watch else [])
+        + extra_args
     )
     result = command.execute(verbose=verbose, stream=True)
     return result
