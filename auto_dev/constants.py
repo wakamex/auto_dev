@@ -3,6 +3,7 @@ Constants for the auto_dev package.
 """
 
 import os
+from enum import Enum
 from pathlib import Path
 
 from aea.cli.utils.config import get_or_create_cli_config
@@ -91,3 +92,11 @@ BASE_FSM_SKILLS = {
     "reset_pause_abci": "bafybeibqz7y3i4aepuprhijwdydkcsbqjtpeea6gdzpp5fgc6abrvjz25a",
     "termination_abci": "bafybeieb3gnvjxxsh73g67m7rivzknwb63xu4qeagpkv7f4mqz33ecikem",
 }
+
+
+class FileType(Enum):
+    """File type enum."""
+
+    TEXT = "text"
+    YAML = "yaml"
+    JSON = "json"
