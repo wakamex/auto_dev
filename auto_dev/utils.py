@@ -32,9 +32,7 @@ def get_logger(name=__name__, log_level="INFO"):
     )
     # We set the time to just the 24 hours minutes and seconds
     datefmt = "%H:%M:%S"
-    logging.basicConfig(level="NOTSET",
-                        datefmt=datefmt,
-                        handlers=[handler])
+    logging.basicConfig(level="NOTSET", datefmt=datefmt, handlers=[handler])
 
     log = logging.getLogger(name)
     log.setLevel(log_level)
