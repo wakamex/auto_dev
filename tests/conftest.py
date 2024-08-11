@@ -12,6 +12,43 @@ from auto_dev.cli_executor import CommandExecutor
 from auto_dev.constants import AUTONOMY_PACKAGES_FILE, DEFAULT_ENCODING, SAMPLE_PACKAGE_FILE, SAMPLE_PACKAGES_JSON
 from auto_dev.utils import isolated_filesystem
 
+OPENAPI_TEST_CASES = [
+    ("uspto.yaml", ["handle_get_", "handle_get_dataset_version_fields", "handle_post_dataset_version_records"]),
+    ("petstore.yaml", ["handle_get_pets", "handle_post_pets", "handle_get_pets_petId"]),
+    ("petstore-expanded.yaml", ["handle_get_pets", "handle_post_pets", "handle_get_pets_id", "handle_delete_pets_id"]),
+    ("dummy_openapi.yaml", ["handle_get_users", "handle_post_users", "handle_get_users_userId"]),
+    (
+        "innovation_station.yaml",
+        [
+            "handle_get_protocol",
+            "handle_post_protocol",
+            "handle_get_protocol_id",
+            "handle_get_connection",
+            "handle_post_connection",
+            "handle_get_connection_id",
+            "handle_get_contract",
+            "handle_post_contract",
+            "handle_get_contract_id",
+            "handle_get_skill",
+            "handle_post_skill",
+            "handle_get_skill_id",
+            "handle_get_agent",
+            "handle_post_agent",
+            "handle_get_agent_id",
+            "handle_get_service",
+            "handle_post_service",
+            "handle_get_service_id",
+            "handle_post_generate",
+        ],
+    ),
+]
+
+
+@pytest.fixture(params=OPENAPI_TEST_CASES)
+def openapi_test_case(request):
+    """Fixture for openapi test cases"""
+    return request.param
+
 
 @pytest.fixture
 def test_filesystem():
