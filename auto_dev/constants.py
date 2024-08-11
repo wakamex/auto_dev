@@ -93,7 +93,6 @@ BASE_FSM_SKILLS = {
     "termination_abci": "bafybeieb3gnvjxxsh73g67m7rivzknwb63xu4qeagpkv7f4mqz33ecikem",
 }
 
-
 class FileType(Enum):
     """File type enum."""
 
