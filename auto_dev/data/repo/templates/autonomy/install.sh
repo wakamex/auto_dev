@@ -142,11 +142,22 @@ function install_poetry_deps() {
 }
 # Main execution
 
-
+ 
 function set_env_file () {
     if [ ! -f ".env" ]; then
         echo "Setting up .env file"
         cp .env.template .env
+    fi
+}
+
+function setup_autonomy_packages() {
+    # We check if there is a packages directory
+    if [ -d "packages" ]; then
+        poetry run autonomy packages sync
+        echo "Packages directory exists"
+    else
+        echo "Creating packages directory"
+        poetry run autonomy packages init
     fi
 }
 
@@ -164,10 +175,11 @@ main() {
 
     echo "Installation completed successfully!"
     echo 'Initializing the author and remote for aea'
-    poetry run aea init --remote --author ci > /dev/null || exit 1
+    poetry run aea init --remote > /dev/null || poetry run aea init --remote --author 'ci' > /dev/null
     echo 'Done initializing the author and remote for aea'
     echo 'Setting up the .env file from .env.example'
     set_env_file
+    setup_autonomy_packages
     echo '🎉You are ready to BUILD!🚀'
 }
 
