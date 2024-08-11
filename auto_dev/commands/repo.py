@@ -18,6 +18,7 @@ from typing import List
 import rich_click as click
 from aea.cli.utils.config import get_default_author_from_cli_config
 from rich.progress import Progress, track
+from rich import print
 
 from auto_dev.base import build_cli
 from auto_dev.cli_executor import CommandExecutor
@@ -296,6 +297,7 @@ def update_deps(ctx, lock: bool):
     with Progress() as progress:
         task = progress.add_task("[cyan]Executing commands dependencies...", total=len(commands))
         for command in commands:
+            print(f"Executing command:\n\n    `{command}`\n")
             cli_executor = CommandExecutor(command.split(" "))
             result = cli_executor.execute(stream=False, verbose=verbose)
             if not result:
