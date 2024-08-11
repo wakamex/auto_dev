@@ -100,3 +100,11 @@ class FileType(Enum):
     TEXT = "text"
     YAML = "yaml"
     JSON = "json"
+
+
+class CheckResult(Enum):
+    """Check result enum."""
+
+    PASS = "PASS"
+    FAIL = "FAIL"
+    MODIFIED = "MODIFIED"
