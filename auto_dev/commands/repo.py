@@ -15,10 +15,17 @@ from pathlib import Path
 
 import rich_click as click
 from aea.cli.utils.config import get_default_author_from_cli_config
+from rich.progress import track
 
 from auto_dev.base import build_cli
 from auto_dev.cli_executor import CommandExecutor
-from auto_dev.constants import DEFAULT_ENCODING, SAMPLE_PYTHON_CLI_FILE, SAMPLE_PYTHON_MAIN_FILE, TEMPLATE_FOLDER
+from auto_dev.constants import (
+    DEFAULT_ENCODING,
+    SAMPLE_PYTHON_CLI_FILE,
+    SAMPLE_PYTHON_MAIN_FILE,
+    TEMPLATE_FOLDER,
+    CheckResult,
+)
 from auto_dev.utils import change_dir
 
 
@@ -99,7 +106,10 @@ class RepoScaffolder:
 
         template_folder = TEMPLATES[self.type_of_repo]
         results = []
-        for file in self.template_files:
+        self.logger.info(f"Verifying scaffolded files for {self.type_of_repo} repo.")
+        self.logger.info(f"Total number of files to verify: {len(self.template_files)}")
+
+        for file in track(self.template_files):
             rel_path = file.relative_to(template_folder)
             content = file.read_text(encoding=DEFAULT_ENCODING)
 
@@ -108,10 +118,14 @@ class RepoScaffolder:
                 target_file_path = rel_path.with_suffix("")
             else:
                 target_file_path = rel_path
-            self.logger.info(f"Scaffolding `{str(target_file_path)}`")
-            actual_content = Path(target_file_path).read_text(encoding=DEFAULT_ENCODING)
+            self.logger.debug(f"Scaffolding `{str(target_file_path)}`")
+            actual_file = Path(target_file_path)
+            actual_content = ""
+            if actual_file.exists():
+                actual_content = actual_file.read_text(encoding=DEFAULT_ENCODING)
             if content == actual_content:
-                results.append(True)
+                results.append(CheckResult.PASS)
+
                 self.logger.debug(f"File {target_file_path} is as expected. ✅")
             else:
                 self.logger.error(f"File {target_file_path} is not as expected. ❌")
@@ -120,12 +134,14 @@ class RepoScaffolder:
                     print(diff)
 
                 if fix_differences:
-                    if click.confirm("Do you want to fix the differences?"):
+                    if click.confirm("Do you want to fix the differences(y/n)?\n"):
                         self.logger.info(f"Fixing differences in {target_file_path}")
                         Path(target_file_path).write_text(content, encoding=DEFAULT_ENCODING)
-                        results.append(True)
+                        results.append(CheckResult.MODIFIED)
+                    else:
+                        results.append(CheckResult.FAIL)
                 else:
-                    results.append(False)
+                    results.append(CheckResult.FAIL)
         return results
 
 
