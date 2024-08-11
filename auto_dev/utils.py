@@ -23,19 +23,30 @@ from rich.logging import RichHandler
 from .constants import AUTONOMY_PACKAGES_FILE, DEFAULT_ENCODING, FileType
 
 
-def get_logger(name=__name__, log_level="INFO"):
-    """Get the logger."""
-    # We use the fancy rich logging handler and the fancy formatter
+def get_logger(name: str = __name__, log_level: str = "INFO") -> logging.Logger:
+    """
+    Get the configured logger.
+
+    Args:
+        name (str): The name of the logger.
+        log_level (str): The logging level.
+
+    Returns:
+        logging.Logger: Configured logger instance.
+    """
     handler = RichHandler(
         rich_tracebacks=True,
         markup=True,
     )
-    # We set the time to just the 24 hours minutes and seconds
     datefmt = "%H:%M:%S"
-    logging.basicConfig(level="NOTSET", datefmt=datefmt, handlers=[handler])
-
+    logging.basicConfig(
+        level=getattr(logging, log_level.upper(), "INFO"),
+        datefmt=datefmt,
+        format="%(levelname)s - %(message)s",
+        handlers=[handler],
+    )
     log = logging.getLogger(name)
-    log.setLevel(log_level)
+    log.setLevel(getattr(logging, log_level.upper(), "INFO"))
     return log
 
 

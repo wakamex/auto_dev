@@ -22,7 +22,7 @@ class BaseTestRepo:
     @property
     def cli_args(self):
         """CLI arguments"""
-        return ["adev", "repo", self.repo_name, "-t", self.type_of_repo]
+        return ["adev", "repo", "scaffold", self.repo_name, "-t", self.type_of_repo]
 
     @property
     def parent_dir(self):
