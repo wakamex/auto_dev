@@ -150,17 +150,6 @@ function set_env_file () {
     fi
 }
 
-function setup_autonomy_packages() {
-    # We check if there is a packages directory
-    if [ -d "packages" ]; then
-        poetry run autonomy packages sync
-        echo "Packages directory exists"
-    else
-        echo "Creating packages directory"
-        poetry run autonomy packages init
-    fi
-}
-
 
 main() {
     install_tool "protoc" || exit 1
@@ -179,7 +168,6 @@ main() {
     echo 'Done initializing the author and remote for aea'
     echo 'Setting up the .env file from .env.example'
     set_env_file
-    setup_autonomy_packages
     echo '🎉You are ready to BUILD!🚀'
 }
 
