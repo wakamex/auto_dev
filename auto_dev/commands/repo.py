@@ -9,6 +9,7 @@ contains the following commands;
         . pyproject.toml
 """
 
+import difflib
 import sys
 from pathlib import Path
 
@@ -49,21 +50,34 @@ TEMPLATES = {f.name: f for f in Path(TEMPLATE_FOLDER).glob("*")}
 class RepoScaffolder:
     """Class to scaffold a new repo."""
 
-    def __init__(self, type_of_repo, logger, verbose):
+    def __init__(self, type_of_repo, logger, verbose, render_overrides=None):
         self.type_of_repo = type_of_repo
         self.logger = logger
         self.verbose = verbose
         self.scaffold_kwargs = render_args
+        if render_overrides:
+            self.scaffold_kwargs.update(render_overrides)
 
-    def scaffold(self):
+    @property
+    def template_files(self):
+        """Get template files."""
+        all_files = TEMPLATES[self.type_of_repo].rglob("*")
+        results = []
+        for file in all_files:
+            if not file.is_file() or "__pycache__" in file.parts:
+                continue
+            results.append(file)
+        return results
+
+    def scaffold(
+        self,
+        write_files=True,
+    ):
         """Scaffold files for a new repo."""
 
         new_repo_dir = Path.cwd()
         template_folder = TEMPLATES[self.type_of_repo]
-        for file in template_folder.rglob("*"):
-            if not file.is_file() or "__pycache__" in file.parts:
-                continue
-
+        for file in self.template_files:
             rel_path = file.relative_to(template_folder)
             content = file.read_text(encoding=DEFAULT_ENCODING)
 
@@ -73,8 +87,46 @@ class RepoScaffolder:
             else:
                 target_file_path = new_repo_dir / rel_path
             self.logger.info(f"Scaffolding `{str(target_file_path)}`")
-            target_file_path.parent.mkdir(parents=True, exist_ok=True)
-            target_file_path.write_text(content)
+            if write_files:
+                target_file_path.parent.mkdir(parents=True, exist_ok=True)
+                target_file_path.write_text(content)
+
+    def verify(
+        self,
+        fix_differences=False,
+    ):
+        """Scaffold files for a new repo."""
+
+        template_folder = TEMPLATES[self.type_of_repo]
+        results = []
+        for file in self.template_files:
+            rel_path = file.relative_to(template_folder)
+            content = file.read_text(encoding=DEFAULT_ENCODING)
+
+            if file.suffix == ".template":
+                content = content.format(**self.scaffold_kwargs)
+                target_file_path = rel_path.with_suffix("")
+            else:
+                target_file_path = rel_path
+            self.logger.info(f"Scaffolding `{str(target_file_path)}`")
+            actual_content = Path(target_file_path).read_text(encoding=DEFAULT_ENCODING)
+            if content == actual_content:
+                results.append(True)
+                self.logger.debug(f"File {target_file_path} is as expected. ✅")
+            else:
+                self.logger.error(f"File {target_file_path} is not as expected. ❌")
+                diffs = list(difflib.unified_diff(actual_content.splitlines(), content.splitlines()))
+                for diff in diffs if self.verbose else []:
+                    print(diff)
+
+                if fix_differences:
+                    if click.confirm("Do you want to fix the differences?"):
+                        self.logger.info(f"Fixing differences in {target_file_path}")
+                        Path(target_file_path).write_text(content, encoding=DEFAULT_ENCODING)
+                        results.append(True)
+                else:
+                    results.append(False)
+        return results
 
 
 @cli.command()
