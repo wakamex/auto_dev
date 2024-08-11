@@ -26,6 +26,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
       - uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
@@ -52,5 +54,5 @@ jobs:
 
       - name: Tests
         run: |
-            make tests
+            make test
 

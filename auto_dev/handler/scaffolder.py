@@ -1,15 +1,16 @@
 """Handler scaffolder."""
 
-import os
+from pathlib import Path
 
 import yaml
+from aea.configurations.base import PublicId
 
 from auto_dev.cli_executor import CommandExecutor
 from auto_dev.commands.metadata import read_yaml_file
 from auto_dev.constants import DEFAULT_ENCODING
 from auto_dev.utils import get_logger
 
-HTTP_PROTOCOL = "eightballer/http:0.1.0:bafybeia2yjjpa57ihbfru54lvq3rru5vtaomyor3fn4zz4ziiaum5yywje"
+HTTP_PROTOCOL = "eightballer/http:0.1.0:bafybeihmhy6ax5uyjt7yxppn4viqswibcs5lsjhl3kvrsesorqe2u44jcm"
 
 HANDLER_HEADER_TEMPLATE = """
 # -*- coding: utf-8 -*-
@@ -38,7 +39,7 @@ from typing import Optional, cast
 from aea.protocols.base import Message
 from aea.skills.base import Handler
 
-from packages.{author}.protocols.http.message import HttpMessage
+from packages.eightballer.protocols.http.message import HttpMessage
 from packages.{author}.skills.{skill_name}.dialogues import HttpDialogue
 from packages.{author}.skills.{skill_name}.strategy import Strategy
 
@@ -65,22 +66,6 @@ class HttpHandler(Handler):
 
 """
 
-HANDLER_METHOD_TEMPLATE = """
-    def handle(self, message):
-        "main handler method"
-        url = message.url
-        parts = url.split('/')
-        if len(parts) == 3:
-            route = parts[-2]
-            id = parts[-1]
-            body = json.loads(message.body.decode("utf-8"))
-            return self.handle_post(route, id, body)
-        elif len(parts) == 2:
-            route = parts[1]
-            return self.handle_get(route)
-        return self.handle_unexpected_message(message)
-        {unexpected_message_handler}
-"""
 
 PATH_FILTER_TEMPLATE = """
         if filter == "{path}":
@@ -171,28 +156,78 @@ class HttpDialogues(Model, BaseHttpDialogues):
 
 """
 
+MAIN_HANDLER_TEMPLATE = """
+    def handle(self, message: HttpMessage) -> None:
+        \"\"\"Handle incoming HTTP messages\"\"\"
+        method = message.method
+        url = message.url
+        body = message.body
+
+        path_parts = url.split('/')
+        path = '/' + '/'.join(path_parts[1:])
+
+        if '{{' in path:
+            id_index = path_parts.index([part for part in path_parts if '{{' in part][0])
+            id = path_parts[id_index]
+            path = '/' + '/'.join(path_parts[1:id_index] + ['{{'+ path_parts[id_index][1:-1] + '}}'] + path_parts[id_index+1:])
+
+        handler_method = getattr(self, f"handle_{{method.lower()}}_{{path.lstrip('/').replace('/', '_').replace('{{', '').replace('}}', '')}}", None)
+
+        if handler_method:
+            kwargs = {{'body': body}} if method.lower() in ['post', 'put', 'patch', 'delete'] else {{}}
+            if '{{' in path:
+                kwargs['id'] = id
+            return handler_method(**kwargs)
+
+        return self.handle_unexpected_message(message)
+
+{all_methods}
+
+{unexpected_message_handler}
+"""
+
 
 class HandlerScaffolder:
     """
     Handler Scaffolder
     """
 
-    def __init__(self, spec_file_path: str, author: str, output: str, logger, verbose: bool = True):
+    def __init__(
+        self,
+        spec_file_path: str,
+        public_id,
+        logger,
+        verbose: bool = True,
+        new_skill: bool = False,
+        auto_confirm: bool = False,
+    ):
         """Initialize HandlerScaffolder."""
 
         self.logger = logger or get_logger()
         self.verbose = verbose
-        self.author = author
-        self.output = output
+        self.author = public_id.author
+        self.output = public_id.name
         self.spec_file_path = spec_file_path
         self.logger.info(f"Read OpenAPI specification: {spec_file_path}")
+        self.auto_confirm = auto_confirm
+        self.new_skill = new_skill
+
+    def create_new_skill(self):
+        """
+        Create a new skill
+        """
+        skill_cmd = f"aea scaffold skill {self.output}".split(" ")
+        if not CommandExecutor(skill_cmd).execute(verbose=self.verbose):
+            raise ValueError("Failed to scaffold skill.")
 
     def generate(self) -> None:
         """Generate handler."""
 
-        skill_cmd = f"aea scaffold skill {self.output}".split(" ")
-        if not CommandExecutor(skill_cmd).execute(verbose=self.verbose):
-            raise ValueError("Failed to scaffold skill.")
+        if not self.new_skill:
+            skill_path = Path("skills") / self.output
+            if not skill_path.exists():
+                self.logger.warning(f"Skill '{self.output}' not found in the 'skills' directory. Exiting.")
+                return None
 
         openapi_spec = read_yaml_file(self.spec_file_path)
         handler_methods = []
@@ -203,57 +238,27 @@ class HandlerScaffolder:
                 params = []
                 if "{" in path:
                     params.append("id")
-                if method.lower() in ["post", "put", "patch"]:
+                if method.lower() in ["post", "put", "patch", "delete"]:
                     params.append("body")
 
                 param_str: str = ", ".join(["self"] + params)
 
                 method_code: str = f"""
-        def {method_name}({param_str}):
-            \"\"\"
-            Handle {method.upper()} request for {path}
-            \"\"\"
-            # TODO: Implement {method.upper()} logic for {path}
-            raise NotImplementedError
+    def {method_name}({param_str}):
+        \"\"\"
+        Handle {method.upper()} request for {path}
+        \"\"\"
+        # TODO: Implement {method.upper()} logic for {path}
+        raise NotImplementedError
     """
                 handler_methods.append(method_code)
 
         all_methods: str = "\n".join(handler_methods)
 
-        handler_code: str = HANDLER_HEADER_TEMPLATE.format(
-            author=self.author, skill_name=openapi_spec["info"]["title"].replace(" ", "_")
+        handler_code: str = HANDLER_HEADER_TEMPLATE.format(author=self.author, skill_name=self.output)
+        main_handler: str = MAIN_HANDLER_TEMPLATE.format(
+            all_methods=all_methods, unexpected_message_handler=UNEXPECTED_MESSAGE_HANDLER_TEMPLATE
         )
-
-        main_handler: str = f"""
-        def handle(self, message: HttpMessage) -> None:
-            \"\"\"Handle incoming HTTP messages\"\"\"
-            method = message.method
-            url = message.url
-            body = message.body
-
-            path_parts = url.split('/')
-            path = '/' + '/'.join(path_parts[1:])
-
-            if '{{' in path:
-                id_index = path_parts.index([part for part in path_parts if '{{' in part][0])
-                id = path_parts[id_index]
-                path = '/' + '/'.join(path_parts[1:id_index] + ['{{'+ path_parts[id_index][1:-1] + '}}'] + path_parts[id_index+1:])
-
-            handler_method = getattr(self, f"handle_{{method.lower()}}_{{path.lstrip('/').replace('/', '_').replace('{', '').replace('}', '')}}", None)
-
-            if handler_method:
-                kwargs = {{'body': body}} if method.lower() in ['post', 'put', 'patch'] else {{}}
-                if '{{' in path:
-                    kwargs['id'] = id
-                return handler_method(**kwargs)
-
-            return self.handle_unexpected_message(message)
-
-    {all_methods}
-
-    {UNEXPECTED_MESSAGE_HANDLER_TEMPLATE}
-    """
-
         handler_code += main_handler
         return handler_code
 
@@ -299,21 +304,35 @@ class HandlerScaffolder:
         Reads in the my_model.py file and updates it.
         We replace the name MyModel with the name Strategy.
         """
-        with open("my_model.py", "r", encoding=DEFAULT_ENCODING) as f:
-            strategy_code: str = f.read()
-        strategy_code = strategy_code.replace("MyModel", "Strategy")
+        my_model_file = Path("my_model.py")
+        strategy_file = Path("strategy.py")
 
-        os.remove("my_model.py")
+        if my_model_file.exists():
+            strategy_code = my_model_file.read_text(encoding=DEFAULT_ENCODING)
+            strategy_code = strategy_code.replace("MyModel", "Strategy")
 
-        strategy_file = "strategy.py"
-        with open(strategy_file, "w", encoding=DEFAULT_ENCODING) as f:
-            f.write(strategy_code)
+            if self.confirm_action(
+                f"Are you sure you want to remove the file '{my_model_file}' and create '{strategy_file}'?"
+            ):
+                my_model_file.unlink()
+                strategy_file.write_text(strategy_code, encoding=DEFAULT_ENCODING)
+                print(f"'{my_model_file}' removed and '{strategy_file}' created.")
+            else:
+                print("Operation cancelled.")
 
     def remove_behaviours(self):
         """
-        Remove the behaviours
+        Remove the behaviours.py file.
         """
-        os.remove("behaviours.py")
+        behaviours_file = Path("behaviours.py")
+        if behaviours_file.exists():
+            if self.confirm_action(f"Are you sure you want to remove the file '{behaviours_file}'?"):
+                behaviours_file.unlink()
+                print(f"File '{behaviours_file}' removed.")
+            else:
+                print("Operation cancelled.")
+        else:
+            print(f"'{behaviours_file}' does not exist.")
 
     def create_dialogues(self):
         """
@@ -322,3 +341,36 @@ class HandlerScaffolder:
         dialogues_file = "dialogues.py"
         with open(dialogues_file, "w", encoding=DEFAULT_ENCODING) as f:
             f.write(DIALOGUES_CODE)
+
+    def fingerprint(self):
+        """
+        Fingerprint the skill
+        """
+        skill_id = PublicId(self.author, self.output, "0.1.0")
+        cli_executor = CommandExecutor(f"aea fingerprint skill {skill_id}".split())
+        result = cli_executor.execute(verbose=True)
+        if not result:
+            raise ValueError(f"Fingerprinting failed: {skill_id}")
+
+    def aea_install(self):
+        """
+        Install the aea
+        """
+        install_cmd = ["aea", "install"]
+        if not CommandExecutor(install_cmd).execute(verbose=self.verbose):
+            raise ValueError(f"Failed to execute {install_cmd}.")
+
+    def add_protocol(self):
+        """
+        Add the protocol"""
+        protocol_cmd = f"aea add protocol {HTTP_PROTOCOL}".split(" ")
+        if not CommandExecutor(protocol_cmd).execute(verbose=self.verbose):
+            raise ValueError(f"Failed to add {HTTP_PROTOCOL}.")
+
+    def confirm_action(self, message):
+        """Prompt the user for confirmation before performing an action."""
+        if self.auto_confirm:
+            self.logger.info(f"Auto confirming: {message}")
+            return True
+        response = input(f"{message} (y/n): ").lower().strip()
+        return response in ('y', 'yes')
