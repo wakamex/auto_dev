@@ -238,7 +238,7 @@ def remove_suffix(text: str, suffix: str) -> str:
     return text[: -len(suffix)] if suffix and text.endswith(suffix) else text
 
 
-def load_aea_ctx(func: Callable[[click.Context, ..., Any], Any]) -> Callable[[click.Context, ..., Any], Any]:
+def load_aea_ctx(func: Callable[[click.Context, Any, Any], Any]) -> Callable[[click.Context, Any, Any], Any]:
     """Load aea Context and AgentConfig if aea-config.yaml exists"""
 
     def wrapper(ctx: click.Context, *args, **kwargs):
@@ -322,8 +322,7 @@ class FileLoader:
             setattr(  # noqa
                 self,  # noqa
                 operation.value,  # noqa
-                lambda *args,  # noqa
-                **kwargs: self._exec_function(operation, *args, **kwargs)  # noqa
+                lambda *args, **kwargs: self._exec_function(operation, *args, **kwargs),  # noqa  # noqa
             )  # noqa
 
     @property
@@ -340,12 +339,20 @@ class FileLoader:
             raise NotFound(f"The file {self.file_path} was not found⁉") from FileNotFoundError
         try:
             func_type = FileOperation(func)
-        except ValueError:
-            raise OperationError(f"Operation {func} not supported for file type {self.file_type}. Only {list(self.supported_operations.keys())} supported.")
+        except ValueError as exc:
+            raise OperationError(
+                f"Operation {func} not supported for file type {self.file_type}. "
+                + f"Only {list(self.supported_operations.keys())} supported."
+            ) from exc
         if func_type not in self.supported_operations:
-            raise OperationError(f"Operation {func} not supported for file type {self.file_type}. Only {list(self.supported_operations.keys())} supported.")
+            raise OperationError(
+                f"Operation {func} not supported for file type {self.file_type}. "
+                + "Only {list(self.supported_operations.keys())} supported."
+            )
         if self.file_type not in self._file_type_to_loader:
-            raise OperationError(f"File type {self.file_type} not supported. Only {list(self._file_type_to_loader.keys())} supported.")
+            raise OperationError(
+                f"File type {self.file_type} not supported. Only {list(self._file_type_to_loader.keys())} supported."
+            )
         loader_func, kwargs = self.supported_operations.get(func_type)
         if func_type is FileOperation.READ:
             return (
@@ -354,7 +361,5 @@ class FileLoader:
                 else self.file_path.read_text(encoding=DEFAULT_ENCODING)
             )
         if func_type is FileOperation.WRITE:
-            return self.file_path.write_text(
-                loader_func(*args, **kwargs), 
-                encoding=DEFAULT_ENCODING)
+            return self.file_path.write_text(loader_func(*args, **kwargs), encoding=DEFAULT_ENCODING)
         raise OperationError(f"Operation {func} not supported")

@@ -18,6 +18,7 @@ import rich_click as click
 from aea.cli.utils.config import get_default_author_from_cli_config
 from rich.progress import track
 from rich.prompt import Prompt
+
 from auto_dev.base import build_cli
 from auto_dev.cli_executor import CommandExecutor
 from auto_dev.constants import (
@@ -27,10 +28,6 @@ from auto_dev.constants import (
     TEMPLATE_FOLDER,
     CheckResult,
 )
-
-from auto_dev.base import build_cli
-from auto_dev.cli_executor import CommandExecutor
-from auto_dev.constants import DEFAULT_ENCODING, SAMPLE_PYTHON_CLI_FILE, SAMPLE_PYTHON_MAIN_FILE, TEMPLATE_FOLDER
 from auto_dev.enums import UserInput
 from auto_dev.utils import change_dir
 
@@ -92,7 +89,9 @@ class RepoScaffolder:
 
         new_repo_dir = Path.cwd()
         template_folder = TEMPLATES[self.type_of_repo]
-        for file in track(self.template_files, description=f"Scaffolding {self.type_of_repo} repo", total=len(paths)):
+        for file in track(
+            self.template_files, description=f"Scaffolding {self.type_of_repo} repo", total=len(self.template_files)
+        ):
             self.logger.debug(f"Scaffolding `{str(file)}`")
             if file.is_dir():
                 rel_path = file.relative_to(template_folder)
@@ -156,6 +155,7 @@ class RepoScaffolder:
                 else:
                     results.append(CheckResult.FAIL)
         return results
+
 
 @cli.command()
 @click.option(
