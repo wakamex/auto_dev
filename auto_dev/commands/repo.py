@@ -18,7 +18,7 @@ from typing import List
 import rich_click as click
 from aea.cli.utils.config import get_default_author_from_cli_config
 from rich.progress import Progress, track
-from rich import print
+from rich import print  # pylint: disable=W0622
 
 from auto_dev.base import build_cli
 from auto_dev.cli_executor import CommandExecutor
