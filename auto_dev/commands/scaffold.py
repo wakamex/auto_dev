@@ -11,11 +11,11 @@ Also contains a Contract, which we will use to allow the user to;
 
 from pathlib import Path
 
-from jinja2 import Environment, FileSystemLoader
 import rich_click as click
 import yaml
 from aea.configurations.constants import DEFAULT_AEA_CONFIG_FILE, PROTOCOL_LANGUAGE_PYTHON, SUPPORTED_PROTOCOL_LANGUAGES
 from aea.configurations.data_types import PublicId
+from jinja2 import Environment, FileSystemLoader
 
 from auto_dev.base import build_cli
 from auto_dev.cli_executor import CommandExecutor
@@ -77,10 +77,9 @@ def contract(  # pylint: disable=R0914
         logger.info(f"Using ABI file: {from_abi}")
         scaffolder = ContractScaffolder(block_explorer=None)
         new_contract = scaffolder.from_abi(from_abi, address, name)
-        breakpoint()
         logger.info(f"New contract scaffolded at {new_contract.path}")
         return
-    
+
     logger.info(f"Using block explorer url: {block_explorer_url}")
     logger.info(f"Scaffolding contract at address: {address} with name: {name}")
 
@@ -227,24 +226,27 @@ def handler(ctx, spec_file, public_id, new_skill, auto_confirm):
     return 0
 
 
-
 @scaffold.command()
 @click.pass_context
-def tests(ctx,):
+def tests(
+    ctx,
+):
     """
-        Generate tests for an aea component in the current directory
-        AEA handler from an OpenAPI 3 specification.
+    Generate tests for an aea component in the current directory
+    AEA handler from an OpenAPI 3 specification.
     """
 
     logger = ctx.obj["LOGGER"]
     verbose = ctx.obj["VERBOSE"]
-    JINJA_TEMPLATE_FOLDER
     env = Environment(loader=FileSystemLoader(JINJA_TEMPLATE_FOLDER))
     template = env.get_template('test_custom.jinja')
     output = template.render(
         name="test",
     )
-    print(output)
+    if verbose:
+        logger.info(f"Generated tests: {output}")
+        print(output)
+
 
 if __name__ == "__main__":
     cli()  # pylint: disable=no-value-for-parameter

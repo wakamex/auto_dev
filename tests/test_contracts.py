@@ -2,10 +2,10 @@
 Test the contracts module.
 """
 import shutil
+from pathlib import Path
 
 import pytest
 import responses
-from pathlib import Path
 
 from auto_dev.commands.scaffold import BlockExplorer, ContractScaffolder
 
@@ -87,6 +87,7 @@ def test_scaffolder_from_abi(scaffolder, test_filesystem):
     """
     Test the scaffolder using an ABI file.
     """
+    assert test_filesystem
     path = Path.cwd() / ".." / "tests" / "data" / "dummy_abi.json"
     new_contract = scaffolder.from_abi(str(path), KNOWN_ADDRESS, "new_contract")
     assert new_contract
