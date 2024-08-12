@@ -42,6 +42,7 @@ def get_logger(name: str = __name__, log_level: str = "INFO") -> logging.Logger:
         rich_tracebacks=True,
         markup=True,
     )
+
     datefmt = "%H:%M:%S"
     logging.basicConfig(
         level=getattr(logging, log_level.upper(), "INFO"),
