@@ -13,12 +13,15 @@ import difflib
 import sys
 from dataclasses import dataclass
 from pathlib import Path
+
 from typing import List
 
 import rich_click as click
 from aea.cli.utils.config import get_default_author_from_cli_config
 from rich.progress import Progress, track
+from rich.prompt import Prompt
 from rich import print  # pylint: disable=W0622
+from shutil import rmtree
 
 from auto_dev.base import build_cli
 from auto_dev.cli_executor import CommandExecutor
@@ -29,7 +32,10 @@ from auto_dev.constants import (
     TEMPLATE_FOLDER,
     CheckResult,
 )
+from auto_dev.enums import UserInput
 from auto_dev.utils import change_dir
+
+AGENT_PREFIX = "AutoDev: ->: {msg}"
 
 
 def execute_commands(*commands: str, verbose: bool, logger, shell: bool = False) -> None:
@@ -87,10 +93,17 @@ class RepoScaffolder:
 
         new_repo_dir = Path.cwd()
         template_folder = TEMPLATES[self.type_of_repo]
-        for file in self.template_files:
+        for file in track(
+            self.template_files, description=f"Scaffolding {self.type_of_repo} repo", total=len(self.template_files)
+        ):
+            self.logger.debug(f"Scaffolding `{str(file)}`")
+            if file.is_dir():
+                rel_path = file.relative_to(template_folder)
+                target_file_path = new_repo_dir / rel_path
+                target_file_path.mkdir(parents=True, exist_ok=True)
+                continue
             rel_path = file.relative_to(template_folder)
             content = file.read_text(encoding=DEFAULT_ENCODING)
-
             if file.suffix == ".template":
                 content = content.format(**self.scaffold_kwargs)
                 target_file_path = new_repo_dir / rel_path.with_suffix("")
@@ -163,19 +176,33 @@ def repo():
     type=click.Choice(TEMPLATES),
     required=True,
 )
+@click.option("-f", "--force", is_flag=True, help="Force overwrite of existing repo", default=False)
+@click.option("--auto-approve", is_flag=True, help="Automatically approve all prompts", default=False)
+@click.argument("name", type=str, required=True)
 @click.pass_context
 def scaffold(ctx, name, type_of_repo):
+
     """Create a new repo and scaffold necessary files."""
 
     logger = ctx.obj["LOGGER"]
     verbose = ctx.obj["VERBOSE"]
     logger.info(f"Creating a new {type_of_repo} repo.")
-
-    # this is important, since repo is expected to contain a nested folder
-    # with the same name in order to be listed in pyproject.toml under packages
     render_args["project_name"] = name
-    Path(name).mkdir(exist_ok=False)
-
+    if Path(name).exists() and not force:
+        logger.error(f"Repo `{name}` already exists.\n\tPlease choose a different name or use the --force flag.")
+        sys.exit(1)
+    if Path(name).exists() and force:
+        if not auto_approve:
+            warning_msg = f"Overwrite existing repo `{name}`? This will delete all existing files. 💀 "
+            confirm = Prompt.ask(
+                AGENT_PREFIX.format(msg=warning_msg), choices=[UserInput.YES.value, UserInput.NO.value]
+            )
+            if UserInput(confirm) is UserInput.NO:
+                logger.info("Exiting. No changes made.")
+                sys.exit(1)
+        logger.info(f"Overwriting existing repo `{name}`.")
+        rmtree(name)
+    Path(name).mkdir(exist_ok=False, parents=True)
     with change_dir(name):
         execute_commands("git init", "git checkout -b main", verbose=verbose, logger=logger)
         assert (Path.cwd() / ".git").exists()
@@ -194,13 +221,12 @@ def scaffold(ctx, name, type_of_repo):
         elif type_of_repo == "python":
             src_dir = Path(name)
             src_dir.mkdir(exist_ok=False)
-            logger.info(f"Scaffolding `{str(src_dir)}`")
+            logger.debug(f"Scaffolding `{str(src_dir)}`")
             (src_dir / "__init__.py").touch()
             (src_dir / "main.py").write_text(SAMPLE_PYTHON_MAIN_FILE)
             (src_dir / "cli.py").write_text(SAMPLE_PYTHON_CLI_FILE.format(project_name=name))
         else:
             raise NotImplementedError(f"Unsupported repo type: {type_of_repo}")
-
         logger.info(f"{type_of_repo.capitalize()} successfully setup.")
 
 
