@@ -159,7 +159,7 @@ function setup_autonomy() {
     echo 'To change the author, run the command;
     `poetry run aea init --remote --author <author>`'
     poetry run autonomy packages init || echo "Already initialized!"
-    poetry run autonomy packages sync > log.txt || cat log.txt && exit 1
+    poetry run autonomy packages sync || echo "Already synced!"
 }
 
 main() {
