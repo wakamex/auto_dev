@@ -1,6 +1,7 @@
 """
 Tools to parse fsm specs.
 """
+
 import collections
 from dataclasses import dataclass
 from pathlib import Path
@@ -207,9 +208,9 @@ class FsmSpec:
             start_state, _, end_state, _transition = items
             transition = camel_to_snake(_transition).upper()
             end_state = end_state[:-1]
-            if start_state == '[*]':
+            if start_state == "[*]":
                 initial_states.append(end_state)
-            elif end_state == '[*]':
+            elif end_state == "[*]":
                 final_states.append(start_state)
             else:
                 states.append(start_state)

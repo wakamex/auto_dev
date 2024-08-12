@@ -40,15 +40,15 @@ class BlockExplorer:
         Get the abi for the contract at the address.
         """
 
-        web3 = Web3(Web3.HTTPProvider('http://127.0.0.1:8545'))
+        web3 = Web3(Web3.HTTPProvider("http://127.0.0.1:8545"))
         check_address = web3.to_checksum_address(address)
         url = self.url + "/api?module=contract&action=getabi&address=" + str(check_address)
         print(url)
         response = self._authenticated_request(url)
         if response.status_code != 200:
             raise ValueError(f"Failed to get abi with api response error result `{response.status_code}`")
-        if response.json()['status'] != '1':
+        if response.json()["status"] != "1":
             raise ValueError(f"Failed to get abi for address {address} with status {response.json()['result']}")
         if response.status_code != 200:
             raise ValueError(f"Failed to get abi with api response error result `{response.status_code}`")
-        return json.loads(response.json()['result'])
+        return json.loads(response.json()["result"])

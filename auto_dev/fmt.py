@@ -36,12 +36,12 @@ class Formatter:
             print(result.json())
 
         if result.json():
-            if 'new_data' in result.json():
+            if "new_data" in result.json():
                 with open(path, "w", encoding=DEFAULT_ENCODING) as file:
-                    file.write(result.json()['new_data'])
+                    file.write(result.json()["new_data"])
                 return True
-            if 'result' in result.json():
-                return result.json()['result']
+            if "result" in result.json():
+                return result.json()["result"]
 
         return False
 

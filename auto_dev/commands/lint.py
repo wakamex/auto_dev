@@ -5,6 +5,7 @@ Simple cli to allow users to perform the following actions against an autonomy r
 - test
 - build
 """
+
 from functools import partial
 from multiprocessing import Pool
 

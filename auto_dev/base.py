@@ -1,6 +1,7 @@
 """
 Base CLI for auto_dev.
 """
+
 import os
 from dataclasses import dataclass
 
@@ -23,7 +24,7 @@ class CLIs:
         """List commands."""
         results = []
         for filename in os.listdir(self.plugin_folder):
-            if filename.endswith('.py') and filename != '__init__.py':
+            if filename.endswith(".py") and filename != "__init__.py":
                 results.append(filename[:-3])
         results.sort()
         return results
@@ -31,9 +32,9 @@ class CLIs:
     def get_command(self, name):
         """Get the command."""
         name_space = {}
-        file_name = os.path.join(self.plugin_folder, name + '.py')
+        file_name = os.path.join(self.plugin_folder, name + ".py")
         with open(file_name, encoding=DEFAULT_ENCODING) as file:
-            code = compile(file.read(), file_name, 'exec')
+            code = compile(file.read(), file_name, "exec")
             eval(code, name_space, name_space)  # pylint: disable=eval-used
         return name_space[name]
 

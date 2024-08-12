@@ -1,6 +1,7 @@
 """
 Utilities for auto_dev.
 """
+
 import json
 import logging
 import os
@@ -84,7 +85,7 @@ def has_package_code_changed(package_path: Path):
         raise FileNotFoundError(f"Package {package_path} does not exist")
     command = f"git status --short {package_path}"
     result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
-    changed_files = [f for f in result.stdout.decode().split("\n") if f != '']
+    changed_files = [f for f in result.stdout.decode().split("\n") if f != ""]
     changed_files = [f.replace(" M ", "") for f in changed_files]
     changed_files = [f.replace("?? ", "") for f in changed_files]
     return changed_files
@@ -116,7 +117,7 @@ def get_paths(path: Optional[str] = None, changed_only: bool = False):
 
     def filter_git_interferace_files(file_path: str):
         regexs = [
-            'M  ',
+            "M  ",
         ]
         for regex in regexs:
             if regex in file_path:
@@ -125,7 +126,7 @@ def get_paths(path: Optional[str] = None, changed_only: bool = False):
 
     def filter_protobuf_files(file_path: str):
         regexs = [
-            '_pb2.py',
+            "_pb2.py",
         ]
         for regex in regexs:
             if regex in file_path:
@@ -286,7 +287,7 @@ def write_to_file(file_path: str, content: Any, file_type: FileType = FileType.T
                 else:
                     yaml.dump(content, f, default_flow_style=False, sort_keys=False)
             elif file_type == FileType.JSON:
-                json.dump(content, f, separators=(',', ':'))
+                json.dump(content, f, separators=(",", ":"))
             else:
                 raise ValueError(f"Invalid file_type, must be one of {list(FileType)}.")
     except Exception as e:
@@ -324,7 +325,7 @@ class FileLoader:
     }
     _file_type_to_dumper = {
         FileType.YAML: (yaml.dump, {"default_flow_style": False, "sort_keys": False}),
-        FileType.JSON: (json.dumps, {"separators": (',', ':'), "sort_keys": False, "indent": 4}),
+        FileType.JSON: (json.dumps, {"separators": (",", ":"), "sort_keys": False, "indent": 4}),
     }
 
     def __post_init__(self):

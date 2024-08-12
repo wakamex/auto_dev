@@ -231,8 +231,8 @@ class AutonomyVersionSet:
     """Class to represent a set of autonomy versions."""
 
     dependencies = {
-        "open-autonomy": '==0.15.2',
-        "open-aea-test-autonomy": '==0.15.2',
+        "open-autonomy": "==0.15.2",
+        "open-aea-test-autonomy": "==0.15.2",
         "open-aea-ledger-ethereum": "==1.55.0",
         "open-aea-ledger-solana": "==1.55.0",
         "open-aea-ledger-cosmos": "==1.55.0",

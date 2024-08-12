@@ -1,6 +1,7 @@
 """
 Test command cli module.
 """
+
 import rich_click as click
 from rich.progress import track
 

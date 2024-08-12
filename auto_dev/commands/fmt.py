@@ -2,7 +2,6 @@
 This module contains the logic for the fmt command.
 """
 
-
 import rich_click as click
 
 from auto_dev.base import build_cli

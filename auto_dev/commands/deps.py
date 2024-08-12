@@ -21,13 +21,14 @@ this is structures as follows:
         "aea_dep3": "ipfshash",
         "aea_dep4": "ipfshash",
         },
-}   
+}
 
 The ipfshash is the hash of the package.
 
-We want to be able to update the hash of the package.       
+We want to be able to update the hash of the package.
 
 """
+
 import logging
 import shutil
 import sys
@@ -207,7 +208,7 @@ def deps(
 @click.option(
     "-p",
     "--parent-repo",
-    default='.',
+    default=".",
     help="The parent repo.",
     type=Path,
     required=True,
@@ -218,7 +219,7 @@ def deps(
     help="The child repo.",
     type=Path,
     required=True,
-    default='.',
+    default=".",
 )
 @click.option(
     "--auto-confirm",

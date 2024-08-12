@@ -210,7 +210,7 @@ def handler(ctx, spec_file, public_id, new_skill, auto_confirm):
         return 1
 
     with change_dir(Path("skills") / public_id.name):
-        output_path = Path('handlers.py')
+        output_path = Path("handlers.py")
         scaffolder.save_handler(output_path, handler_code)
         skill_yaml_file = "skill.yaml"
 
@@ -239,7 +239,7 @@ def tests(
     logger = ctx.obj["LOGGER"]
     verbose = ctx.obj["VERBOSE"]
     env = Environment(loader=FileSystemLoader(JINJA_TEMPLATE_FOLDER))
-    template = env.get_template('test_custom.jinja')
+    template = env.get_template("test_custom.jinja")
     output = template.render(
         name="test",
     )
