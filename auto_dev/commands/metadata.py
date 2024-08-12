@@ -1,19 +1,17 @@
-"""
-This script is used to generate metadata for aea packages.
+"""This script is used to generate metadata for aea packages.
 - generate metadata. we read in a meta data file and generate a json file that can be uploaded to ipfs.
 - print metadata: we read in a meta data file and print it in a way that can be copy pasted into the frontend.
 """
 
 import sys
 import json
-from typing import List
 
 import yaml
 import rich_click as click
 from rich import print_json
-from aea_cli_ipfs.ipfs_utils import IPFSTool
 from aea.helpers.cid import to_v1
 from aea.configurations.base import PublicId
+from aea_cli_ipfs.ipfs_utils import IPFSTool
 from aea.configurations.constants import (
     AGENT,
     AGENTS,
@@ -37,36 +35,28 @@ cli = build_cli()
 
 
 def read_yaml_file(file_path):
-    """
-    Reads a yaml file and returns the data.
-    """
-    with open(file_path, "r", encoding=DEFAULT_ENCODING) as file:
-        data = list(yaml.safe_load_all(file))[0]
-    return data
+    """Reads a yaml file and returns the data."""
+    with open(file_path, encoding=DEFAULT_ENCODING) as file:
+        return next(iter(yaml.safe_load_all(file)))
 
 
 def read_json_file(file_path):
-    """
-    Reads a json file and returns the data.
-    """
-    with open(file_path, "r", encoding=DEFAULT_ENCODING) as file:
-        data = json.load(file)
-    return data
+    """Reads a json file and returns the data."""
+    with open(file_path, encoding=DEFAULT_ENCODING) as file:
+        return json.load(file)
 
 
 def get_metadata(root, name, hash_, target_id):
-    """
-    Get metadata for a package by reading in the package.yaml file and then getting
+    """Get metadata for a package by reading in the package.yaml file and then getting
     packages from the yaml keys in the orders of:
     - contracts
     - protocols
     - connections
     - skills
     - agents
-    - customs
+    - customs.
 
     """
-
     split_name = name.split("/")
     package_type, author, package_name, version = split_name
 
@@ -99,8 +89,8 @@ def get_metadata(root, name, hash_, target_id):
 
 
 @cli.group()
-def metadata():
-    """Commands for generating and printing metadata"""
+def metadata() -> None:
+    """Commands for generating and printing metadata."""
 
 
 # we make a command called generate
@@ -132,8 +122,8 @@ def metadata():
     is_flag=True,
     default=False,
 )
-def generate(root, target_name, target_id, strict, all):  # pylint: disable=redefined-builtin
-    """Generate metadata for a package
+def generate(root, target_name, target_id, strict, all) -> None:  # pylint: disable=redefined-builtin
+    """Generate metadata for a package.
 
     example usage:
          python ./metadata.py generate . contract/eightballer/cool_skill/0.1.0 01
@@ -153,8 +143,8 @@ def generate(root, target_name, target_id, strict, all):  # pylint: disable=rede
     if not id_to_metadata:
         click.echo("No packages found in packages.json")
         sys.exit(1)
-    for _, target_metadata in id_to_metadata.items():
-        target_metadata = id_to_metadata.get(target_id, None)
+    for target_metadata in id_to_metadata.values():
+        target_metadata = id_to_metadata.get(target_id)
         if not target_metadata:
             click.echo(f"Package {target_name} not found in packages.json Do you have the correct name?")
             if strict:
@@ -192,15 +182,13 @@ dependency_order = [
 
 
 class Dependency(PublicId):
-    """
-    Class to represent a dependency.
-    """
+    """Class to represent a dependency."""
 
     component_type: str
 
 
-def build_dependency_tree_for_component(component) -> List[str]:
-    """Build dependency tree for a component"""
+def build_dependency_tree_for_component(component) -> list[str]:
+    """Build dependency tree for a component."""
     component_type = component.split("/")[0]
     component_author = component.split("/")[1]
     component_name = component.split("/")[2]
@@ -220,9 +208,8 @@ def build_dependency_tree_for_component(component) -> List[str]:
     dependencies = {}
 
     for dependency_type in dependency_order:
-        if dependency_type == AGENTS:
-            if component_type != SERVICE:
-                continue
+        if dependency_type == AGENTS and component_type != SERVICE:
+            continue
         if component_type == SERVICE and dependency_type == SERVICES:
             dependency_id = Dependency.from_str(component_data[AGENT])
             dependency_id.component_type = AGENT
@@ -245,8 +232,8 @@ def build_dependency_tree_for_component(component) -> List[str]:
     type=click.Path(exists=True),
 )
 @click.pass_context
-def validate(ctx, metadata_file):
-    """Print metadata for a package"""
+def validate(ctx, metadata_file) -> None:
+    """Print metadata for a package."""
     verbose = ctx.obj["VERBOSE"]
     metadata = read_json_file(metadata_file)
     valid = render_metadata(metadata, verbose=verbose)
@@ -255,8 +242,8 @@ def validate(ctx, metadata_file):
         sys.exit(1)
 
 
-def render_metadata(metadata, verbose=False):
-    """Render metadata for a package"""
+def render_metadata(metadata, verbose=False) -> bool:
+    """Render metadata for a package."""
     self_component = Dependency.from_str("/".join(metadata["name"].split("/")[1:]))
     self_component.component_type = metadata["name"].split("/")[0]
     self_component_status, self_component_id = check_component_status(self_component)
@@ -299,7 +286,7 @@ def render_metadata(metadata, verbose=False):
         # we use a sexy emjoji to show the status of the minting.
         status_emjoji = "✅" if component_status == "MINTED" else "❌"
         if verbose:
-            click.echo(f"Status: {status_emjoji} {component_id if component_id else ''} {component_status} - {path}")
+            click.echo(f"Status: {status_emjoji} {component_id or ''} {component_status} - {path}")
 
     # we print the self mint status
     # we first check that all the dependencies are minted.
@@ -322,18 +309,12 @@ def render_metadata(metadata, verbose=False):
             "\nSelf Mint Status:",
         )
         status_emjoji = "✅" if self_component_status == "MINTED" else "❌"
-        click.echo(
-            f"{status_emjoji} {self_component_id if self_component_id else ''} "
-            + f"{self_component_status} - {self_component} "
-        )
-    if self_component_status == "MINTED":
-        return True
-    return False
+        click.echo(f"{status_emjoji} {self_component_id or ''} " + f"{self_component_status} - {self_component} ")
+    return self_component_status == "MINTED"
 
 
 def check_component_status(component_id):
-    """
-    We check the status of the component by reading the mapping.txt file in the mints folder.
+    """We check the status of the component by reading the mapping.txt file in the mints folder.
     ➤ cat mints/mapping.txt
     token_id-"component_id"
     # deps
@@ -343,23 +324,22 @@ def check_component_status(component_id):
     51-"contract/valory/multicall2/0.1.0"
     # dev
     97-contract/zarathustra/grow_registry:0.1.0
-    ?-skill/zarathustra/plantation_abci/0.1.0
+    ?-skill/zarathustra/plantation_abci/0.1.0.
 
     NOTES: if the component is NOT present in the mapping.txt file, it is NOT minted.
     if the component is present in the
     we always return the token_id, even if it is not minted.
 
     """
-    with open("mints/mapping.txt", "r", encoding=DEFAULT_ENCODING) as file:
+    with open("mints/mapping.txt", encoding=DEFAULT_ENCODING) as file:
         lines = file.readlines()
     status, token_id = "NOT MINTED", "?"
     path = f"{component_id.component_type}/{component_id.author}/{component_id.name}"
     for line in lines:
-        if path in line:
-            if line.split("-")[0].isnumeric():
-                status = "MINTED"
-                token_id = line.split("-")[0]
-                break
+        if path in line and line.split("-")[0].isnumeric():
+            status = "MINTED"
+            token_id = line.split("-")[0]
+            break
     return status, token_id
 
 

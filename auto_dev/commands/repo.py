@@ -1,18 +1,16 @@
-"""
-Module to assist with repo setup and management.
+"""Module to assist with repo setup and management.
 contains the following commands;
     - scaffold
         - all
         - .gitignore
         . .githubworkflows
         . .README.md
-        . pyproject.toml
+        . pyproject.toml.
 """
 
 import sys
 import difflib
 from shutil import rmtree
-from typing import List
 from pathlib import Path
 from dataclasses import dataclass
 
@@ -66,7 +64,7 @@ TEMPLATES = {f.name: f for f in Path(TEMPLATE_FOLDER).glob("*")}
 class RepoScaffolder:
     """Class to scaffold a new repo."""
 
-    def __init__(self, type_of_repo, logger, verbose, render_overrides=None):
+    def __init__(self, type_of_repo, logger, verbose, render_overrides=None) -> None:
         self.type_of_repo = type_of_repo
         self.logger = logger
         self.verbose = verbose
@@ -88,15 +86,14 @@ class RepoScaffolder:
     def scaffold(
         self,
         write_files=True,
-    ):
+    ) -> None:
         """Scaffold files for a new repo."""
-
         new_repo_dir = Path.cwd()
         template_folder = TEMPLATES[self.type_of_repo]
         for file in track(
             self.template_files, description=f"Scaffolding {self.type_of_repo} repo", total=len(self.template_files)
         ):
-            self.logger.debug(f"Scaffolding `{str(file)}`")
+            self.logger.debug(f"Scaffolding `{file!s}`")
             if file.is_dir():
                 rel_path = file.relative_to(template_folder)
                 target_file_path = new_repo_dir / rel_path
@@ -109,7 +106,7 @@ class RepoScaffolder:
                 target_file_path = new_repo_dir / rel_path.with_suffix("")
             else:
                 target_file_path = new_repo_dir / rel_path
-            self.logger.info(f"Scaffolding `{str(target_file_path)}`")
+            self.logger.info(f"Scaffolding `{target_file_path!s}`")
             if write_files:
                 target_file_path.parent.mkdir(parents=True, exist_ok=True)
                 target_file_path.write_text(content)
@@ -119,7 +116,6 @@ class RepoScaffolder:
         fix_differences=False,
     ):
         """Scaffold files for a new repo."""
-
         template_folder = TEMPLATES[self.type_of_repo]
         results = []
         self.logger.info(f"Verifying scaffolded files for {self.type_of_repo} repo.")
@@ -134,7 +130,7 @@ class RepoScaffolder:
                 target_file_path = rel_path.with_suffix("")
             else:
                 target_file_path = rel_path
-            self.logger.debug(f"Scaffolding `{str(target_file_path)}`")
+            self.logger.debug(f"Scaffolding `{target_file_path!s}`")
             actual_file = Path(target_file_path)
             actual_content = ""
             if actual_file.exists():
@@ -163,7 +159,7 @@ class RepoScaffolder:
 
 # We create a new command group
 @cli.group()
-def repo():
+def repo() -> None:
     """Repository management commands."""
 
 
@@ -179,9 +175,8 @@ def repo():
 @click.option("-f", "--force", is_flag=True, help="Force overwrite of existing repo", default=False)
 @click.option("--auto-approve", is_flag=True, help="Automatically approve all prompts", default=False)
 @click.pass_context
-def scaffold(ctx, name, type_of_repo, force, auto_approve):
+def scaffold(ctx, name, type_of_repo, force, auto_approve) -> None:
     """Create a new repo and scaffold necessary files."""
-
     logger = ctx.obj["LOGGER"]
     verbose = ctx.obj["VERBOSE"]
     logger.info(f"Creating a new {type_of_repo} repo.")
@@ -218,12 +213,13 @@ def scaffold(ctx, name, type_of_repo, force, auto_approve):
         elif type_of_repo == "python":
             src_dir = Path(name)
             src_dir.mkdir(exist_ok=False)
-            logger.debug(f"Scaffolding `{str(src_dir)}`")
+            logger.debug(f"Scaffolding `{src_dir!s}`")
             (src_dir / "__init__.py").touch()
             (src_dir / "main.py").write_text(SAMPLE_PYTHON_MAIN_FILE)
             (src_dir / "cli.py").write_text(SAMPLE_PYTHON_CLI_FILE.format(project_name=name))
         else:
-            raise NotImplementedError(f"Unsupported repo type: {type_of_repo}")
+            msg = f"Unsupported repo type: {type_of_repo}"
+            raise NotImplementedError(msg)
         logger.info(f"{type_of_repo.capitalize()} successfully setup.")
 
 
@@ -241,10 +237,8 @@ class AutonomyVersionSet:
     }
 
 
-def update_against_version_set(logger, dry_run: bool = False) -> List[str]:
-    """
-    Update the dependencies in the pyproject.toml file against the version set.
-    """
+def update_against_version_set(logger, dry_run: bool = False) -> list[str]:
+    """Update the dependencies in the pyproject.toml file against the version set."""
     pyproject = Path("pyproject.toml")
     if not pyproject.exists():
         logger.error("No pyproject.toml found in current directory.")
@@ -294,10 +288,8 @@ def update_against_version_set(logger, dry_run: bool = False) -> List[str]:
     default=False,
 )
 @click.pass_context
-def update_deps(ctx, lock: bool):
-    """
-    Update dependencies in the current repo.
-    """
+def update_deps(ctx, lock: bool) -> None:
+    """Update dependencies in the current repo."""
     logger = ctx.obj["LOGGER"]
     verbose = ctx.obj["VERBOSE"]
     # We read in the pyproject.toml file

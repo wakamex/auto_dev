@@ -1,6 +1,4 @@
-"""
-Tests for the documentation.
-"""
+"""Tests for the documentation."""
 
 import os
 from logging import getLogger
@@ -15,7 +13,7 @@ from auto_dev.cli_executor import CommandExecutor
 
 def extract_code_blocks(doc):
     """Extract the code blocks from the documentation."""
-    with open(doc, "r", encoding=DEFAULT_ENCODING) as file_path:
+    with open(doc, encoding=DEFAULT_ENCODING) as file_path:
         lines = file_path.readlines()
     code_blocks = []
     code_block = []
@@ -29,9 +27,8 @@ def extract_code_blocks(doc):
             else:
                 cleaned_line = line.strip()
                 code_block.append(cleaned_line)
-        else:
-            if line.startswith("```bash"):
-                in_code_block = True
+        elif line.startswith("```bash"):
+            in_code_block = True
     return code_blocks
 
 

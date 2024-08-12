@@ -1,6 +1,4 @@
-"""
-Constants for the auto_dev package.
-"""
+"""Constants for the auto_dev package."""
 
 import os
 from enum import Enum

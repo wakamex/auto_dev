@@ -1,6 +1,4 @@
-"""
-Utils for the contracts.
-"""
+"""Utils for the contracts."""
 
 from aea.crypto.base import Address
 

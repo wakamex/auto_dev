@@ -1,6 +1,4 @@
-"""
-Conftest for testing command-line interfaces.
-"""
+"""Conftest for testing command-line interfaces."""
 # pylint: disable=W0135
 
 import os
@@ -67,9 +65,7 @@ def test_clean_filesystem():
 
 @pytest.fixture
 def test_packages_filesystem(test_filesystem):
-    """
-    Fixure for testing packages.
-    """
+    """Fixure for testing packages."""
     (Path(test_filesystem) / "packages").mkdir(parents=True, exist_ok=True)
     with open(AUTONOMY_PACKAGES_FILE, "w", encoding=DEFAULT_ENCODING) as file:
         file.write(SAMPLE_PACKAGES_JSON["packages/packages.json"])
@@ -79,7 +75,7 @@ def test_packages_filesystem(test_filesystem):
         with open(Path(test_filesystem) / Path(file), "w", encoding=DEFAULT_ENCODING) as path:
             path.write(data)
 
-    yield test_filesystem
+    return test_filesystem
 
 
 @pytest.fixture

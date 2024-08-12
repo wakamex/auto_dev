@@ -1,6 +1,4 @@
-"""
-Implement fsm tooling
-"""
+"""Implement fsm tooling."""
 
 import rich_click as click
 
@@ -17,17 +15,15 @@ cli = build_cli(plugins=False)
 
 # we have a fsm command group
 @cli.group()
-def fsm():
-    """
-    Implement fsm tooling
-    """
+def fsm() -> None:
+    """Implement fsm tooling."""
 
 
 @fsm.command()
 @click.argument("fsm-spec", type=click.File("r", encoding=DEFAULT_ENCODING))
 @click.option("--in-type", type=click.Choice(["mermaid", "fsm-spec"], case_sensitive=False))
 @click.option("--output", type=click.Choice(["mermaid", "fsm-spec"], case_sensitive=False))
-def from_file(fsm_spec: str, in_type: str, output: str):
+def from_file(fsm_spec: str, in_type: str, output: str) -> None:
     """We template from a file."""
     # we need perform the following steps:
     # 1. load the yaml file
@@ -41,11 +37,11 @@ def from_file(fsm_spec: str, in_type: str, output: str):
 
     if in_type == "mermaid":
         _fsm_spec = fsm_spec.read()
-        fsm = FsmSpec.from_mermaid(_fsm_spec)
+        FsmSpec.from_mermaid(_fsm_spec)
     else:
-        fsm = FsmSpec.from_yaml(fsm_spec)
+        FsmSpec.from_yaml(fsm_spec)
 
     if output == "mermaid":
-        print(fsm.to_mermaid())
+        pass
     else:
-        print(fsm.to_string())
+        pass

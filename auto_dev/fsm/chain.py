@@ -1,8 +1,5 @@
-"""
-Module to allow the chaining of multiple FSMs together.
-"""
+"""Module to allow the chaining of multiple FSMs together."""
 
-from typing import List, Optional
 from dataclasses import dataclass
 
 from auto_dev.fsm.fsm import FsmSpec
@@ -17,22 +14,16 @@ abci_paths = [
 
 @dataclass
 class Chainer:
-    """
-    The chainer class allows us to chain together multiple FSMs.
-    """
+    """The chainer class allows us to chain together multiple FSMs."""
 
-    fsms: List[FsmSpec]
-    chained_fsm: Optional[FsmSpec] = None
+    fsms: list[FsmSpec]
+    chained_fsm: FsmSpec | None = None
 
-    def validate(self):
-        """
-        We validate the FSMs.
-        """
+    def validate(self) -> None:
+        """We validate the FSMs."""
 
-    def chain(self):
-        """
-        We chain the FSMs together.
-        """
+    def chain(self) -> None:
+        """We chain the FSMs together."""
         self.validate()
         self.chained_fsm = FsmSpec(
             alphabet_in=[],
@@ -74,8 +65,6 @@ class Chainer:
 
         all_states = list(set(all_states))
         self.chained_fsm.alphabet_in = list(set(all_transitions))
-
-        print(self.chained_fsm.to_string())
 
 
 if __name__ == "__main__":

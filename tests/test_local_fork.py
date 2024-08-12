@@ -1,6 +1,4 @@
-"""
-Tests for the local fork.
-"""
+"""Tests for the local fork."""
 
 import sys
 import socket

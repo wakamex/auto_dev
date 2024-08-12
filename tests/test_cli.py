@@ -1,6 +1,4 @@
-"""
-Tests for the click cli.
-"""
+"""Tests for the click cli."""
 
 import os
 

@@ -1,6 +1,4 @@
-"""
-Contract scaffolder.
-"""
+"""Contract scaffolder."""
 
 import os
 import json
@@ -16,31 +14,24 @@ from auto_dev.contracts.block_explorer import BlockExplorer
 
 @dataclass
 class ContractScaffolder:
-    """
-    Class to scaffold a contract.
-    """
+    """Class to scaffold a contract."""
 
     block_explorer: BlockExplorer
     author: str = "eightballer"
 
     def from_abi(self, path, address: str, name: str):
-        """
-        Scaffold a contract from a file.
-        """
-        with open(path, "r", encoding=DEFAULT_ENCODING) as file:
+        """Scaffold a contract from a file."""
+        with open(path, encoding=DEFAULT_ENCODING) as file:
             abi = json.load(file)
         return Contract(abi=abi, name=name, address=address, author=self.author)
 
     def from_block_explorer(self, address: str, name: str):
-        """
-        Scaffold a contract from a block explorer.
-        """
+        """Scaffold a contract from a block explorer."""
         abi = self.block_explorer.get_abi(address)
         return Contract(abi=abi, name=name, address=address, author=self.author)
 
     def generate_openaea_contract(self, contract: Contract):
-        """
-        Generate the open-aea contract.
+        """Generate the open-aea contract.
         We will use the contract name to generate the class name.
         We need to;
         - use the temporary directory context manager.
@@ -53,18 +44,22 @@ class ContractScaffolder:
         verbose = False
 
         if contract.path.exists():
-            raise ValueError(f"Contract {contract.name} already exists.")
+            msg = f"Contract {contract.name} already exists."
+            raise ValueError(msg)
 
         init_cmd = f"aea init --author {self.author} --reset --ipfs --remote".split(" ")
         if not CommandExecutor(init_cmd).execute(verbose=verbose):
-            raise ValueError("Failed to initialise agent lib.")
+            msg = "Failed to initialise agent lib."
+            raise ValueError(msg)
 
         with isolated_filesystem():
             if not CommandExecutor("aea create myagent".split(" ")).execute(verbose=verbose):
-                raise ValueError("Failed to create agent.")
+                msg = "Failed to create agent."
+                raise ValueError(msg)
             os.chdir("myagent")
             if not CommandExecutor(f"aea scaffold contract {contract.name}".split(" ")).execute(verbose=verbose):
-                raise ValueError("Failed to scaffold contract.")
+                msg = "Failed to scaffold contract."
+                raise ValueError(msg)
 
             if not contract.path.parent.exists():
                 contract.path.parent.mkdir(parents=True)

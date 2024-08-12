@@ -1,6 +1,4 @@
-"""
-Group to implement improvements.
-"""
+"""Group to implement improvements."""
 
 import os
 from pathlib import Path
@@ -44,10 +42,8 @@ cli = build_cli()
     required=True,
 )
 @click.pass_context
-def improve(ctx, path, type_of_repo, author, name):
-    """
-    Improves downstream repos by verifying the context of scaffolded files.
-    """
+def improve(ctx, path, type_of_repo, author, name) -> None:
+    """Improves downstream repos by verifying the context of scaffolded files."""
     if path is None:
         path = Path.cwd()
     os.chdir(path)
@@ -67,4 +63,5 @@ def improve(ctx, path, type_of_repo, author, name):
     modified = results.count(CheckResult.MODIFIED)
     logger.info(f"Verification completed with {passed} passed and {failed} failed and {modified} modified.")
     if failed:
-        raise click.ClickException(f"Verification failed with {failed} failed.")
+        msg = f"Verification failed with {failed} failed."
+        raise click.ClickException(msg)

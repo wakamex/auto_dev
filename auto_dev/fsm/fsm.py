@@ -1,10 +1,7 @@
-"""
-Tools to parse fsm specs.
-"""
+"""Tools to parse fsm specs."""
 
 import collections
 from string import Template
-from typing import Dict, List, Tuple
 from pathlib import Path
 from dataclasses import dataclass
 
@@ -42,46 +39,36 @@ TRANSITION_TEMPLATE = Template("""$start_state -->|$transition| $end_state""")
 
 @dataclass
 class FsmSpec:
-    """
-    We represent a fsm spec.
-    """
+    """We represent a fsm spec."""
 
-    alphabet_in: List[str]
+    alphabet_in: list[str]
     default_start_state: str
-    final_states: List[str]
+    final_states: list[str]
     label: str
-    start_states: List[str]
-    states: List[str]
-    transition_func: Dict[Tuple[str, str], str]
+    start_states: list[str]
+    states: list[str]
+    transition_func: dict[tuple[str, str], str]
 
     @classmethod
     def from_yaml(cls, yaml_str: str):
-        """
-        We create a FsmSpec from a yaml string.
-        """
+        """We create a FsmSpec from a yaml string."""
         fsm_spec = yaml.safe_load(yaml_str)
         return cls(**fsm_spec)
 
     @classmethod
     def from_path(cls, path: Path):
-        """
-        We create a FsmSpec from a yaml file.
-        """
-        with open(path, "r", encoding=DEFAULT_ENCODING) as file_pointer:
+        """We create a FsmSpec from a yaml file."""
+        with open(path, encoding=DEFAULT_ENCODING) as file_pointer:
             return cls.from_yaml(file_pointer.read())
 
     @classmethod
     def from_mermaid_path(cls, path: Path):
-        """
-        We create a FsmSpec from a yaml file.
-        """
-        with open(path, "r", encoding=DEFAULT_ENCODING) as file_pointer:
+        """We create a FsmSpec from a yaml file."""
+        with open(path, encoding=DEFAULT_ENCODING) as file_pointer:
             return cls.from_mermaid(file_pointer.read())
 
     def to_mermaid(self):
-        """
-        We convert the FsmSpec to a mermaid string.
-        """
+        """We convert the FsmSpec to a mermaid string."""
         start_state = STATE_TEMPLATE.substitute(state=self.default_start_state)
         # join on new line
         states = "\n  ".join([STATE_TEMPLATE.substitute(state=state) for state in self.states])
@@ -98,25 +85,22 @@ class FsmSpec:
 
     @classmethod
     def from_mermaid(cls, mermaid_str: str):
-        """
-        Parse a mermaid string to a FsmSpec.
+        """Parse a mermaid string to a FsmSpec.
         note, we need to create a graph like structure.
         we parse each line and create a node and a edge.
         """
-
         if mermaid_str.find("graph TD") != -1:
             return cls._handle_graph(mermaid_str)
 
         if mermaid_str.find("stateDiagram-v2") != -1:
             return cls._handle_state_diagram_v2(mermaid_str)
 
-        raise ValueError("We do not support this mermaid format!")
+        msg = "We do not support this mermaid format!"
+        raise ValueError(msg)
 
     @classmethod
     def _handle_graph(cls, graph):  # pylint: disable=R0912  # noqa
-        """
-        We handle the graph case.
-        """
+        """We handle the graph case."""
         states = []
         transitions = []
 
@@ -133,12 +117,13 @@ class FsmSpec:
                 states.append(items[0])
             else:
                 if len(items) != 3:
-                    raise ValueError(f"Invalid line {line}")
+                    msg = f"Invalid line {line}"
+                    raise ValueError(msg)
                 start_state, _transition, end_state = items
                 transition = _transition.split("|")[1]
                 transitions.append(((start_state, transition), end_state))
         # we need to create the alphabet_in
-        alphabet_in = sorted(list(set(transition[1].upper() for transition, _ in transitions)))  # pylint: disable=R1718
+        alphabet_in = sorted({transition[1].upper() for transition, _ in transitions})  # pylint: disable=R1718
         # we need to create the transition_func
         transition_func = {}
         for transition, end_state in transitions:
@@ -161,9 +146,8 @@ class FsmSpec:
 
         vals = [clean(i) for i in transition_func]
         for end_state in transition_func.values():
-            if end_state not in vals:
-                if end_state not in final_states:
-                    final_states.append(end_state)
+            if end_state not in vals and end_state not in final_states:
+                final_states.append(end_state)
 
         if not start_states:
             # we need to determine the start state by using a counter
@@ -171,7 +155,7 @@ class FsmSpec:
             counter = Counter(states)
             start_states = [counter.most_common(1)[0][0]]
         else:
-            start_states = list(set(f[0] for f in start_states))
+            start_states = list({f[0] for f in start_states})
         initial_state = start_states[0]
         states = list(set(states))
 
@@ -187,9 +171,7 @@ class FsmSpec:
 
     @classmethod
     def _handle_state_diagram_v2(cls, graph):
-        """
-        We handle the state diagram v2 case.
-        """
+        """We handle the state diagram v2 case."""
         states = []
         transitions = []
         initial_states = []
@@ -214,13 +196,12 @@ class FsmSpec:
             elif end_state == "[*]":
                 final_states.append(start_state)
             else:
-                states.append(start_state)
-                states.append(end_state)
+                states.extend((start_state, end_state))
                 transitions.append(((start_state, transition), end_state))
 
         # we need to create the alphabet_in
         states = list(set(states))
-        alphabet_in = sorted(list(set([transition[1] for transition, _ in transitions])))  # pylint: disable=R1718
+        alphabet_in = sorted({transition[1] for transition, _ in transitions})  # pylint: disable=R1718
         # we need to create the transition_func
         transition_func = {}
         for transition, end_state in transitions:
@@ -240,9 +221,7 @@ class FsmSpec:
         )
 
     def to_string(self):
-        """
-        We convert the FsmSpec to a string.
-        """
+        """We convert the FsmSpec to a string."""
         return str(
             yaml.safe_dump(self.__dict__),
         )

@@ -1,6 +1,4 @@
-"""
-This module contains tests for the pytest fixtures.
-"""
+"""This module contains tests for the pytest fixtures."""
 
 from pathlib import Path
 

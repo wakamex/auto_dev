@@ -1,6 +1,4 @@
-"""
-This module contains the ParamType class, which represents the type of a parameter in solidity.
-"""
+"""This module contains the ParamType class, which represents the type of a parameter in solidity."""
 
 from enum import Enum
 

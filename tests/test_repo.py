@@ -1,9 +1,6 @@
-"""
-Tests for the click cli.
-"""
+"""Tests for the click cli."""
 
 import subprocess
-from typing import Tuple
 from pathlib import Path
 
 import toml
@@ -17,7 +14,7 @@ class BaseTestRepo:
 
     repo_name = "dummy"
     type_of_repo: str
-    make_commands: Tuple[str]
+    make_commands: tuple[str]
 
     @property
     def cli_args(self):
@@ -86,7 +83,7 @@ class BaseTestRepo:
                     text=True,
                     check=False,
                 )
-                if not runner.return_code == 0:
+                if runner.return_code != 0:
                     error_messages[command] = runner.stderr
         assert not error_messages
 

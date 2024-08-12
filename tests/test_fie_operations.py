@@ -1,6 +1,4 @@
-"""
-Test file operations.
-"""
+"""Test file operations."""
 
 from pathlib import Path
 

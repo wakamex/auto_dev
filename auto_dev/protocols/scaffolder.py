@@ -4,7 +4,6 @@ import re
 import ast
 import tempfile
 import subprocess
-from typing import Dict
 from pathlib import Path
 from itertools import starmap
 from collections import namedtuple
@@ -37,16 +36,16 @@ README_TEMPLATE = """
 
 def read_protocol(filepath: str) -> ProtocolSpecification:
     """Read protocol specification."""
-
     content = Path(filepath).read_text(encoding=DEFAULT_ENCODING)
     if "```" in content:
         if content.count("```") != 2:
-            raise ValueError("Expecting a single code block")
+            msg = "Expecting a single code block"
+            raise ValueError(msg)
         content = remove_prefix(content.split("```")[1], "yaml")
 
     # use ProtocolGenerator to validate the specification
 
-    with tempfile.NamedTemporaryFile(mode="w", delete=False) as temp_file:
+    with tempfile.NamedTemporaryFile(mode="w", delete=False, encoding="utf-8") as temp_file:
         Path(temp_file.name).write_text(content, encoding=DEFAULT_ENCODING)
         ProtocolGenerator(temp_file.name)
 
@@ -55,16 +54,16 @@ def read_protocol(filepath: str) -> ProtocolSpecification:
     return ProtocolSpecification(metadata, custom_types, speech_acts)
 
 
-def parse_enums(protocol: ProtocolSpecification) -> Dict[str, Dict[str, str]]:
-    """Parse enums"""
-
+def parse_enums(protocol: ProtocolSpecification) -> dict[str, dict[str, str]]:
+    """Parse enums."""
     enums = {}
     for ct_name, definition in protocol.custom_types.items():
         if not definition.startswith("enum "):
             continue
         result = re.search(r"\{([^}]*)\}", definition)
         if not result:
-            raise ValueError(f"Error parsing enum fields from: {definition}")
+            msg = f"Error parsing enum fields from: {definition}"
+            raise ValueError(msg)
         fields = {}
         for enum in filter(None, result.group(1).strip().split(";")):
             name, number = enum.split("=")
@@ -74,7 +73,7 @@ def parse_enums(protocol: ProtocolSpecification) -> Dict[str, Dict[str, str]]:
 
 
 def get_docstring_index(node: ast.stmt):
-    """Get docstring index"""
+    """Get docstring index."""
 
     def is_docstring(stmt: ast.stmt):
         return isinstance(stmt, ast.Expr) and isinstance(stmt.value, ast.Str)
@@ -83,7 +82,7 @@ def get_docstring_index(node: ast.stmt):
 
 
 def get_raise_statement(stmt) -> ast.stmt:
-    """Get raise statement"""
+    """Get raise statement."""
     return next(
         statement
         for statement in stmt.body
@@ -94,17 +93,16 @@ def get_raise_statement(stmt) -> ast.stmt:
 
 
 class EnumModifier:
-    """EnumModifier"""
+    """EnumModifier."""
 
     def __init__(self, protocol_path: Path, logger):
-        """Initialize EnumModifier"""
-
+        """Initialize EnumModifier."""
         self.protocol_path = protocol_path
         self.protocol = read_protocol(protocol_path / "README.md")
         self.logger = logger
 
-    def augment_enums(self):
-        """Agument enums"""
+    def augment_enums(self) -> None:
+        """Agument enums."""
         enums = parse_enums(self.protocol)
         if not enums:
             return
@@ -129,11 +127,11 @@ class EnumModifier:
         i = content.find(modified_code.split("\n")[0])
         return content[:i] + modified_code
 
-    def _format_and_write_to_file(self, file_path: Path, content: str):
+    def _format_and_write_to_file(self, file_path: Path, content: str) -> None:
         file_path.write_text(content)
         Formatter.run_sort(file_path)
 
-    def _process_enum(self, node: ast.ClassDef, enums):
+    def _process_enum(self, node: ast.ClassDef, enums) -> None:
         camel_to_snake(node.name)
         node.bases = [ast.Name(id="Enum", ctx=ast.Load())]
 
@@ -142,7 +140,7 @@ class EnumModifier:
         node.body = node.body[:docstring_index] + class_attrs + node.body[docstring_index:]
         self._update_methods(node)
 
-    def _create_class_attributes(self, enum_values: Dict[str, str], node: ast.ClassDef):
+    def _create_class_attributes(self, enum_values: dict[str, str], node: ast.ClassDef):
         def to_ast_assign(attr_name: str, attr_value: str):
             return ast.Assign(
                 targets=[ast.Name(id=attr_name, ctx=ast.Store())],
@@ -152,11 +150,11 @@ class EnumModifier:
 
         return list(starmap(to_ast_assign, enum_values.items()))
 
-    def _update_methods(self, node: ast.ClassDef):
+    def _update_methods(self, node: ast.ClassDef) -> None:
         to_remove = []
         for i, stmt in enumerate(node.body):
             if isinstance(stmt, ast.FunctionDef):
-                if stmt.name in ("__init__", "__eq__"):
+                if stmt.name in {"__init__", "__eq__"}:
                     to_remove.append(i)
                 elif stmt.name == "encode":
                     self._modify_encode_function(stmt, node)
@@ -166,7 +164,7 @@ class EnumModifier:
         for i in sorted(to_remove, reverse=True):
             node.body.pop(i)
 
-    def _modify_encode_function(self, stmt: ast.stmt, node: ast.ClassDef):
+    def _modify_encode_function(self, stmt: ast.stmt, node: ast.ClassDef) -> None:
         name = camel_to_snake(node.name)
         statement = get_raise_statement(stmt)
         j = stmt.body.index(statement)
@@ -182,7 +180,7 @@ class EnumModifier:
             )
         )
 
-    def _modify_decode_function(self, stmt: ast.stmt, node: ast.ClassDef):
+    def _modify_decode_function(self, stmt: ast.stmt, node: ast.ClassDef) -> None:
         name = camel_to_snake(node.name)
         statement = get_raise_statement(stmt)
         j = stmt.body.index(statement)
@@ -200,11 +198,10 @@ class EnumModifier:
 
 
 class ProtocolScaffolder:
-    """ProtocolScaffolder"""
+    """ProtocolScaffolder."""
 
     def __init__(self, protocol_specification_path: str, language, logger, verbose: bool = True):
         """Initialize ProtocolScaffolder."""
-
         self.logger = logger or get_logger()
         self.verbose = verbose
         self.language = language
@@ -213,11 +210,11 @@ class ProtocolScaffolder:
 
     def generate(self) -> None:
         """Generate protocol."""
-
         command = f"aea generate protocol {self.protocol_specification_path} --l {self.language}"
-        result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
-        if not result.returncode == 0:
-            raise ValueError(f"Protocol scaffolding failed: {result.stderr}")
+        result = subprocess.run(command, shell=True, capture_output=True, check=False)
+        if result.returncode != 0:
+            msg = f"Protocol scaffolding failed: {result.stderr}"
+            raise ValueError(msg)
 
         protocol = read_protocol(self.protocol_specification_path)
         protocol_author = protocol.metadata["author"]
@@ -238,9 +235,10 @@ class ProtocolScaffolder:
         EnumModifier(protocol_path, self.logger).augment_enums()
 
         command = f"aea fingerprint protocol {protocol_author}/{protocol_name}:{protocol_version}"
-        result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
-        if not result.returncode == 0:
-            raise ValueError(f"Protocol fingerprinting failed: {result.stderr}")
+        result = subprocess.run(command, shell=True, capture_output=True, check=False)
+        if result.returncode != 0:
+            msg = f"Protocol fingerprinting failed: {result.stderr}"
+            raise ValueError(msg)
 
         protocol_path = Path.cwd() / "protocols" / protocol_name
         self.logger.info(f"New protocol scaffolded at {protocol_path}")

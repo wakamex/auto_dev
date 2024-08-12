@@ -1,6 +1,4 @@
-"""
-Test the augmenter.
-"""
+"""Test the augmenter."""
 
 import os
 import shutil
@@ -49,7 +47,7 @@ def connection_scaffolder(isolated_filesystem):
 
 
 def test_logging_scaffolder_scaffold_all(logging_scaffolder):
-    """test the logging scaffolder."""
+    """Test the logging scaffolder."""
     scaffold = logging_scaffolder.scaffold(["all"])
     assert "console" in scaffold["logging_config"]["handlers"]
     assert "http" in scaffold["logging_config"]["handlers"]
@@ -57,7 +55,7 @@ def test_logging_scaffolder_scaffold_all(logging_scaffolder):
 
 
 def test_logging_scaffolder_scaffold(logging_scaffolder):
-    """test the logging scaffolder."""
+    """Test the logging scaffolder."""
     scaffold = logging_scaffolder.scaffold(["console"])
     assert "console" in scaffold["logging_config"]["handlers"]
     assert "http" not in scaffold["logging_config"]["handlers"]
@@ -65,7 +63,7 @@ def test_logging_scaffolder_scaffold(logging_scaffolder):
 
 
 def test_logging_scaffolder_scaffold_bad_handler(logging_scaffolder):
-    """test the logging scaffolder."""
+    """Test the logging scaffolder."""
     with pytest.raises(ValueError):
         logging_scaffolder.scaffold(["bad"])
 

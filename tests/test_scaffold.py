@@ -24,7 +24,7 @@ def get_yaml_files(directory):
 
 def get_paths_from_yaml(yaml_file):
     """Get all paths from a yaml file"""
-    with open(yaml_file, "r", encoding=DEFAULT_ENCODING) as f:
+    with open(yaml_file, encoding=DEFAULT_ENCODING) as f:
         spec = yaml.safe_load(f)
 
     paths = []
@@ -144,7 +144,7 @@ def verify_dynamic_handlers(openapi_spec_path, expected_handlers, openapi_file):
 
 def verify_skill_yaml(skill_path):
     """Verify content of skill.yaml"""
-    with open(skill_path / "skill.yaml", "r", encoding=DEFAULT_ENCODING) as f:
+    with open(skill_path / "skill.yaml", encoding=DEFAULT_ENCODING) as f:
         skill_yaml = yaml.safe_load(f)
     assert "eightballer/http:0.1.0" in skill_yaml["protocols"][0]
     assert "behaviours" in skill_yaml and not skill_yaml["behaviours"]

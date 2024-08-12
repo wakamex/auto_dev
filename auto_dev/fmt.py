@@ -1,6 +1,4 @@
-"""
-Module to format the code.
-"""
+"""Module to format the code."""
 
 from multiprocessing import Pool
 
@@ -14,7 +12,7 @@ from auto_dev.cli_executor import CommandExecutor
 class Formatter:
     """Formatter class to run the formatter."""
 
-    def __init__(self, verbose, remote):
+    def __init__(self, verbose, remote) -> None:
         self.verbose = verbose
         self.remote = remote
 
@@ -33,7 +31,7 @@ class Formatter:
                 timeout=150,
             )
         if verbose:
-            print(result.json())
+            pass
 
         if result.json():
             if "new_data" in result.json():
@@ -47,14 +45,12 @@ class Formatter:
 
     def _format_path(self, path, verbose=False):
         """Format the path."""
-
-        results = all(
+        return all(
             [
                 self.run_sort(path, verbose=verbose),
                 self.run_format(path, verbose=verbose),
             ]
         )
-        return results
 
     @staticmethod
     def run_format(path, verbose=False):
@@ -68,8 +64,7 @@ class Formatter:
                 str(path),
             ]
         )
-        result = command.execute(verbose=verbose)
-        return result
+        return command.execute(verbose=verbose)
 
     @staticmethod
     def run_sort(path, verbose=False):
@@ -86,8 +81,7 @@ class Formatter:
                 str(path),
             ]
         )
-        result = command.execute(verbose=verbose)
-        return result
+        return command.execute(verbose=verbose)
 
 
 def single_thread_fmt(paths, verbose, logger, remote=False):
@@ -119,4 +113,4 @@ def multi_thread_fmt(paths, verbose, num_processes, remote=False):
         if not result:
             results[i] = local_formatter.format(paths[i])
 
-    return dict(zip(paths, results))
+    return dict(zip(paths, results, strict=False))

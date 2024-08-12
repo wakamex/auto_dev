@@ -1,6 +1,4 @@
-"""
-This module contains the logic for the fmt command.
-"""
+"""This module contains the logic for the fmt command."""
 
 import rich_click as click
 
@@ -28,10 +26,8 @@ cli = build_cli()
     default=False,
 )
 @click.pass_context
-def fmt(ctx, path, changed_only):
-    """
-    Runs the formatting tooling
-    """
+def fmt(ctx, path, changed_only) -> None:
+    """Runs the formatting tooling."""
     verbose = ctx.obj["VERBOSE"]
     num_processes = ctx.obj["NUM_PROCESSES"]
     logger = ctx.obj["LOGGER"]
@@ -48,4 +44,5 @@ def fmt(ctx, path, changed_only):
     failed = len(results) - passed
     logger.info(f"Formatting completed with {passed} passed and {failed} failed")
     if failed > 0:
-        raise click.ClickException("Formatting failed!")
+        msg = "Formatting failed!"
+        raise click.ClickException(msg)

@@ -232,7 +232,7 @@ class {name_camelcase}AsyncChannel(BaseAsyncChannel):  # pylint: disable=too-man
 
         :param loop: asyncio event loop to use
         \"\"\"
-        
+
         if self.is_stopped:
             self._loop = loop
             self._in_queue = asyncio.Queue()

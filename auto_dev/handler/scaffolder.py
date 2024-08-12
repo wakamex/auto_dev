@@ -189,9 +189,7 @@ MAIN_HANDLER_TEMPLATE = """
 
 
 class HandlerScaffolder:
-    """
-    Handler Scaffolder
-    """
+    """Handler Scaffolder."""
 
     def __init__(
         self,
@@ -203,7 +201,6 @@ class HandlerScaffolder:
         auto_confirm: bool = False,
     ):
         """Initialize HandlerScaffolder."""
-
         self.logger = logger or get_logger()
         self.verbose = verbose
         self.author = public_id.author
@@ -213,17 +210,15 @@ class HandlerScaffolder:
         self.auto_confirm = auto_confirm
         self.new_skill = new_skill
 
-    def create_new_skill(self):
-        """
-        Create a new skill
-        """
+    def create_new_skill(self) -> None:
+        """Create a new skill."""
         skill_cmd = f"aea scaffold skill {self.output}".split(" ")
         if not CommandExecutor(skill_cmd).execute(verbose=self.verbose):
-            raise ValueError("Failed to scaffold skill.")
+            msg = "Failed to scaffold skill."
+            raise ValueError(msg)
 
     def generate(self) -> None:
         """Generate handler."""
-
         if not self.new_skill:
             skill_path = Path("skills") / self.output
             if not skill_path.exists():
@@ -236,15 +231,15 @@ class HandlerScaffolder:
         for path, path_spec in openapi_spec.get("paths", {}).items():
             for method, operation in path_spec.items():  # noqa
                 method_name: str = (
-                    f"handle_{method.lower()}_{path.lstrip('/').replace('/', '_').replace('{', '').replace('}', '')}"  # noqa
+                    f"handle_{method.lower()}_{path.lstrip('/').replace('/', '_').replace('{', '').replace('}', '')}"
                 )
                 params = []
                 if "{" in path:
                     params.append("id")
-                if method.lower() in ["post", "put", "patch", "delete"]:
+                if method.lower() in {"post", "put", "patch", "delete"}:
                     params.append("body")
 
-                param_str: str = ", ".join(["self"] + params)
+                param_str: str = ", ".join(["self", *params])
 
                 method_code: str = f"""
     def {method_name}({param_str}):
@@ -265,18 +260,17 @@ class HandlerScaffolder:
         handler_code += main_handler
         return handler_code
 
-    def save_handler(self, path, content):
+    def save_handler(self, path, content) -> None:
         """Save handler to file."""
         with open(path, "w", encoding=DEFAULT_ENCODING) as f:
             try:
                 f.write(content)
             except Exception as e:
-                raise ValueError(f"Error writing to file: {e}") from e
+                msg = f"Error writing to file: {e}"
+                raise ValueError(msg) from e
 
-    def update_skill_yaml(self, file):
-        """
-        Update the skill.yaml file
-        """
+    def update_skill_yaml(self, file) -> None:
+        """Update the skill.yaml file."""
         skill_yaml = read_yaml_file(file)
 
         skill_yaml["protocols"] = [HTTP_PROTOCOL]
@@ -302,9 +296,8 @@ class HandlerScaffolder:
         with open(file, "w", encoding=DEFAULT_ENCODING) as f:
             yaml.safe_dump(skill_yaml, f, sort_keys=False)
 
-    def move_and_update_my_model(self):
-        """
-        Reads in the my_model.py file and updates it.
+    def move_and_update_my_model(self) -> None:
+        """Reads in the my_model.py file and updates it.
         We replace the name MyModel with the name Strategy.
         """
         my_model_file = Path("my_model.py")
@@ -319,56 +312,48 @@ class HandlerScaffolder:
             ):
                 my_model_file.unlink()
                 strategy_file.write_text(strategy_code, encoding=DEFAULT_ENCODING)
-                print(f"'{my_model_file}' removed and '{strategy_file}' created.")
             else:
-                print("Operation cancelled.")
+                pass
 
-    def remove_behaviours(self):
-        """
-        Remove the behaviours.py file.
-        """
+    def remove_behaviours(self) -> None:
+        """Remove the behaviours.py file."""
         behaviours_file = Path("behaviours.py")
         if behaviours_file.exists():
             if self.confirm_action(f"Are you sure you want to remove the file '{behaviours_file}'?"):
                 behaviours_file.unlink()
-                print(f"File '{behaviours_file}' removed.")
             else:
-                print("Operation cancelled.")
+                pass
         else:
-            print(f"'{behaviours_file}' does not exist.")
+            pass
 
-    def create_dialogues(self):
-        """
-        Create the dialogues
-        """
+    def create_dialogues(self) -> None:
+        """Create the dialogues."""
         dialogues_file = "dialogues.py"
         with open(dialogues_file, "w", encoding=DEFAULT_ENCODING) as f:
             f.write(DIALOGUES_CODE)
 
-    def fingerprint(self):
-        """
-        Fingerprint the skill
-        """
+    def fingerprint(self) -> None:
+        """Fingerprint the skill."""
         skill_id = PublicId(self.author, self.output, "0.1.0")
         cli_executor = CommandExecutor(f"aea fingerprint skill {skill_id}".split())
         result = cli_executor.execute(verbose=True)
         if not result:
-            raise ValueError(f"Fingerprinting failed: {skill_id}")
+            msg = f"Fingerprinting failed: {skill_id}"
+            raise ValueError(msg)
 
-    def aea_install(self):
-        """
-        Install the aea
-        """
+    def aea_install(self) -> None:
+        """Install the aea."""
         install_cmd = ["aea", "install"]
         if not CommandExecutor(install_cmd).execute(verbose=self.verbose):
-            raise ValueError(f"Failed to execute {install_cmd}.")
+            msg = f"Failed to execute {install_cmd}."
+            raise ValueError(msg)
 
-    def add_protocol(self):
-        """
-        Add the protocol"""
+    def add_protocol(self) -> None:
+        """Add the protocol."""
         protocol_cmd = f"aea add protocol {HTTP_PROTOCOL}".split(" ")
         if not CommandExecutor(protocol_cmd).execute(verbose=self.verbose):
-            raise ValueError(f"Failed to add {HTTP_PROTOCOL}.")
+            msg = f"Failed to add {HTTP_PROTOCOL}."
+            raise ValueError(msg)
 
     def confirm_action(self, message):
         """Prompt the user for confirmation before performing an action."""
@@ -376,4 +361,4 @@ class HandlerScaffolder:
             self.logger.info(f"Auto confirming: {message}")
             return True
         response = input(f"{message} (y/n): ").lower().strip()
-        return response in ("y", "yes")
+        return response in {"y", "yes"}

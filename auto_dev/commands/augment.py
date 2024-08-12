@@ -1,9 +1,6 @@
-"""
-Implement scaffolding tooling
-"""
+"""Implement scaffolding tooling."""
 
 from copy import deepcopy
-from typing import List, Tuple
 from pathlib import Path
 
 import yaml
@@ -168,16 +165,17 @@ AEA_CONFIG = "aea-config.yaml"
 
 
 class BaseScaffolder:
-    """BaseScaffolder"""
+    """BaseScaffolder."""
 
-    def load(self):
-        """Load"""
+    def load(self) -> None:
+        """Load."""
         if not Path(AEA_CONFIG).exists():
-            raise FileNotFoundError(f"File {AEA_CONFIG} not found")
+            msg = f"File {AEA_CONFIG} not found"
+            raise FileNotFoundError(msg)
         content = Path(AEA_CONFIG).read_text(encoding=DEFAULT_ENCODING)
         self.aea_config = list(yaml.safe_load_all(content))
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Init scaffolder."""
         self.logger = get_logger()
         self.load()
@@ -190,12 +188,14 @@ class LoggingScaffolder(BaseScaffolder):
         """Scaffold logging."""
         self.logger.info(f"Generating logging config with handlers: {handlers}")
         if not handlers:
-            raise ValueError("No handlers provided")
+            msg = "No handlers provided"
+            raise ValueError(msg)
         if handlers == ["all"]:
             handlers = HANDLERS
         for handler in handlers:
             if handler not in HANDLERS:
-                raise ValueError(f"Handler '{handler}' not found")
+                msg = f"Handler '{handler}' not found"
+                raise ValueError(msg)
             handlers = {handler: HANDLERS[handler] for handler in handlers}
         logging_config = deepcopy(BASE_LOGGING_CONFIG)
         logging_config["logging_config"]["handlers"] = handlers
@@ -206,13 +206,14 @@ class LoggingScaffolder(BaseScaffolder):
         """Scaffold logging."""
         path = "aea-config.yaml"
         if not Path(path).exists():
-            raise FileNotFoundError(f"File {path} not found")
+            msg = f"File {path} not found"
+            raise FileNotFoundError(msg)
 
         config = yaml.safe_load_all(Path(path).read_text(encoding=DEFAULT_ENCODING))
         if isinstance(config, dict):
             pass
         else:
-            config = list(config)[0]
+            config = next(iter(config))
         logging_config = self.generate(handlers)
         self.aea_config[0].update(logging_config)
         write_to_file(AEA_CONFIG, self.aea_config, FileType.YAML)
@@ -221,13 +222,13 @@ class LoggingScaffolder(BaseScaffolder):
 
 
 @cli.group()
-def augment():
+def augment() -> None:
     """Scaffold commands."""
 
 
 @augment.command()
 @click.argument("handlers", nargs=-1, type=click.Choice(HANDLERS.keys()), required=True)
-def logging(handlers):
+def logging(handlers) -> None:
     """Augment an aeas logging configuration."""
     logger.info(f"Augmenting logging with handlers: {handlers}")
     logging_scaffolder = LoggingScaffolder()
@@ -236,24 +237,24 @@ def logging(handlers):
 
 
 class ConnectionScaffolder(BaseScaffolder):
-    """ConnectionScaffolder"""
+    """ConnectionScaffolder."""
 
-    def generate(self, connections: list) -> List[Tuple[str, str]]:
+    def generate(self, connections: list) -> list[tuple[str, str]]:
         """Generate connections."""
         self.logger.info(f"Generating connection config for: {connections}")
         if not connections:
-            raise ValueError("No connections provided")
+            msg = "No connections provided"
+            raise ValueError(msg)
         if connections == ["all"]:
             connections = CONNECTIONS
         for connection in connections:
             if connection not in CONNECTIONS:
-                raise ValueError(f"Connection '{connection}' not found")
-        connections = [CONNECTIONS[c] for c in connections]
-        return connections
+                msg = f"Connection '{connection}' not found"
+                raise ValueError(msg)
+        return [CONNECTIONS[c] for c in connections]
 
     def scaffold(self, connections: list) -> None:
         """Scaffold connection."""
-
         connections = self.generate(connections)
         for connection, config in connections:
             self.aea_config[0]["connections"].append(connection)
@@ -266,7 +267,7 @@ class ConnectionScaffolder(BaseScaffolder):
 
 @augment.command()
 @click.argument("connections", nargs=-1, type=click.Choice(CONNECTIONS), required=True)
-def connection(connections):
+def connection(connections) -> None:
     """Augment an AEA configuration with connections."""
     logger.info(f"Augmenting agent connections: {connections}")
     connection_scaffolder = ConnectionScaffolder()
