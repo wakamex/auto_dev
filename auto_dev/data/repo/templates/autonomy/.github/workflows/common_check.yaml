@@ -24,8 +24,13 @@ jobs:
         poetry-version: ["1.3.2"]
         os: [ubuntu-20.04,]
     runs-on: ${{ matrix.os }}
+    env:
+        PYTHONPATH: .
+        PYTHONWARNINGS: "ignore"
     steps:
       - uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
       - uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
@@ -52,5 +57,5 @@ jobs:
 
       - name: Tests
         run: |
-            make tests
+            make test
 

@@ -9,6 +9,7 @@ contains the following commands;
         . pyproject.toml
 """
 
+import difflib
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -16,11 +17,18 @@ from typing import List
 
 import rich_click as click
 from aea.cli.utils.config import get_default_author_from_cli_config
-from rich.progress import Progress
+from rich.progress import Progress, track
+from rich import print  # pylint: disable=W0622
 
 from auto_dev.base import build_cli
 from auto_dev.cli_executor import CommandExecutor
-from auto_dev.constants import DEFAULT_ENCODING, SAMPLE_PYTHON_CLI_FILE, SAMPLE_PYTHON_MAIN_FILE, TEMPLATE_FOLDER
+from auto_dev.constants import (
+    DEFAULT_ENCODING,
+    SAMPLE_PYTHON_CLI_FILE,
+    SAMPLE_PYTHON_MAIN_FILE,
+    TEMPLATE_FOLDER,
+    CheckResult,
+)
 from auto_dev.utils import change_dir
 
 
@@ -52,21 +60,34 @@ TEMPLATES = {f.name: f for f in Path(TEMPLATE_FOLDER).glob("*")}
 class RepoScaffolder:
     """Class to scaffold a new repo."""
 
-    def __init__(self, type_of_repo, logger, verbose):
+    def __init__(self, type_of_repo, logger, verbose, render_overrides=None):
         self.type_of_repo = type_of_repo
         self.logger = logger
         self.verbose = verbose
         self.scaffold_kwargs = render_args
+        if render_overrides:
+            self.scaffold_kwargs.update(render_overrides)
 
-    def scaffold(self):
+    @property
+    def template_files(self):
+        """Get template files."""
+        all_files = TEMPLATES[self.type_of_repo].rglob("*")
+        results = []
+        for file in all_files:
+            if not file.is_file() or "__pycache__" in file.parts:
+                continue
+            results.append(file)
+        return results
+
+    def scaffold(
+        self,
+        write_files=True,
+    ):
         """Scaffold files for a new repo."""
 
         new_repo_dir = Path.cwd()
         template_folder = TEMPLATES[self.type_of_repo]
-        for file in template_folder.rglob("*"):
-            if not file.is_file() or "__pycache__" in file.parts:
-                continue
-
+        for file in self.template_files:
             rel_path = file.relative_to(template_folder)
             content = file.read_text(encoding=DEFAULT_ENCODING)
 
@@ -76,11 +97,63 @@ class RepoScaffolder:
             else:
                 target_file_path = new_repo_dir / rel_path
             self.logger.info(f"Scaffolding `{str(target_file_path)}`")
-            target_file_path.parent.mkdir(parents=True, exist_ok=True)
-            target_file_path.write_text(content)
+            if write_files:
+                target_file_path.parent.mkdir(parents=True, exist_ok=True)
+                target_file_path.write_text(content)
+
+    def verify(
+        self,
+        fix_differences=False,
+    ):
+        """Scaffold files for a new repo."""
+
+        template_folder = TEMPLATES[self.type_of_repo]
+        results = []
+        self.logger.info(f"Verifying scaffolded files for {self.type_of_repo} repo.")
+        self.logger.info(f"Total number of files to verify: {len(self.template_files)}")
+
+        for file in track(self.template_files):
+            rel_path = file.relative_to(template_folder)
+            content = file.read_text(encoding=DEFAULT_ENCODING)
+
+            if file.suffix == ".template":
+                content = content.format(**self.scaffold_kwargs)
+                target_file_path = rel_path.with_suffix("")
+            else:
+                target_file_path = rel_path
+            self.logger.debug(f"Scaffolding `{str(target_file_path)}`")
+            actual_file = Path(target_file_path)
+            actual_content = ""
+            if actual_file.exists():
+                actual_content = actual_file.read_text(encoding=DEFAULT_ENCODING)
+            if content == actual_content:
+                results.append(CheckResult.PASS)
+
+                self.logger.debug(f"File {target_file_path} is as expected. ✅")
+            else:
+                self.logger.error(f"File {target_file_path} is not as expected. ❌")
+                diffs = list(difflib.unified_diff(actual_content.splitlines(), content.splitlines()))
+                for diff in diffs if self.verbose else []:
+                    print(diff)
+
+                if fix_differences:
+                    if click.confirm("Do you want to fix the differences(y/n)?\n"):
+                        self.logger.info(f"Fixing differences in {target_file_path}")
+                        Path(target_file_path).write_text(content, encoding=DEFAULT_ENCODING)
+                        results.append(CheckResult.MODIFIED)
+                    else:
+                        results.append(CheckResult.FAIL)
+                else:
+                    results.append(CheckResult.FAIL)
+        return results
 
 
 # We create a new command group
+@cli.group()
+def repo():
+    """Repository management commands."""
+
+
 @cli.group()
 def repo():
     """Repository management commands."""
@@ -228,8 +301,9 @@ def update_deps(ctx, lock: bool):
     ]
     commands_to_results = {}
     with Progress() as progress:
-        task = progress.add_task("[cyan]Executing commands to lock upstream dependencies...", total=len(commands))
+        task = progress.add_task("[cyan]Executing commands dependencies...", total=len(commands))
         for command in commands:
+            print(f"Executing command:\n\n    `{command}`\n")
             cli_executor = CommandExecutor(command.split(" "))
             result = cli_executor.execute(stream=False, verbose=verbose)
             if not result:

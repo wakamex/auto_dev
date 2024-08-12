@@ -13,7 +13,7 @@ from aea.configurations.data_types import PublicId
 from aea.helpers.yaml_utils import yaml_dump
 
 from auto_dev.cli_executor import CommandExecutor
-from auto_dev.constants import AEA_CONFIG, DEFAULT_ENCODING
+from auto_dev.constants import AEA_CONFIG, DEFAULT_ENCODING, FileType
 from auto_dev.data.connections.template import CONNECTION_TEMPLATE
 from auto_dev.data.connections.test_template import TEST_CONNECTION_TEMPLATE
 from auto_dev.protocols.scaffolder import ProtocolSpecification, read_protocol
@@ -217,7 +217,7 @@ class ConnectionScaffolder:
             "name": " ".join(map(str.capitalize, self.name.split("_"))),
         }
         content = README_TEMPLATE.format(**kwargs)
-        write_to_file(str(file_path), content, file_type="text")
+        write_to_file(str(file_path), content, FileType.TEXT)
 
     def generate(self) -> None:
         """Generate connection."""
