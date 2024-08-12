@@ -17,6 +17,7 @@ AUTONOMY_PACKAGES_FILE = "packages/packages.json"
 AUTO_DEV_FOLDER = os.path.join(os.path.dirname(__file__))
 PLUGIN_FOLDER = os.path.join(AUTO_DEV_FOLDER, "commands")
 TEMPLATE_FOLDER = os.path.join(AUTO_DEV_FOLDER, "data", "repo", "templates")
+JINJA_TEMPLATE_FOLDER = os.path.join(AUTO_DEV_FOLDER, "data", "templates", "tests", "customs")
 
 AEA_CONFIG = get_or_create_cli_config()
 
@@ -100,3 +101,11 @@ class FileType(Enum):
     TEXT = "text"
     YAML = "yaml"
     JSON = "json"
+
+
+class CheckResult(Enum):
+    """Check result enum."""
+
+    PASS = "PASS"
+    FAIL = "FAIL"
+    MODIFIED = "MODIFIED"

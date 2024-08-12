@@ -11,6 +11,7 @@ Also contains a Contract, which we will use to allow the user to;
 
 from pathlib import Path
 
+from jinja2 import Environment, FileSystemLoader
 import rich_click as click
 import yaml
 from aea.configurations.constants import DEFAULT_AEA_CONFIG_FILE, PROTOCOL_LANGUAGE_PYTHON, SUPPORTED_PROTOCOL_LANGUAGES
@@ -19,7 +20,7 @@ from aea.configurations.data_types import PublicId
 from auto_dev.base import build_cli
 from auto_dev.cli_executor import CommandExecutor
 from auto_dev.connections.scaffolder import ConnectionScaffolder
-from auto_dev.constants import BASE_FSM_SKILLS, DEFAULT_ENCODING
+from auto_dev.constants import BASE_FSM_SKILLS, DEFAULT_ENCODING, JINJA_TEMPLATE_FOLDER
 from auto_dev.contracts.block_explorer import BlockExplorer
 from auto_dev.contracts.contract_scafolder import ContractScaffolder
 from auto_dev.handler.scaffolder import HandlerScaffolder
@@ -182,20 +183,34 @@ def connection(  # pylint: disable=R0914
 
 
 @scaffold.command()
-@click.argument("spec_file", type=click.Path(exists=True))
-@click.option("--author", default="eightballer", help="Author of the skill")
-@click.option("--output", default="my_api_skill", help="Name of API skill")
+@click.argument("spec_file", type=click.Path(exists=True), required=True)
+@click.argument("public_id", type=PublicId.from_str, required=True)
+@click.option("--new-skill", is_flag=True, default=False, help="Create a new skill")
+@click.option("--auto-confirm", is_flag=True, default=False, help="Auto confirm all actions")
 @click.pass_context
-def handler(ctx, spec_file, author, output):
+def handler(ctx, spec_file, public_id, new_skill, auto_confirm):
     """Generate an AEA handler from an OpenAPI 3 specification."""
 
     logger = ctx.obj["LOGGER"]
     verbose = ctx.obj["VERBOSE"]
 
-    scaffolder = HandlerScaffolder(spec_file, author, output, logger=logger, verbose=verbose)
-    handler_code = scaffolder.generate()
+    if not Path(DEFAULT_AEA_CONFIG_FILE).exists():
+        raise ValueError(f"No {DEFAULT_AEA_CONFIG_FILE} found in current directory")
 
-    with change_dir(f"skills/{output}"):
+    scaffolder = HandlerScaffolder(
+        spec_file, public_id, logger=logger, verbose=verbose, new_skill=new_skill, auto_confirm=auto_confirm
+    )
+    if auto_confirm:
+        scaffolder.confirm_action = lambda _: True
+    if new_skill:
+        scaffolder.create_new_skill()
+
+    handler_code = scaffolder.generate()
+    if handler_code is None:
+        logger.error("Handler generation failed. Exiting.")
+        return 1
+
+    with change_dir(Path("skills") / public_id.name):
         output_path = Path('handlers.py')
         scaffolder.save_handler(output_path, handler_code)
         skill_yaml_file = "skill.yaml"
@@ -205,8 +220,31 @@ def handler(ctx, spec_file, author, output):
         scaffolder.remove_behaviours()
         scaffolder.create_dialogues()
 
+    scaffolder.fingerprint()
+    scaffolder.aea_install()
+    scaffolder.add_protocol()
+
     return 0
 
+
+
+@scaffold.command()
+@click.pass_context
+def tests(ctx,):
+    """
+        Generate tests for an aea component in the current directory
+        AEA handler from an OpenAPI 3 specification.
+    """
+
+    logger = ctx.obj["LOGGER"]
+    verbose = ctx.obj["VERBOSE"]
+    JINJA_TEMPLATE_FOLDER
+    env = Environment(loader=FileSystemLoader(JINJA_TEMPLATE_FOLDER))
+    template = env.get_template('test_custom.jinja')
+    output = template.render(
+        name="test",
+    )
+    print(output)
 
 if __name__ == "__main__":
     cli()  # pylint: disable=no-value-for-parameter
