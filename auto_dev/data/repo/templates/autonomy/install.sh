@@ -158,7 +158,7 @@ function setup_autonomy() {
     echo 'Done initializing the author and remote for aea using the author: ' $author
     echo 'To change the author, run the command;
     `poetry run aea init --remote --author <author>`'
-    poetry run autonomy packages sync || Echo 'Warning: failed to sync packages as part of autonomy setup'
+    poetry run autonomy packages sync > /dev/null || echo 'Warning: failed to sync packages as part of autonomy setup'
 }
 
 main() {
