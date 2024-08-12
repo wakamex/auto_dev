@@ -11,6 +11,7 @@ Also contains a Contract, which we will use to allow the user to;
 
 from pathlib import Path
 
+from jinja2 import Environment, FileSystemLoader
 import rich_click as click
 import yaml
 from aea.configurations.constants import DEFAULT_AEA_CONFIG_FILE, PROTOCOL_LANGUAGE_PYTHON, SUPPORTED_PROTOCOL_LANGUAGES
@@ -19,7 +20,7 @@ from aea.configurations.data_types import PublicId
 from auto_dev.base import build_cli
 from auto_dev.cli_executor import CommandExecutor
 from auto_dev.connections.scaffolder import ConnectionScaffolder
-from auto_dev.constants import BASE_FSM_SKILLS, DEFAULT_ENCODING
+from auto_dev.constants import BASE_FSM_SKILLS, DEFAULT_ENCODING, JINJA_TEMPLATE_FOLDER
 from auto_dev.contracts.block_explorer import BlockExplorer
 from auto_dev.contracts.contract_scafolder import ContractScaffolder
 from auto_dev.handler.scaffolder import HandlerScaffolder
@@ -216,6 +217,25 @@ def handler(ctx, spec_file, public_id, new_skill, auto_confirm):
 
     return 0
 
+
+
+@scaffold.command()
+@click.pass_context
+def tests(ctx,):
+    """
+        Generate tests for an aea component in the current directory
+        AEA handler from an OpenAPI 3 specification.
+    """
+
+    logger = ctx.obj["LOGGER"]
+    verbose = ctx.obj["VERBOSE"]
+    JINJA_TEMPLATE_FOLDER
+    env = Environment(loader=FileSystemLoader(JINJA_TEMPLATE_FOLDER))
+    template = env.get_template('test_custom.jinja')
+    output = template.render(
+        name="test",
+    )
+    print(output)
 
 if __name__ == "__main__":
     cli()  # pylint: disable=no-value-for-parameter
