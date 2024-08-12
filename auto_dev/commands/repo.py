@@ -14,14 +14,13 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 from shutil import rmtree
-
 from typing import List
 
 import rich_click as click
 from aea.cli.utils.config import get_default_author_from_cli_config
+from rich import print  # pylint: disable=W0622
 from rich.progress import Progress, track
 from rich.prompt import Prompt
-from rich import print  # pylint: disable=W0622
 
 from auto_dev.base import build_cli
 from auto_dev.cli_executor import CommandExecutor
@@ -178,10 +177,8 @@ def repo():
 )
 @click.option("-f", "--force", is_flag=True, help="Force overwrite of existing repo", default=False)
 @click.option("--auto-approve", is_flag=True, help="Automatically approve all prompts", default=False)
-@click.argument("name", type=str, required=True)
 @click.pass_context
 def scaffold(ctx, name, type_of_repo, force, auto_approve):
-
     """Create a new repo and scaffold necessary files."""
 
     logger = ctx.obj["LOGGER"]
@@ -217,7 +214,6 @@ def scaffold(ctx, name, type_of_repo, force, auto_approve):
                 logger=logger,
             )
             logger.info("Initialising autonomy packages.")
-            execute_commands("autonomy packages init", verbose=verbose, logger=logger)
         elif type_of_repo == "python":
             src_dir = Path(name)
             src_dir.mkdir(exist_ok=False)
