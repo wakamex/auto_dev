@@ -17,6 +17,15 @@ from auto_dev.utils import get_logger
 
 FSM_SPEC = Path("auto_dev/data/fsm/fsm_specification.yaml").absolute()
 
+class Mockers:
+    """Class containing mock objects for testing"""
+
+    class MockRunner:
+        """Mock runner for testing scaffold commands"""
+
+        def __init__(self):
+            self.return_code = 0
+            self.output = ""
 
 def get_yaml_files(directory):
     """Get all yaml files in a directory"""
@@ -128,15 +137,7 @@ def run_scaffold_command(openapi_spec_path, public_id, new_skill, auto_confirm):
     )
 
     scaffolder.scaffold()
-
-    class MockRunner:
-        """Mock runner"""
-
-        def __init__(self):
-            self.return_code = 0
-            self.output = ""
-
-    return MockRunner()
+    return Mockers.MockRunner()
 
 
 def verify_scaffolded_files(skill_path):
