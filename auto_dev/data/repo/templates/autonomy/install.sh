@@ -158,7 +158,8 @@ function setup_autonomy() {
     echo 'Done initializing the author and remote for aea using the author: ' $author
     echo 'To change the author, run the command;
     `poetry run aea init --remote --author <author>`'
-    poetry run autonomy packages sync || exit 1
+    poetry run autonomy packages init || echo "Already initialized!"
+    poetry run autonomy packages sync > log.txt || cat log.txt && exit 1
 }
 
 main() {
@@ -173,7 +174,6 @@ main() {
     install_poetry_deps
 
     echo "Installation completed successfully!"
-    echo 'Initializing the author and remote for aea'
     setup_autonomy
     set_env_file
     echo '🎉You are ready to BUILD!🚀'
