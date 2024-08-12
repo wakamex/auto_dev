@@ -154,11 +154,6 @@ def repo():
     """Repository management commands."""
 
 
-@cli.group()
-def repo():
-    """Repository management commands."""
-
-
 @repo.command()
 @click.argument("name", type=str, required=True)
 @click.option(
