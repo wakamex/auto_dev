@@ -31,6 +31,7 @@ We want to be able to update the hash of the package.
 import logging
 import shutil
 import sys
+import traceback
 from enum import Enum
 from pathlib import Path
 from typing import Dict
@@ -142,8 +143,8 @@ def main(
     """
     try:
         proposed = get_proposed_dependency_updates(parent_repo=parent_repo, child_repo=child_repo)
-    except FileNotFoundError as NotFound:
-        logger.debug(NotFound)
+    except FileNotFoundError:
+        logger.debug(traceback.format_exc())
         logger.error("The packages.json file does not exist. Exiting. 😢")
         return False
     if not proposed:
@@ -172,11 +173,19 @@ cli = build_cli()
 
 
 class DependencyLocation(Enum):
+    """
+    We define the dependency location
+    """
+
     REMOTE = "remote"
     LOCAL = "local"
 
 
 class DependencyType(Enum):
+    """
+    We define the dependency type.
+    """
+
     AUTONOMY_PACKAGE = "autonomy"
     REMOTE_GIT = "git"
     IPFS = "ipfs"
@@ -236,9 +245,12 @@ def update(
     Example usage:
         adev deps update -p /path/to/parent/repo -c /path/to/child/repo
     """
-    # if the parent repo is `remote` we need to clone it.
+    logger = ctx.obj["LOGGER"]
+    logger.info("Updating the dependencies... 📝")
+    logger.info(f"Parent repo: {parent_repo}")
+    logger.info(f"Child repo: {child_repo}")
+    logger.info(f"Location: {location}")
     if parent_repo == DependencyLocation.REMOTE:
-        breakpoint()
         parent_repo = Path("parent_repo")
     logger = ctx.obj["LOGGER"]
     logger.info("Updating the dependencies... 📝")
