@@ -1,6 +1,7 @@
 """
 Module for testing the project.
 """
+
 from multiprocessing import cpu_count
 
 from auto_dev.cli_executor import CommandExecutor

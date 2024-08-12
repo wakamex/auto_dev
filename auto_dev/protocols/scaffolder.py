@@ -16,7 +16,7 @@ from auto_dev.constants import DEFAULT_ENCODING
 from auto_dev.fmt import Formatter
 from auto_dev.utils import camel_to_snake, get_logger, remove_prefix
 
-ProtocolSpecification = namedtuple('ProtocolSpecification', ['metadata', 'custom_types', 'speech_acts'])
+ProtocolSpecification = namedtuple("ProtocolSpecification", ["metadata", "custom_types", "speech_acts"])
 
 
 README_TEMPLATE = """
@@ -41,11 +41,11 @@ def read_protocol(filepath: str) -> ProtocolSpecification:
     if "```" in content:
         if content.count("```") != 2:
             raise ValueError("Expecting a single code block")
-        content = remove_prefix(content.split('```')[1], "yaml")
+        content = remove_prefix(content.split("```")[1], "yaml")
 
     # use ProtocolGenerator to validate the specification
 
-    with tempfile.NamedTemporaryFile(mode='w', delete=False) as temp_file:
+    with tempfile.NamedTemporaryFile(mode="w", delete=False) as temp_file:
         Path(temp_file.name).write_text(content, encoding=DEFAULT_ENCODING)
         ProtocolGenerator(temp_file.name)
 
@@ -61,7 +61,7 @@ def parse_enums(protocol: ProtocolSpecification) -> Dict[str, Dict[str, str]]:
     for ct_name, definition in protocol.custom_types.items():
         if not definition.startswith("enum "):
             continue
-        result = re.search(r'\{([^}]*)\}', definition)
+        result = re.search(r"\{([^}]*)\}", definition)
         if not result:
             raise ValueError(f"Error parsing enum fields from: {definition}")
         fields = {}
@@ -88,7 +88,7 @@ def get_raise_statement(stmt) -> ast.stmt:
         for statement in stmt.body
         if isinstance(statement, ast.Raise)
         and isinstance(statement.exc, ast.Name)
-        and statement.exc.id == 'NotImplementedError'
+        and statement.exc.id == "NotImplementedError"
     )
 
 
@@ -112,7 +112,7 @@ class EnumModifier:
         content = custom_types_path.read_text()
         root = ast.parse(content)
 
-        new_import = ast.ImportFrom(module="enum", names=[ast.alias(name='Enum', asname=None)], level=0)
+        new_import = ast.ImportFrom(module="enum", names=[ast.alias(name="Enum", asname=None)], level=0)
         root.body.insert(get_docstring_index(root), new_import)
 
         for node in root.body:
@@ -134,7 +134,7 @@ class EnumModifier:
 
     def _process_enum(self, node: ast.ClassDef, enums):
         camel_to_snake(node.name)
-        node.bases = [ast.Name(id='Enum', ctx=ast.Load())]
+        node.bases = [ast.Name(id="Enum", ctx=ast.Load())]
 
         class_attrs = self._create_class_attributes(enums[node.name], node)
         docstring_index = get_docstring_index(node)
@@ -190,7 +190,7 @@ class EnumModifier:
                 func=ast.Name(id=node.name, ctx=ast.Load()),
                 args=[
                     ast.Attribute(
-                        value=ast.Name(id=f'{name}_protobuf_object', ctx=ast.Load()), attr=name, ctx=ast.Load()
+                        value=ast.Name(id=f"{name}_protobuf_object", ctx=ast.Load()), attr=name, ctx=ast.Load()
                     )
                 ],
                 keywords=[],

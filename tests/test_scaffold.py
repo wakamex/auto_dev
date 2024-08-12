@@ -29,18 +29,18 @@ class Mockers:
 
 def get_yaml_files(directory):
     """Get all yaml files in a directory"""
-    return [str(f) for f in Path(directory).glob('*.yaml')]
+    return [str(f) for f in Path(directory).glob("*.yaml")]
 
 
 def get_paths_from_yaml(yaml_file):
     """Get all paths from a yaml file"""
-    with open(yaml_file, 'r', encoding=DEFAULT_ENCODING) as f:
+    with open(yaml_file, "r", encoding=DEFAULT_ENCODING) as f:
         spec = yaml.safe_load(f)
 
     paths = []
-    for path, methods in spec.get('paths', {}).items():
+    for path, methods in spec.get("paths", {}).items():
         for method in methods:
-            handler_name = path.replace('{', '').replace('}', '')
+            handler_name = path.replace("{", "").replace("}", "")
             handler_name = f"handle_{method.lower()}_{handler_name.lstrip('/').replace('/', '_')}"
             paths.append(handler_name)
     return paths
@@ -66,7 +66,7 @@ def test_scaffold_fsm_with_aea_run(cli_runner, spec, dummy_agent_tim):
     assert (Path.cwd() / "vendor" / "valory" / "skills" / "reset_pause_abci").exists()
     assert (Path.cwd() / "vendor" / "valory" / "skills" / "termination_abci").exists()
 
-    cmd = ['aea', 'run']
+    cmd = ["aea", "run"]
     runner = cli_runner(cmd)
     result = runner.execute()
     assert runner.exit_code == 1, runner.output

@@ -15,11 +15,12 @@ import rich_click as click
 import yaml
 from aea.configurations.constants import DEFAULT_AEA_CONFIG_FILE, PROTOCOL_LANGUAGE_PYTHON, SUPPORTED_PROTOCOL_LANGUAGES
 from aea.configurations.data_types import PublicId
+from jinja2 import Environment, FileSystemLoader
 
 from auto_dev.base import build_cli
 from auto_dev.cli_executor import CommandExecutor
 from auto_dev.connections.scaffolder import ConnectionScaffolder
-from auto_dev.constants import BASE_FSM_SKILLS, DEFAULT_ENCODING
+from auto_dev.constants import BASE_FSM_SKILLS, DEFAULT_ENCODING, JINJA_TEMPLATE_FOLDER
 from auto_dev.contracts.block_explorer import BlockExplorer
 from auto_dev.contracts.contract_scafolder import ContractScaffolder
 from auto_dev.handler.scaffolder import HandlerScaffoldBuilder
@@ -41,13 +42,14 @@ def scaffold():
 @click.argument("address", default=None, required=False)
 @click.argument("name", default=None, required=False)
 @click.option("--from-file", default=None, help="Ingest a file containing a list of addresses and names.")
+@click.option("--from-abi", default=None, help="Ingest an ABI file to scaffold a contract.")
 @click.option("--block-explorer-url", default="https://api.etherscan.io/api")
-@click.option("--block-explorer-api-key", required=True)
+@click.option("--block-explorer-api-key", default=None)
 @click.option("--read-functions", default=None, help="Comma separated list of read functions to scaffold.")
 @click.option("--write-functions", default=None, help="Comma separated list of write functions to scaffold.")
 @click.pass_context
 def contract(  # pylint: disable=R0914
-    ctx, address, name, block_explorer_url, block_explorer_api_key, read_functions, write_functions, from_file
+    ctx, address, name, block_explorer_url, block_explorer_api_key, read_functions, write_functions, from_abi, from_file
 ):
     """
     Scaffold a contract.
@@ -71,6 +73,13 @@ def contract(  # pylint: disable=R0914
             )
 
         return
+    if from_abi is not None:
+        logger.info(f"Using ABI file: {from_abi}")
+        scaffolder = ContractScaffolder(block_explorer=None)
+        new_contract = scaffolder.from_abi(from_abi, address, name)
+        logger.info(f"New contract scaffolded at {new_contract.path}")
+        return
+
     logger.info(f"Using block explorer url: {block_explorer_url}")
     logger.info(f"Scaffolding contract at address: {address} with name: {name}")
 
@@ -203,6 +212,28 @@ def handler(ctx, spec_file, public_id, new_skill, auto_confirm):
     scaffolder.scaffold()
 
     return 0
+
+
+@scaffold.command()
+@click.pass_context
+def tests(
+    ctx,
+):
+    """
+    Generate tests for an aea component in the current directory
+    AEA handler from an OpenAPI 3 specification.
+    """
+
+    logger = ctx.obj["LOGGER"]
+    verbose = ctx.obj["VERBOSE"]
+    env = Environment(loader=FileSystemLoader(JINJA_TEMPLATE_FOLDER))
+    template = env.get_template("test_custom.jinja")
+    output = template.render(
+        name="test",
+    )
+    if verbose:
+        logger.info(f"Generated tests: {output}")
+        print(output)
 
 
 if __name__ == "__main__":

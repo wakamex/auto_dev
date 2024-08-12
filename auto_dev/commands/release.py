@@ -1,6 +1,7 @@
 """
 We release the package.
 """
+
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -96,7 +97,7 @@ class Releaser:
         We check the project is clean using a command to check if there are ANY changes.
         """
         self.logger.info("Checking the tree is clean... 🚀")
-        result = subprocess.run(['git', 'status', '--porcelain'], capture_output=True, text=True, check=False)
+        result = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True, check=False)
         # we check there are no changes
         return result.stdout == ""
 

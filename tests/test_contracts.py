@@ -1,7 +1,9 @@
 """
 Test the contracts module.
 """
+
 import shutil
+from pathlib import Path
 
 import pytest
 import responses
@@ -80,3 +82,17 @@ def test_scaffolder_generate_openaea_contract(scaffolder, test_filesystem):
     assert contract_path.parent.name == "contracts"
     shutil.rmtree(contract_path.parent)
     assert not contract_path.exists()
+
+
+def test_scaffolder_from_abi(scaffolder, test_filesystem):
+    """
+    Test the scaffolder using an ABI file.
+    """
+    assert test_filesystem
+    path = Path() / "tests" / "data" / "dummy_abi.json"
+    new_contract = scaffolder.from_abi(str(path), KNOWN_ADDRESS, "new_contract")
+    assert new_contract
+    assert new_contract.abi
+    assert new_contract.address == KNOWN_ADDRESS
+    assert new_contract.name == "new_contract"
+    assert new_contract.author == "eightballer"

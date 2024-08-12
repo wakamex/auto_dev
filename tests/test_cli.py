@@ -8,7 +8,7 @@ import os
 def test_lint_fails(cli_runner, test_filesystem):
     """Test the lint command fails with no packages."""
     assert os.getcwd() == test_filesystem
-    cmd = ['adev', '-n', '0', "lint", "-p", "packages/fake"]
+    cmd = ["adev", "-n", "0", "lint", "-p", "packages/fake"]
     runner = cli_runner(cmd)
     runner.execute()
     assert runner.return_code == 2, runner.output
@@ -17,7 +17,7 @@ def test_lint_fails(cli_runner, test_filesystem):
 def test_lints_self(cli_runner, test_filesystem):
     """Test the lint command works with the current package."""
     assert os.getcwd() == test_filesystem
-    cmd = ['adev', "-v", "-n", "0", "lint", "-p", "."]
+    cmd = ["adev", "-v", "-n", "0", "lint", "-p", "."]
     runner = cli_runner(cmd)
     result = runner.execute()
     assert result, runner.output
@@ -27,7 +27,7 @@ def test_lints_self(cli_runner, test_filesystem):
 def test_formats_self(cli_runner, test_filesystem):
     """Test the format command works with the current package."""
     assert os.getcwd() == test_filesystem
-    cmd = ['adev', "-n", "0", "-v", "fmt", "-p", "."]
+    cmd = ["adev", "-n", "0", "-v", "fmt", "-p", "."]
     runner = cli_runner(cmd)
     result = runner.execute()
     assert result, runner.output

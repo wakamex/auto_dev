@@ -1,6 +1,7 @@
 """
 This module contains the Variable class.
 """
+
 from dataclasses import dataclass
 from typing import Any, Optional
 

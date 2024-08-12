@@ -135,14 +135,14 @@ function install_poetry_deps() {
 
     echo "Installing package dependencies via poetry..."
     echo "Using poetry executable: $poetry_executable"
-    poetry install 
+    poetry install > /dev/null || exit 1
     echo "Checking if aea is installed"
     poetry run aea --version
     echo "Done installing dependencies"
 }
 # Main execution
 
-
+ 
 function set_env_file () {
     if [ ! -f ".env" ]; then
         echo "Setting up .env file"
@@ -150,6 +150,16 @@ function set_env_file () {
     fi
 }
 
+function setup_autonomy() {
+    echo "Setting up autonomy"
+    echo 'Initializing the author and remote for aea and syncing packages...'
+    author=$(cat ~/.aea/cli_config.yaml | yq -r '.author') || author="ci"
+    poetry run aea init --remote --author $author > /dev/null || exit 1
+    echo 'Done initializing the author and remote for aea using the author: ' $author
+    echo 'To change the author, run the command;
+    `poetry run aea init --remote --author <author>`'
+    poetry run autonomy packages sync > /dev/null || echo 'Warning: failed to sync packages as part of autonomy setup'
+}
 
 main() {
     install_tool "protoc" || exit 1
@@ -163,10 +173,7 @@ main() {
     install_poetry_deps
 
     echo "Installation completed successfully!"
-    echo 'Initializing the author and remote for aea'
-    poetry run aea init --remote --author ci > /dev/null || exit 1
-    echo 'Done initializing the author and remote for aea'
-    echo 'Setting up the .env file from .env.example'
+    setup_autonomy
     set_env_file
     echo '🎉You are ready to BUILD!🚀'
 }

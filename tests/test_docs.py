@@ -1,6 +1,7 @@
 """
 Tests for the documentation.
 """
+
 import os
 from logging import getLogger
 from pathlib import Path
@@ -56,7 +57,7 @@ def test_doc_code_execution(doc, test_filesystem):
 
     with restore_directory():
         for command in commands:
-            logger.info(f"Executing command:\n\"\"\n{command}\n\"\"")
+            logger.info(f'Executing command:\n""\n{command}\n""')
             if command.startswith("cd "):
                 os.chdir(command.split(" ")[1])
             else:

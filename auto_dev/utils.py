@@ -1,6 +1,7 @@
 """
 Utilities for auto_dev.
 """
+
 import json
 import logging
 import os
@@ -8,6 +9,7 @@ import shutil
 import subprocess
 import tempfile
 from contextlib import contextmanager
+from dataclasses import dataclass
 from functools import reduce
 from glob import glob
 from pathlib import Path
@@ -20,22 +22,37 @@ from aea.cli.utils.context import Context
 from aea.configurations.base import AgentConfig
 from rich.logging import RichHandler
 
+from auto_dev.enums import FileOperation
+from auto_dev.exceptions import NotFound, OperationError
+
 from .constants import AUTONOMY_PACKAGES_FILE, DEFAULT_ENCODING, FileType
 
 
-def get_logger(name=__name__, log_level="INFO"):
-    """Get the logger."""
-    # We use the fancy rich logging handler and the fancy formatter
+def get_logger(name: str = __name__, log_level: str = "INFO") -> logging.Logger:
+    """
+    Get the configured logger.
+
+    Args:
+        name (str): The name of the logger.
+        log_level (str): The logging level.
+
+    Returns:
+        logging.Logger: Configured logger instance.
+    """
     handler = RichHandler(
         rich_tracebacks=True,
         markup=True,
     )
-    # We set the time to just the 24 hours minutes and seconds
-    datefmt = "%H:%M:%S"
-    logging.basicConfig(level="NOTSET", datefmt=datefmt, handlers=[handler])
 
+    datefmt = "%H:%M:%S"
+    logging.basicConfig(
+        level=getattr(logging, log_level.upper(), "INFO"),
+        datefmt=datefmt,
+        format="%(levelname)s - %(message)s",
+        handlers=[handler],
+    )
     log = logging.getLogger(name)
-    log.setLevel(log_level)
+    log.setLevel(getattr(logging, log_level.upper(), "INFO"))
     return log
 
 
@@ -68,7 +85,7 @@ def has_package_code_changed(package_path: Path):
         raise FileNotFoundError(f"Package {package_path} does not exist")
     command = f"git status --short {package_path}"
     result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
-    changed_files = [f for f in result.stdout.decode().split("\n") if f != '']
+    changed_files = [f for f in result.stdout.decode().split("\n") if f != ""]
     changed_files = [f.replace(" M ", "") for f in changed_files]
     changed_files = [f.replace("?? ", "") for f in changed_files]
     return changed_files
@@ -100,7 +117,7 @@ def get_paths(path: Optional[str] = None, changed_only: bool = False):
 
     def filter_git_interferace_files(file_path: str):
         regexs = [
-            'M  ',
+            "M  ",
         ]
         for regex in regexs:
             if regex in file_path:
@@ -109,7 +126,7 @@ def get_paths(path: Optional[str] = None, changed_only: bool = False):
 
     def filter_protobuf_files(file_path: str):
         regexs = [
-            '_pb2.py',
+            "_pb2.py",
         ]
         for regex in regexs:
             if regex in file_path:
@@ -234,7 +251,7 @@ def remove_suffix(text: str, suffix: str) -> str:
     return text[: -len(suffix)] if suffix and text.endswith(suffix) else text
 
 
-def load_aea_ctx(func: Callable[[click.Context, ..., Any], Any]) -> Callable[[click.Context, ..., Any], Any]:
+def load_aea_ctx(func: Callable[[click.Context, Any, Any], Any]) -> Callable[[click.Context, Any, Any], Any]:
     """Load aea Context and AgentConfig if aea-config.yaml exists"""
 
     def wrapper(ctx: click.Context, *args, **kwargs):
@@ -270,8 +287,92 @@ def write_to_file(file_path: str, content: Any, file_type: FileType = FileType.T
                 else:
                     yaml.dump(content, f, default_flow_style=False, sort_keys=False)
             elif file_type == FileType.JSON:
-                json.dump(content, f, separators=(',', ':'))
+                json.dump(content, f, separators=(",", ":"))
             else:
                 raise ValueError(f"Invalid file_type, must be one of {list(FileType)}.")
     except Exception as e:
         raise ValueError(f"Error writing to file {file_path}: {e}") from e
+
+
+def read_from_file(file_path: str, file_type: FileType = FileType.TEXT) -> Any:
+    """
+    Read content from a file.
+    """
+    try:
+        with open(file_path, "r", encoding=DEFAULT_ENCODING) as f:
+            if file_type == FileType.TEXT:
+                return f.read()
+            if file_type == FileType.YAML:
+                return yaml.safe_load(f)
+            if file_type == FileType.JSON:
+                return json.load(f)
+            raise ValueError(f"Invalid file_type, must be one of {list(FileType)}.")
+    except Exception as e:
+        raise ValueError(f"Error reading from file {file_path}: {e}") from e
+
+
+# We want to use emojis as much as possible in all output.
+@dataclass
+class FileLoader:
+    """File loader class."""
+
+    file_path: Path
+    file_type: FileType
+    parse_data: bool = False
+    _file_type_to_loader = {
+        FileType.YAML: (yaml.safe_load, {}),
+        FileType.JSON: (json.loads, {}),
+    }
+    _file_type_to_dumper = {
+        FileType.YAML: (yaml.dump, {"default_flow_style": False, "sort_keys": False}),
+        FileType.JSON: (json.dumps, {"separators": (",", ":"), "sort_keys": False, "indent": 4}),
+    }
+
+    def __post_init__(self):
+        """Post init."""
+        self.file_path = Path(self.file_path)
+        for operation in self.supported_operations:
+            setattr(  # noqa
+                self,  # noqa
+                operation.value,  # noqa
+                lambda *args, **kwargs: self._exec_function(operation, *args, **kwargs),  # noqa  # noqa
+            )  # noqa
+
+    @property
+    def supported_operations(self):
+        """Supported operations. aligns the operations with the file type."""
+        return {
+            FileOperation.READ: self._file_type_to_loader.get(self.file_type),
+            FileOperation.WRITE: self._file_type_to_dumper.get(self.file_type),
+        }
+
+    def _exec_function(self, func: Callable, *args, **kwargs):
+        """Execute a function."""
+        if not self.file_path.exists() and FileOperation(func) is FileOperation.READ:
+            raise NotFound(f"The file {self.file_path} was not found⁉") from FileNotFoundError
+        try:
+            func_type = FileOperation(func)
+        except ValueError as exc:
+            raise OperationError(
+                f"Operation {func} not supported for file type {self.file_type}. "
+                + f"Only {list(self.supported_operations.keys())} supported."
+            ) from exc
+        if func_type not in self.supported_operations:
+            raise OperationError(
+                f"Operation {func} not supported for file type {self.file_type}. "
+                + "Only {list(self.supported_operations.keys())} supported."
+            )
+        if self.file_type not in self._file_type_to_loader:
+            raise OperationError(
+                f"File type {self.file_type} not supported. Only {list(self._file_type_to_loader.keys())} supported."
+            )
+        loader_func, kwargs = self.supported_operations.get(func_type)
+        if func_type is FileOperation.READ:
+            return (
+                loader_func(self.file_path.read_text(encoding=DEFAULT_ENCODING), **kwargs)
+                if self.parse_data
+                else self.file_path.read_text(encoding=DEFAULT_ENCODING)
+            )
+        if func_type is FileOperation.WRITE:
+            return self.file_path.write_text(loader_func(*args, **kwargs), encoding=DEFAULT_ENCODING)
+        raise OperationError(f"Operation {func} not supported")

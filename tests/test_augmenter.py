@@ -1,6 +1,7 @@
 """
 Test the augmenter.
 """
+
 import os
 import shutil
 import tempfile
@@ -50,17 +51,17 @@ def connection_scaffolder(isolated_filesystem):
 def test_logging_scaffolder_scaffold_all(logging_scaffolder):
     """test the logging scaffolder."""
     scaffold = logging_scaffolder.scaffold(["all"])
-    assert "console" in scaffold['logging_config']['handlers']
-    assert "http" in scaffold['logging_config']['handlers']
-    assert "logfile" in scaffold['logging_config']['handlers']
+    assert "console" in scaffold["logging_config"]["handlers"]
+    assert "http" in scaffold["logging_config"]["handlers"]
+    assert "logfile" in scaffold["logging_config"]["handlers"]
 
 
 def test_logging_scaffolder_scaffold(logging_scaffolder):
     """test the logging scaffolder."""
     scaffold = logging_scaffolder.scaffold(["console"])
-    assert "console" in scaffold['logging_config']['handlers']
-    assert "http" not in scaffold['logging_config']['handlers']
-    assert "logfile" not in scaffold['logging_config']['handlers']
+    assert "console" in scaffold["logging_config"]["handlers"]
+    assert "http" not in scaffold["logging_config"]["handlers"]
+    assert "logfile" not in scaffold["logging_config"]["handlers"]
 
 
 def test_logging_scaffolder_scaffold_bad_handler(logging_scaffolder):

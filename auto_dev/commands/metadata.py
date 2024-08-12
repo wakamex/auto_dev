@@ -3,6 +3,7 @@ This script is used to generate metadata for aea packages.
 - generate metadata. we read in a meta data file and generate a json file that can be uploaded to ipfs.
 - print metadata: we read in a meta data file and print it in a way that can be copy pasted into the frontend.
 """
+
 import json
 import sys
 from typing import List
@@ -38,7 +39,7 @@ def read_yaml_file(file_path):
     """
     Reads a yaml file and returns the data.
     """
-    with open(file_path, 'r', encoding=DEFAULT_ENCODING) as file:
+    with open(file_path, "r", encoding=DEFAULT_ENCODING) as file:
         data = list(yaml.safe_load_all(file))[0]
     return data
 
@@ -47,7 +48,7 @@ def read_json_file(file_path):
     """
     Reads a json file and returns the data.
     """
-    with open(file_path, 'r', encoding=DEFAULT_ENCODING) as file:
+    with open(file_path, "r", encoding=DEFAULT_ENCODING) as file:
         data = json.load(file)
     return data
 
@@ -65,7 +66,7 @@ def get_metadata(root, name, hash_, target_id):
 
     """
 
-    split_name = name.split('/')
+    split_name = name.split("/")
     package_type, author, package_name, version = split_name
 
     file_name = split_name[0] if split_name[0] != "agent" else "aea-config"
@@ -142,7 +143,7 @@ def generate(root, target_name, target_id, strict, all):  # pylint: disable=rede
         sys.exit(1)
     data = read_json_file(root + "/packages/packages.json")
     id_to_metadata = {}
-    for name, hash_ in data['dev'].items():
+    for name, hash_ in data["dev"].items():
         if name != target_name and not all:
             continue
         metadata = get_metadata(root, name, hash_, target_id)
@@ -245,7 +246,7 @@ def build_dependency_tree_for_component(component) -> List[str]:
 @click.pass_context
 def validate(ctx, metadata_file):
     """Print metadata for a package"""
-    verbose = ctx.obj['VERBOSE']
+    verbose = ctx.obj["VERBOSE"]
     metadata = read_json_file(metadata_file)
     valid = render_metadata(metadata, verbose=verbose)
     if not valid:
@@ -369,5 +370,5 @@ def check_component_status(component_id):
 metadata.add_command(generate)
 metadata.add_command(validate)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     cli()  # pylint: disable=no-value-for-parameter

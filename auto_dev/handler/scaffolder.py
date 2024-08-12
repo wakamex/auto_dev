@@ -266,7 +266,7 @@ class HandlerScaffolder:
         openapi_spec = read_yaml_file(self.config.spec_file_path)
         handler_methods = []
 
-        for path, path_spec in openapi_spec.get('paths', {}).items():
+        for path, path_spec in openapi_spec.get("paths", {}).items():
             for method, operation in path_spec.items():  # noqa
                 method_name: str = f"handle_{method.lower()}_{path.lstrip('/').replace('/', '_').replace('{', '').replace('}', '')}"  # noqa
                 params = []

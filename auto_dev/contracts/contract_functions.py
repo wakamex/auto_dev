@@ -1,6 +1,7 @@
 """
 Contract functions.
 """
+
 from dataclasses import dataclass
 from enum import Enum
 from string import Template
@@ -48,8 +49,8 @@ class ContractFunction:
         expected format: "arg1, arg2, arg3"
         """
         arguments = []
-        for argument in self.w3_function.abi['inputs']:
-            arguments.append(argument['name'])
+        for argument in self.w3_function.abi["inputs"]:
+            arguments.append(argument["name"])
         return ", ".join(arguments)
 
     @property
@@ -63,7 +64,7 @@ class ContractFunction:
         arg3: type
         """
         arguments = []
-        for argument in self.w3_function.abi['inputs']:
+        for argument in self.w3_function.abi["inputs"]:
             arguments.append(f"{argument['name']}: {SOLIDITY_TO_PYTHON_TYPES[argument['type']]}")
 
         return ",\n".join(arguments)
@@ -97,7 +98,7 @@ class ContractFunction:
         }
         """
         return_values = []
-        for return_value in self.w3_function.abi['outputs']:
+        for return_value in self.w3_function.abi["outputs"]:
             return_values.append(f"{return_value['name']}: {return_value['type']}")
         return ",\n".join(return_values)
 
@@ -106,11 +107,11 @@ class ContractFunction:
         """
         Return the function name.
         """
-        return self.w3_function.abi['name']
+        return self.w3_function.abi["name"]
 
     @property
     def function_signature(self):
         """
         Return the function signature.
         """
-        return self.w3_function.abi['signature']
+        return self.w3_function.abi["signature"]
