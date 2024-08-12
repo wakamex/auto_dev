@@ -1,6 +1,7 @@
 """
 Group to implement improvements.
 """
+
 import os
 from pathlib import Path
 
@@ -27,7 +28,7 @@ cli = build_cli()
     help="Type of repo to scaffold",
     type=click.Choice(TEMPLATES),
     required=True,
-    default='autonomy',
+    default="autonomy",
 )
 @click.option(
     "--author",

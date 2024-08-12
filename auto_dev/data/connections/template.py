@@ -337,17 +337,17 @@ class {name_camelcase}Connection(Connection):
 """
 
 ConnectionTemplate = namedtuple(
-    'ConnectionTemplate',
+    "ConnectionTemplate",
     [
-        'HEADER',
-        'DOCSTRING',
-        'IMPORTS',
-        'PULBIC_ID',
-        'LOGGER',
-        'DIALOGUES',
-        'BASE_ASYNC_CHANNEL',
-        'ASYNC_CHANNEL',
-        'CONNECTION',
+        "HEADER",
+        "DOCSTRING",
+        "IMPORTS",
+        "PULBIC_ID",
+        "LOGGER",
+        "DIALOGUES",
+        "BASE_ASYNC_CHANNEL",
+        "ASYNC_CHANNEL",
+        "CONNECTION",
     ],
 )
 CONNECTION_TEMPLATE = ConnectionTemplate(

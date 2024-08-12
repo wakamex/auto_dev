@@ -21,7 +21,7 @@ class CommandExecutor:
     def __init__(self, command: Union[str, List[str]], cwd: Optional[str] = None):
         """Initialize the command executor."""
         self.command = command
-        self.cwd = str(cwd) if cwd else '.'
+        self.cwd = str(cwd) if cwd else "."
         self.stdout = []
         self.stderr = []
         self.return_code = None

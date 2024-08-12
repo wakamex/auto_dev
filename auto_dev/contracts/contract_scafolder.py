@@ -1,6 +1,7 @@
 """
 Contract scaffolder.
 """
+
 import json
 import os
 import shutil
@@ -26,7 +27,7 @@ class ContractScaffolder:
         """
         Scaffold a contract from a file.
         """
-        with open(path, 'r', encoding=DEFAULT_ENCODING) as file:
+        with open(path, "r", encoding=DEFAULT_ENCODING) as file:
             abi = json.load(file)
         return Contract(abi=abi, name=name, address=address, author=self.author)
 

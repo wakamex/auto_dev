@@ -1,6 +1,7 @@
 """
 Test file operations.
 """
+
 from pathlib import Path
 
 import pytest
@@ -19,13 +20,13 @@ def test_file_writer(
     assert Path(test_clean_filesystem).exists()
 
 
-@pytest.mark.skip('TODO: Fix this test')
+@pytest.mark.skip("TODO: Fix this test")
 @pytest.mark.parametrize(
-    'file_path, file_type, file_operation, data, expected',
+    "file_path, file_type, file_operation, data, expected",
     [
-        ('test.yaml', FileType.YAML, FileOperation.WRITE, {'key': 'value'}, {'key': 'value'}),
-        ('test.json', FileType.JSON, FileOperation.WRITE, {'key': 'value'}, {'key': 'value'}),
-        ('test.txt', FileType.TEXT, FileOperation.WRITE, 'Hello, world!', 'Hello, world!'),
+        ("test.yaml", FileType.YAML, FileOperation.WRITE, {"key": "value"}, {"key": "value"}),
+        ("test.json", FileType.JSON, FileOperation.WRITE, {"key": "value"}, {"key": "value"}),
+        ("test.txt", FileType.TEXT, FileOperation.WRITE, "Hello, world!", "Hello, world!"),
     ],
 )
 class TestFileOperations:

@@ -232,7 +232,7 @@ class HandlerScaffolder:
         openapi_spec = read_yaml_file(self.spec_file_path)
         handler_methods = []
 
-        for path, path_spec in openapi_spec.get('paths', {}).items():
+        for path, path_spec in openapi_spec.get("paths", {}).items():
             for method, operation in path_spec.items():  # noqa
                 method_name: str = f"handle_{method.lower()}_{path.lstrip('/').replace('/', '_').replace('{', '').replace('}', '')}"  # noqa
                 params = []
@@ -373,4 +373,4 @@ class HandlerScaffolder:
             self.logger.info(f"Auto confirming: {message}")
             return True
         response = input(f"{message} (y/n): ").lower().strip()
-        return response in ('y', 'yes')
+        return response in ("y", "yes")

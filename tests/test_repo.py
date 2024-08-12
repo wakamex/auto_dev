@@ -22,7 +22,7 @@ class BaseTestRepo:
     @property
     def cli_args(self):
         """CLI arguments"""
-        return ["adev", "repo", 'scaffold', self.repo_name, "-t", self.type_of_repo]
+        return ["adev", "repo", "scaffold", self.repo_name, "-t", self.type_of_repo]
 
     @property
     def parent_dir(self):
@@ -59,7 +59,7 @@ class BaseTestRepo:
 
         runner = cli_runner(self.cli_args)
         result = runner.execute(self.cli_args)
-        assert result, (runner.stdout, '\n'.join(runner.stderr))
+        assert result, (runner.stdout, "\n".join(runner.stderr))
         makefile = self.repo_path / "Makefile"
         assert makefile.exists(), result.output
         assert makefile.read_text(encoding="utf-8")
@@ -128,12 +128,12 @@ class TestRepoAutonomy(BaseTestRepo):
             (subfolder / "__pycache__" / "cachefile").write_text("cache data")
 
         with change_dir(self.repo_path):
-            result = subprocess.run(['git', 'status', '--porcelain'], capture_output=True, text=True, check=False)
+            result = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True, check=False)
             assert result.returncode == 0
 
             # any other file created in the author's own package directory should be detected
             (author_packages / "some_other_file").write_text("to_be_committed")
-            result = subprocess.run(['git', 'status', '--porcelain'], capture_output=True, text=True, check=False)
+            result = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True, check=False)
             assert result.returncode == 0
             assert "packages" in result.stdout
 
@@ -156,18 +156,18 @@ class TestRepoAutonomy(BaseTestRepo):
         # We read in the pyproject.toml file and check the versions
         current_pyproject = self.parent_dir / "pyproject.toml"
         repo_pyproject = (
-            self.parent_dir / 'auto_dev' / 'data' / 'repo' / 'templates' / 'autonomy' / "pyproject.toml.template"
+            self.parent_dir / "auto_dev" / "data" / "repo" / "templates" / "autonomy" / "pyproject.toml.template"
         )  # pylint: disable=line-too-long
 
-        auto_dev_deps = toml.loads(current_pyproject.read_text())['tool']['poetry']['dependencies']
+        auto_dev_deps = toml.loads(current_pyproject.read_text())["tool"]["poetry"]["dependencies"]
         repo_deps = toml.loads(
             repo_pyproject.read_text().format(
                 project_name=self.repo_name,
                 author=self.author,
             )
         )[
-            'tool'
-        ]['poetry']['dependencies']
+            "tool"
+        ]["poetry"]["dependencies"]
 
         errors = []
         for key in auto_dev_deps:

@@ -1,6 +1,7 @@
 """
 Module to represent a contract.
 """
+
 import json
 from pathlib import Path
 from typing import List, Optional
@@ -35,13 +36,13 @@ class Contract:
         if not abi_path.exists():
             raise ValueError(f"Abi file {abi_path} does not exist.")
         with abi_path.open("r", encoding=DEFAULT_ENCODING) as file_pointer:
-            abi = json.load(file_pointer)['abi']
+            abi = json.load(file_pointer)["abi"]
         w3_contract = self.web3.eth.contract(address=self.address, abi=abi)
         for function in w3_contract.all_functions():
-            mutability = function.abi['stateMutability']
-            if mutability in ['view', "pure"]:
+            mutability = function.abi["stateMutability"]
+            if mutability in ["view", "pure"]:
                 self.read_functions.append(Function(function.abi, FunctionType.READ))
-            elif mutability in ['nonpayable', 'payable']:
+            elif mutability in ["nonpayable", "payable"]:
                 self.write_functions.append(Function(function.abi, FunctionType.WRITE))
             else:
                 raise ValueError(f"Function {function} has unknown state mutability: {mutability}")
@@ -55,7 +56,7 @@ class Contract:
         self.abi = abi
         self.address = address
         self.path = Path.cwd() / "packages" / self.author / "contracts" / self.name
-        self.web3 = web3 if web3 is not None else Web3(Web3.HTTPProvider('http://127.0.0.1:8545'))
+        self.web3 = web3 if web3 is not None else Web3(Web3.HTTPProvider("http://127.0.0.1:8545"))
 
     def write_abi_to_file(self):
         """
