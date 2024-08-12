@@ -189,9 +189,14 @@ def handler(ctx, spec_file, public_id, new_skill, auto_confirm):
 
     scaffolder = (
         HandlerScaffoldBuilder()
-        .create_scaffolder(spec_file, public_id, logger, verbose)
-        .with_new_skill(new_skill)
-        .with_auto_confirm(auto_confirm)
+        .create_scaffolder(
+            spec_file,
+            public_id,
+            logger,
+            verbose,
+            new_skill=new_skill,
+            auto_confirm=auto_confirm
+        )
         .build()
     )
 

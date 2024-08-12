@@ -116,9 +116,14 @@ def run_scaffold_command(openapi_spec_path, public_id, new_skill, auto_confirm):
 
     scaffolder = (
         HandlerScaffoldBuilder()
-        .create_scaffolder(openapi_spec_path, public_id, logger, verbose)
-        .with_new_skill(new_skill)
-        .with_auto_confirm(auto_confirm)
+        .create_scaffolder(
+            openapi_spec_path,
+            public_id,
+            logger,
+            verbose,
+            new_skill=new_skill,
+            auto_confirm=auto_confirm,
+        )
         .build()
     )
 

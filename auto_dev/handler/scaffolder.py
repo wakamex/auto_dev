@@ -465,18 +465,6 @@ class HandlerScaffoldBuilder:
         self.logger = logger
         return self
 
-    def with_new_skill(self, new_skill: bool):
-        """Set the new skill flag."""
-        if self.config:
-            self.config.new_skill = new_skill
-        return self
-
-    def with_auto_confirm(self, auto_confirm: bool):
-        """Set the auto confirm flag."""
-        if self.config:
-            self.config.auto_confirm = auto_confirm
-        return self
-
     def build(self) -> HandlerScaffolder:
         """Build the scaffolder."""
         if not self.config:
