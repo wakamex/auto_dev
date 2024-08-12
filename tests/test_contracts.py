@@ -88,7 +88,7 @@ def test_scaffolder_from_abi(scaffolder, test_filesystem):
     Test the scaffolder using an ABI file.
     """
     assert test_filesystem
-    path = Path.cwd() / ".." / "tests" / "data" / "dummy_abi.json"
+    path = Path() / 'tests' / 'data' / 'dummy_abi.json'
     new_contract = scaffolder.from_abi(str(path), KNOWN_ADDRESS, "new_contract")
     assert new_contract
     assert new_contract.abi
