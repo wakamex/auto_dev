@@ -2,11 +2,12 @@
 Module to allow the chaining of multiple FSMs together.
 """
 
-from dataclasses import dataclass
 from typing import List, Optional
+from dataclasses import dataclass
 
-from auto_dev.constants import DEFAULT_ENCODING
 from auto_dev.fsm.fsm import FsmSpec
+from auto_dev.constants import DEFAULT_ENCODING
+
 
 abci_paths = [
     "/home/tom/Desktop/Fun/mad_market_maker/tmp/vendor/eightballer/skills/cex_data_retrieval/fsm_specification.yaml",

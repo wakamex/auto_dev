@@ -9,30 +9,31 @@ contains the following commands;
         . pyproject.toml
 """
 
-import difflib
 import sys
-from dataclasses import dataclass
-from pathlib import Path
+import difflib
 from shutil import rmtree
 from typing import List
+from pathlib import Path
+from dataclasses import dataclass
 
 import rich_click as click
-from aea.cli.utils.config import get_default_author_from_cli_config
 from rich import print  # pylint: disable=W0622
-from rich.progress import Progress, track
 from rich.prompt import Prompt
+from rich.progress import Progress, track
+from aea.cli.utils.config import get_default_author_from_cli_config
 
 from auto_dev.base import build_cli
-from auto_dev.cli_executor import CommandExecutor
+from auto_dev.enums import UserInput
+from auto_dev.utils import change_dir
 from auto_dev.constants import (
+    TEMPLATE_FOLDER,
     DEFAULT_ENCODING,
     SAMPLE_PYTHON_CLI_FILE,
     SAMPLE_PYTHON_MAIN_FILE,
-    TEMPLATE_FOLDER,
     CheckResult,
 )
-from auto_dev.enums import UserInput
-from auto_dev.utils import change_dir
+from auto_dev.cli_executor import CommandExecutor
+
 
 AGENT_PREFIX = "AutoDev: ->: {msg}"
 

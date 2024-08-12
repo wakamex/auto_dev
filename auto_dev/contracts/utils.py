@@ -6,6 +6,7 @@ from aea.crypto.base import Address
 
 from auto_dev.contracts.param_type import ParamType
 
+
 SOLIDITY_TYPE_TO_PYTHON_TYPE = {
     "address": Address,
     "bool": bool,

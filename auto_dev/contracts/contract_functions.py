@@ -2,13 +2,13 @@
 Contract functions.
 """
 
-from dataclasses import dataclass
 from enum import Enum
 from string import Template
 from typing import Any
+from dataclasses import dataclass
 
-from auto_dev.contracts.contract_templates import READ_FUNCTION_TEMPLATE, WRITE_FUNCTION_TEMPLATE
 from auto_dev.contracts.utils import SOLIDITY_TO_PYTHON_TYPES
+from auto_dev.contracts.contract_templates import READ_FUNCTION_TEMPLATE, WRITE_FUNCTION_TEMPLATE
 
 
 class FunctionType(Enum):

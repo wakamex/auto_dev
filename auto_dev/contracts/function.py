@@ -3,12 +3,12 @@ Function class.
 
 """
 
-from dataclasses import dataclass
 from typing import Any, Dict
+from dataclasses import dataclass
 
-from auto_dev.contracts.contract_functions import FUNCTION_TO_TEMPLATE_MAPPING, FunctionType
-from auto_dev.contracts.variable import Variable
 from auto_dev.utils import camel_to_snake
+from auto_dev.contracts.variable import Variable
+from auto_dev.contracts.contract_functions import FUNCTION_TO_TEMPLATE_MAPPING, FunctionType
 
 
 @dataclass

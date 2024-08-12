@@ -4,9 +4,10 @@ This module contains the logic for the fmt command.
 
 import rich_click as click
 
-from auto_dev.base import build_cli
 from auto_dev.fmt import multi_thread_fmt, single_thread_fmt
+from auto_dev.base import build_cli
 from auto_dev.utils import get_paths
+
 
 cli = build_cli()
 

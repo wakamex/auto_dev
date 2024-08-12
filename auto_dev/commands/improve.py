@@ -8,8 +8,9 @@ from pathlib import Path
 import rich_click as click
 
 from auto_dev.base import build_cli
-from auto_dev.commands.repo import TEMPLATES, RepoScaffolder
 from auto_dev.constants import CheckResult
+from auto_dev.commands.repo import TEMPLATES, RepoScaffolder
+
 
 cli = build_cli()
 

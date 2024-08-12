@@ -2,18 +2,18 @@
 We release the package.
 """
 
-import subprocess
 import sys
-from dataclasses import dataclass
-from pathlib import Path
+import subprocess
 from typing import Any
+from pathlib import Path
+from dataclasses import dataclass
 
-import rich_click as click
 import toml
+import rich_click as click
 
 from auto_dev.base import build_cli
-from auto_dev.cli_executor import CommandExecutor
 from auto_dev.constants import DEFAULT_ENCODING
+from auto_dev.cli_executor import CommandExecutor
 
 
 @dataclass

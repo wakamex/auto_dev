@@ -8,6 +8,7 @@ from pathlib import Path
 
 from aea.cli.utils.config import get_or_create_cli_config
 
+
 DEFAULT_ENCODING = "utf-8"
 DEFAULT_TIMEOUT = 10
 # package directory

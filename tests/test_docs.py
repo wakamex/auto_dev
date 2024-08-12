@@ -8,9 +8,9 @@ from pathlib import Path
 
 import pytest
 
-from auto_dev.cli_executor import CommandExecutor
-from auto_dev.constants import DEFAULT_ENCODING
 from auto_dev.utils import restore_directory
+from auto_dev.constants import DEFAULT_ENCODING
+from auto_dev.cli_executor import CommandExecutor
 
 
 def extract_code_blocks(doc):

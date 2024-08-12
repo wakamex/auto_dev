@@ -10,6 +10,7 @@ import responses
 
 from auto_dev.commands.scaffold import BlockExplorer, ContractScaffolder
 
+
 KNOWN_ADDRESS = "0xc939df369C0Fc240C975A6dEEEE77d87bCFaC259"
 BLOCK_EXPLORER_URL = "https://api.etherscan.io"
 BLOCK_EXPLORER_API_KEY = None

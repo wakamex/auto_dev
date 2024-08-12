@@ -4,8 +4,8 @@ Simple linting tooling for autonomy repos.
 
 from auto_dev.utils import isolated_filesystem
 
-from .cli_executor import CommandExecutor
 from .constants import DEFAULT_PYLAMA_CONFIG
+from .cli_executor import CommandExecutor
 
 
 def check_path(path: str, verbose: bool = False) -> bool:

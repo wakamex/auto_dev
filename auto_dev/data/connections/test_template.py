@@ -2,6 +2,7 @@
 
 from collections import namedtuple
 
+
 HEADER = """
 # -*- coding: utf-8 -*-
 # ------------------------------------------------------------------------------

@@ -1,23 +1,24 @@
 """Connection scaffolder."""
 
-import shutil
 import sys
+import shutil
 import tempfile
 import textwrap
 from pathlib import Path
 
-import rich_click as click
 import yaml
+import rich_click as click
 from aea import AEA_DIR
-from aea.configurations.data_types import PublicId
 from aea.helpers.yaml_utils import yaml_dump
+from aea.configurations.data_types import PublicId
 
-from auto_dev.cli_executor import CommandExecutor
+from auto_dev.utils import get_logger, write_to_file, folder_swapper
 from auto_dev.constants import AEA_CONFIG, DEFAULT_ENCODING, FileType
+from auto_dev.cli_executor import CommandExecutor
+from auto_dev.protocols.scaffolder import ProtocolSpecification, read_protocol
 from auto_dev.data.connections.template import CONNECTION_TEMPLATE
 from auto_dev.data.connections.test_template import TEST_CONNECTION_TEMPLATE
-from auto_dev.protocols.scaffolder import ProtocolSpecification, read_protocol
-from auto_dev.utils import folder_swapper, get_logger, write_to_file
+
 
 INDENT = "    "
 

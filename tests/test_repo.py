@@ -3,8 +3,8 @@ Tests for the click cli.
 """
 
 import subprocess
-from pathlib import Path
 from typing import Tuple
+from pathlib import Path
 
 import toml
 from aea.cli.utils.config import get_default_author_from_cli_config
@@ -165,9 +165,7 @@ class TestRepoAutonomy(BaseTestRepo):
                 project_name=self.repo_name,
                 author=self.author,
             )
-        )[
-            "tool"
-        ]["poetry"]["dependencies"]
+        )["tool"]["poetry"]["dependencies"]
 
         errors = []
         for key in auto_dev_deps:

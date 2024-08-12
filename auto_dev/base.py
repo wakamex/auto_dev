@@ -5,11 +5,12 @@ Base CLI for auto_dev.
 import os
 from dataclasses import dataclass
 
-import pkg_resources
 import rich_click as click
+import pkg_resources
 
-from auto_dev.constants import DEFAULT_ENCODING, PLUGIN_FOLDER
 from auto_dev.utils import get_logger
+from auto_dev.constants import PLUGIN_FOLDER, DEFAULT_ENCODING
+
 
 click.rich_click.USE_RICH_MARKUP = True
 

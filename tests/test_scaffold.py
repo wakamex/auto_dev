@@ -1,17 +1,18 @@
 """Tests for the scaffold command"""
 
-import subprocess
 import sys
+import subprocess
 from pathlib import Path
 
-import pytest
 import yaml
+import pytest
 from aea.cli import cli as aea_cli
 from aea.configurations.base import PublicId
 
 from auto_dev.cli import cli
 from auto_dev.constants import DEFAULT_ENCODING
 from auto_dev.protocols.scaffolder import read_protocol
+
 
 FSM_SPEC = Path("auto_dev/data/fsm/fsm_specification.yaml").absolute()
 

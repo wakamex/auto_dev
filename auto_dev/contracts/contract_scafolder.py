@@ -2,16 +2,16 @@
 Contract scaffolder.
 """
 
-import json
 import os
+import json
 import shutil
 from dataclasses import dataclass
 
-from auto_dev.cli_executor import CommandExecutor
-from auto_dev.constants import DEFAULT_ENCODING
-from auto_dev.contracts.block_explorer import BlockExplorer
-from auto_dev.contracts.contract import Contract
 from auto_dev.utils import isolated_filesystem
+from auto_dev.constants import DEFAULT_ENCODING
+from auto_dev.cli_executor import CommandExecutor
+from auto_dev.contracts.contract import Contract
+from auto_dev.contracts.block_explorer import BlockExplorer
 
 
 @dataclass

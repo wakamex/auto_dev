@@ -11,21 +11,22 @@ Also contains a Contract, which we will use to allow the user to;
 
 from pathlib import Path
 
-import rich_click as click
 import yaml
+import rich_click as click
+from jinja2 import Environment, FileSystemLoader
 from aea.configurations.constants import DEFAULT_AEA_CONFIG_FILE, PROTOCOL_LANGUAGE_PYTHON, SUPPORTED_PROTOCOL_LANGUAGES
 from aea.configurations.data_types import PublicId
-from jinja2 import Environment, FileSystemLoader
 
 from auto_dev.base import build_cli
-from auto_dev.cli_executor import CommandExecutor
-from auto_dev.connections.scaffolder import ConnectionScaffolder
+from auto_dev.utils import change_dir, load_aea_ctx, remove_suffix, camel_to_snake
 from auto_dev.constants import BASE_FSM_SKILLS, DEFAULT_ENCODING, JINJA_TEMPLATE_FOLDER
-from auto_dev.contracts.block_explorer import BlockExplorer
-from auto_dev.contracts.contract_scafolder import ContractScaffolder
+from auto_dev.cli_executor import CommandExecutor
 from auto_dev.handler.scaffolder import HandlerScaffolder
 from auto_dev.protocols.scaffolder import ProtocolScaffolder
-from auto_dev.utils import camel_to_snake, change_dir, load_aea_ctx, remove_suffix
+from auto_dev.connections.scaffolder import ConnectionScaffolder
+from auto_dev.contracts.block_explorer import BlockExplorer
+from auto_dev.contracts.contract_scafolder import ContractScaffolder
+
 
 cli = build_cli()
 

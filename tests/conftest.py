@@ -8,9 +8,10 @@ from pathlib import Path
 
 import pytest
 
-from auto_dev.cli_executor import CommandExecutor
-from auto_dev.constants import AUTONOMY_PACKAGES_FILE, DEFAULT_ENCODING, SAMPLE_PACKAGE_FILE, SAMPLE_PACKAGES_JSON
 from auto_dev.utils import isolated_filesystem
+from auto_dev.constants import DEFAULT_ENCODING, SAMPLE_PACKAGE_FILE, SAMPLE_PACKAGES_JSON, AUTONOMY_PACKAGES_FILE
+from auto_dev.cli_executor import CommandExecutor
+
 
 OPENAPI_TEST_CASES = [
     ("uspto.yaml", ["handle_get_", "handle_get_dataset_version_fields", "handle_post_dataset_version_records"]),

@@ -8,22 +8,23 @@ import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock
 
+import yaml
 import pytest
 import rich_click as click
-import yaml
 
-from auto_dev.constants import DEFAULT_ENCODING, FileType
 from auto_dev.utils import (
-    folder_swapper,
+    get_paths,
     get_logger,
     get_packages,
-    get_paths,
-    has_package_code_changed,
     load_aea_ctx,
     remove_prefix,
     remove_suffix,
     write_to_file,
+    folder_swapper,
+    has_package_code_changed,
 )
+from auto_dev.constants import DEFAULT_ENCODING, FileType
+
 
 TEST_PACKAGES_JSON = {
     "packages/packages.json": """

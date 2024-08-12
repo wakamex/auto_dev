@@ -3,15 +3,16 @@ Implement scaffolding tooling
 """
 
 from copy import deepcopy
-from pathlib import Path
 from typing import List, Tuple
+from pathlib import Path
 
-import rich_click as click
 import yaml
+import rich_click as click
 
 from auto_dev.base import build_cli
-from auto_dev.constants import DEFAULT_ENCODING, FileType
 from auto_dev.utils import get_logger, write_to_file
+from auto_dev.constants import DEFAULT_ENCODING, FileType
+
 
 logger = get_logger()
 

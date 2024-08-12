@@ -3,16 +3,16 @@ Module to represent a contract.
 """
 
 import json
-from pathlib import Path
 from typing import List, Optional
+from pathlib import Path
 
 import yaml
 from web3 import Web3
 
+from auto_dev.utils import write_to_file, snake_to_camel
 from auto_dev.constants import DEFAULT_ENCODING, FileType
-from auto_dev.contracts.contract_functions import ContractFunction, FunctionType
 from auto_dev.contracts.function import Function
-from auto_dev.utils import snake_to_camel, write_to_file
+from auto_dev.contracts.contract_functions import FunctionType, ContractFunction
 
 
 class Contract:

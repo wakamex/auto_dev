@@ -1,20 +1,21 @@
 """Protocol scaffolder."""
 
-import ast
 import re
-import subprocess
+import ast
 import tempfile
-from collections import namedtuple
-from itertools import starmap
-from pathlib import Path
+import subprocess
 from typing import Dict
+from pathlib import Path
+from itertools import starmap
+from collections import namedtuple
 
 import yaml
 from aea.protocols.generator.base import ProtocolGenerator
 
-from auto_dev.constants import DEFAULT_ENCODING
 from auto_dev.fmt import Formatter
-from auto_dev.utils import camel_to_snake, get_logger, remove_prefix
+from auto_dev.utils import get_logger, remove_prefix, camel_to_snake
+from auto_dev.constants import DEFAULT_ENCODING
+
 
 ProtocolSpecification = namedtuple("ProtocolSpecification", ["metadata", "custom_types", "speech_acts"])
 
@@ -130,7 +131,7 @@ class EnumModifier:
 
     def _format_and_write_to_file(self, file_path: Path, content: str):
         file_path.write_text(content)
-        Formatter.run_black(file_path)
+        Formatter.run_sort(file_path)
 
     def _process_enum(self, node: ast.ClassDef, enums):
         camel_to_snake(node.name)

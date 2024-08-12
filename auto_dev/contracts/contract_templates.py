@@ -4,8 +4,11 @@ Contains the necessary templates for the contracts
 
 from string import Template
 
-from auto_dev.data.contracts.header import HEADER as CONTRACT_HEADER
-from auto_dev.data.contracts.header import IMPORTS as CONTRACT_IMPORTS
+from auto_dev.data.contracts.header import (
+    HEADER as CONTRACT_HEADER,
+    IMPORTS as CONTRACT_IMPORTS,
+)
+
 
 PUBLIC_ID = Template(
     """

@@ -3,15 +3,16 @@ Tools to parse fsm specs.
 """
 
 import collections
-from dataclasses import dataclass
-from pathlib import Path
 from string import Template
 from typing import Dict, List, Tuple
+from pathlib import Path
+from dataclasses import dataclass
 
 import yaml
 
-from auto_dev.constants import DEFAULT_ENCODING
 from auto_dev.utils import camel_to_snake
+from auto_dev.constants import DEFAULT_ENCODING
+
 
 # we define our base template
 BASE_MERMAID_TEMPLATE = Template(

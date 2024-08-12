@@ -7,10 +7,10 @@ import shutil
 import tempfile
 from pathlib import Path
 
-import pytest
 import yaml
+import pytest
 
-from auto_dev.commands.augment import ConnectionScaffolder, LoggingScaffolder
+from auto_dev.commands.augment import LoggingScaffolder, ConnectionScaffolder
 
 
 def read_aea_config() -> list:

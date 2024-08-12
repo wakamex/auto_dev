@@ -5,10 +5,11 @@ from pathlib import Path
 import yaml
 from aea.configurations.base import PublicId
 
+from auto_dev.utils import get_logger
+from auto_dev.constants import DEFAULT_ENCODING
 from auto_dev.cli_executor import CommandExecutor
 from auto_dev.commands.metadata import read_yaml_file
-from auto_dev.constants import DEFAULT_ENCODING
-from auto_dev.utils import get_logger
+
 
 HTTP_PROTOCOL = "eightballer/http:0.1.0:bafybeihmhy6ax5uyjt7yxppn4viqswibcs5lsjhl3kvrsesorqe2u44jcm"
 
@@ -234,7 +235,9 @@ class HandlerScaffolder:
 
         for path, path_spec in openapi_spec.get("paths", {}).items():
             for method, operation in path_spec.items():  # noqa
-                method_name: str = f"handle_{method.lower()}_{path.lstrip('/').replace('/', '_').replace('{', '').replace('}', '')}"  # noqa
+                method_name: str = (
+                    f"handle_{method.lower()}_{path.lstrip('/').replace('/', '_').replace('{', '').replace('}', '')}"  # noqa
+                )
                 params = []
                 if "{" in path:
                     params.append("id")

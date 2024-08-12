@@ -6,6 +6,7 @@ from textwrap import dedent
 
 from auto_dev.fsm.fsm import FsmSpec
 
+
 EXAMPLE = """
 alphabet_in:
 - DONE

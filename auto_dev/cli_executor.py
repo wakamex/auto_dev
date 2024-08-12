@@ -8,9 +8,10 @@ It is used by the lint and test functions.
 
 import os
 import subprocess
-from typing import List, Optional, Union
+from typing import List, Union, Optional
 
 from .utils import get_logger
+
 
 logger = get_logger()
 

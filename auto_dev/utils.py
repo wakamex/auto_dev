@@ -2,30 +2,30 @@
 Utilities for auto_dev.
 """
 
-import json
-import logging
 import os
+import json
 import shutil
-import subprocess
+import logging
 import tempfile
+import subprocess
+from glob import glob
+from typing import Any, Union, Callable, Optional
+from pathlib import Path
+from functools import reduce
 from contextlib import contextmanager
 from dataclasses import dataclass
-from functools import reduce
-from glob import glob
-from pathlib import Path
-from typing import Any, Callable, Optional, Union
 
-import rich_click as click
 import yaml
+import rich_click as click
+from rich.logging import RichHandler
 from aea.cli.utils.config import get_registry_path_from_cli_config
 from aea.cli.utils.context import Context
 from aea.configurations.base import AgentConfig
-from rich.logging import RichHandler
 
 from auto_dev.enums import FileOperation
 from auto_dev.exceptions import NotFound, OperationError
 
-from .constants import AUTONOMY_PACKAGES_FILE, DEFAULT_ENCODING, FileType
+from .constants import DEFAULT_ENCODING, AUTONOMY_PACKAGES_FILE, FileType
 
 
 def get_logger(name: str = __name__, log_level: str = "INFO") -> logging.Logger:

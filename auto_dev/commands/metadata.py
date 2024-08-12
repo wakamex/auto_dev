@@ -4,33 +4,34 @@ This script is used to generate metadata for aea packages.
 - print metadata: we read in a meta data file and print it in a way that can be copy pasted into the frontend.
 """
 
-import json
 import sys
+import json
 from typing import List
 
-import rich_click as click
 import yaml
+import rich_click as click
+from rich import print_json
+from aea_cli_ipfs.ipfs_utils import IPFSTool
+from aea.helpers.cid import to_v1
 from aea.configurations.base import PublicId
 from aea.configurations.constants import (
     AGENT,
     AGENTS,
-    CONNECTIONS,
-    CONTRACTS,
     CUSTOM,
+    SKILLS,
     CUSTOMS,
-    DEFAULT_AEA_CONFIG_FILE,
-    PROTOCOLS,
     SERVICE,
     SERVICES,
-    SKILLS,
+    CONTRACTS,
+    PROTOCOLS,
+    CONNECTIONS,
+    DEFAULT_AEA_CONFIG_FILE,
 )
-from aea.helpers.cid import to_v1
-from aea_cli_ipfs.ipfs_utils import IPFSTool
-from rich import print_json
 
 from auto_dev.base import build_cli
-from auto_dev.constants import DEFAULT_ENCODING, FileType
 from auto_dev.utils import write_to_file
+from auto_dev.constants import DEFAULT_ENCODING, FileType
+
 
 cli = build_cli()
 

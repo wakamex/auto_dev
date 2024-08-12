@@ -2,11 +2,11 @@
 This module contains the Variable class.
 """
 
-from dataclasses import dataclass
 from typing import Any, Optional
+from dataclasses import dataclass
 
-from auto_dev.contracts.param_type import ParamType
 from auto_dev.contracts.utils import PARAM_TO_STR_MAPPING
+from auto_dev.contracts.param_type import ParamType
 
 
 @dataclass

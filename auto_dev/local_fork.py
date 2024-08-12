@@ -2,11 +2,11 @@
 Module to run a docker container with a fork of the mainnet.
 """
 
+import time
 import platform
 import subprocess
-import time
-from dataclasses import dataclass
 from typing import Optional
+from dataclasses import dataclass
 
 import requests
 from docker import DockerClient

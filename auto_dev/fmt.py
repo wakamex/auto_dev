@@ -7,8 +7,8 @@ from multiprocessing import Pool
 import requests
 from rich.progress import track
 
-from auto_dev.cli_executor import CommandExecutor
 from auto_dev.constants import DEFAULT_ENCODING
+from auto_dev.cli_executor import CommandExecutor
 
 
 class Formatter:
@@ -50,21 +50,21 @@ class Formatter:
 
         results = all(
             [
-                self.run_autoflake8(path, verbose=verbose),
-                self.run_isort(path, verbose=verbose),
-                self.run_black(path, verbose=verbose),
+                self.run_sort(path, verbose=verbose),
+                self.run_format(path, verbose=verbose),
             ]
         )
         return results
 
     @staticmethod
-    def run_black(path, verbose=False):
+    def run_format(path, verbose=False):
         """Run black on the path."""
         command = CommandExecutor(
             [
                 "poetry",
                 "run",
-                "black",
+                "ruff",
+                "format",
                 str(path),
             ]
         )
@@ -72,30 +72,17 @@ class Formatter:
         return result
 
     @staticmethod
-    def run_isort(path, verbose=False):
+    def run_sort(path, verbose=False):
         """Run isort on the path."""
         command = CommandExecutor(
             [
                 "poetry",
                 "run",
-                "isort",
-                str(path),
-            ]
-        )
-        result = command.execute(verbose=verbose)
-        return result
-
-    @staticmethod
-    def run_autoflake8(path, verbose=False):
-        """Run autoflake8 on the path."""
-        command = CommandExecutor(
-            [
-                "poetry",
-                "run",
-                "autoflake8",
-                "--remove-unused-variables",
-                "--in-place",
-                "--recursive",
+                "ruff",
+                "check",
+                "--select",
+                "I",
+                "--fix",
                 str(path),
             ]
         )
@@ -113,7 +100,7 @@ def single_thread_fmt(paths, verbose, logger, remote=False):
         if verbose:
             logger.info(f"Formatting: {path}")
         result = formatter.format(path)
-        if not result:
+        if not result and remote:
             logger.error(f"Failed to format {path} remotely, trying locally")
             result = local_formatter.format(path)
         results[package] = result
