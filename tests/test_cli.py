@@ -5,7 +5,7 @@ from pathlib import Path
 
 def test_lint_fails(cli_runner, test_filesystem):
     """Test the lint command fails with no packages."""
-    assert Path.cwd() == test_filesystem
+    assert str(Path.cwd()) == test_filesystem
     cmd = ["adev", "-n", "0", "lint", "-p", "packages/fake"]
     runner = cli_runner(cmd)
     runner.execute()
@@ -14,7 +14,7 @@ def test_lint_fails(cli_runner, test_filesystem):
 
 def test_lints_self(cli_runner, test_filesystem):
     """Test the lint command works with the current package."""
-    assert Path.cwd() == test_filesystem
+    assert str(Path.cwd()) == test_filesystem
     cmd = ["adev", "-v", "-n", "0", "lint", "-p", "."]
     runner = cli_runner(cmd)
     result = runner.execute()
@@ -24,7 +24,7 @@ def test_lints_self(cli_runner, test_filesystem):
 
 def test_formats_self(cli_runner, test_filesystem):
     """Test the format command works with the current package."""
-    assert Path.cwd() == test_filesystem
+    assert str(Path.cwd()) == test_filesystem
     cmd = ["adev", "-n", "0", "-v", "fmt", "-p", "."]
     runner = cli_runner(cmd)
     result = runner.execute()
