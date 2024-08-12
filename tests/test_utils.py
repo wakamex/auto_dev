@@ -1,4 +1,4 @@
-"""We test the functions from utils"""
+"""We test the functions from utils."""
 
 import json
 import shutil
@@ -125,7 +125,7 @@ def test_get_paths(test_packages_filesystem):
 
 
 def test_remove_prefix():
-    """Test remove_prefix"""
+    """Test remove_prefix."""
 
     assert remove_prefix("HelloWorld", "Hello") == "World"
     assert remove_prefix("PythonIsGreat", "Python") == "IsGreat"
@@ -135,7 +135,7 @@ def test_remove_prefix():
 
 
 def test_remove_suffix():
-    """Test remove_suffix"""
+    """Test remove_suffix."""
 
     assert remove_suffix("HelloWorld", "World") == "Hello"
     assert remove_suffix("PythonIsGreat", "Great") == "PythonIs"
@@ -145,11 +145,11 @@ def test_remove_suffix():
 
 
 class TestFolderSwapper:
-    """TestFolderSwapper"""
+    """TestFolderSwapper."""
 
     @classmethod
-    def setup_class(cls):
-        """Setup class"""
+    def setup_class(cls) -> None:
+        """Setup class."""
         cls.temp_dir = tempfile.TemporaryDirectory()  # pylint: disable=consider-using-with
         cls.a_dir = Path(tempfile.mkdtemp(dir=cls.temp_dir.name))
         cls.b_dir = Path(tempfile.mkdtemp(dir=cls.temp_dir.name))
@@ -175,7 +175,8 @@ class TestFolderSwapper:
 
         try:
             with folder_swapper(self.a_dir, self.b_dir):
-                raise ZeroDivisionError("Whoops!")
+                msg = "Whoops!"
+                raise ZeroDivisionError(msg)
         except ZeroDivisionError:
             pass
 
@@ -184,10 +185,12 @@ class TestFolderSwapper:
 
 
 def test_load_aea_ctx(dummy_agent_tim):
-    """Test load_aea_ctx"""
+    """Test load_aea_ctx."""
 
     assert dummy_agent_tim
-    mock_func = lambda ctx, *args, **kwargs: (ctx, args, kwargs)  # pylint: disable=C3001
+
+    def mock_func(ctx, *args, **kwargs):
+        return ctx, args, kwargs  # pylint: disable=C3001
     mock_context = MagicMock(spec=click.Context)
 
     decorated_func = load_aea_ctx(mock_func)
@@ -202,7 +205,8 @@ def test_load_aea_ctx(dummy_agent_tim):
 def test_load_aea_ctx_without_config_fails():
     """Test load_aea_ctx fails without aea-config.yaml in local directory."""
 
-    mock_func = lambda ctx, *args, **kwargs: (ctx, args, kwargs)  # pylint: disable=C3001
+    def mock_func(ctx, *args, **kwargs):
+        return ctx, args, kwargs  # pylint: disable=C3001
     mock_context = MagicMock(spec=click.Context)
 
     decorated_func = load_aea_ctx(mock_func)
@@ -212,7 +216,7 @@ def test_load_aea_ctx_without_config_fails():
 
 @pytest.fixture
 def temp_dir(tmp_path):
-    """Temp dir fixture"""
+    """Temp dir fixture."""
     return tmp_path
 
 

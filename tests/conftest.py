@@ -45,7 +45,7 @@ OPENAPI_TEST_CASES = [
 
 @pytest.fixture(params=OPENAPI_TEST_CASES)
 def openapi_test_case(request):
-    """Fixture for openapi test cases"""
+    """Fixture for openapi test cases."""
     return request.param
 
 
@@ -97,7 +97,8 @@ def dummy_agent_tim(test_filesystem, monkeypatch) -> Path:
     command_executor = CommandExecutor(command)
     result = command_executor.execute(verbose=True, shell=True)
     if not result:
-        raise ValueError(f"CLI command execution failed: `{command}`")
+        msg = f"CLI command execution failed: `{command}`"
+        raise ValueError(msg)
 
     os.chdir(str(Path.cwd() / agent))
 
@@ -109,6 +110,7 @@ def dummy_agent_tim(test_filesystem, monkeypatch) -> Path:
         command_executor = CommandExecutor(command.split())
         result = command_executor.execute(verbose=True)
         if not result:
-            raise ValueError(f"CLI command execution failed: `{command}`")
+            msg = f"CLI command execution failed: `{command}`"
+            raise ValueError(msg)
 
     return Path.cwd()

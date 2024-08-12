@@ -12,10 +12,9 @@ from auto_dev.commands.augment import LoggingScaffolder, ConnectionScaffolder
 
 
 def read_aea_config() -> list:
-    """Small helper to load local aea-config.yaml"""
+    """Small helper to load local aea-config.yaml."""
     content = Path("aea-config.yaml").read_text(encoding="utf-8")
-    aea_config = list(yaml.safe_load_all(content))
-    return aea_config
+    return list(yaml.safe_load_all(content))
 
 
 @pytest.fixture
@@ -69,7 +68,7 @@ def test_logging_scaffolder_scaffold_bad_handler(logging_scaffolder):
 
 
 def test_scaffold_connection(connection_scaffolder):
-    """Test scaffold connection"""
+    """Test scaffold connection."""
     aea_config = read_aea_config()
     assert len(aea_config) == 1
     connections = ("abci", "ledger", "ipfs", "http_client", "http_server", "websocket_server", "prometheus")

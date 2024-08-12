@@ -122,7 +122,7 @@ def test_from_mermaid():
 
 
 def test_to_string():
-    """We test whether to output of to_string will match EXAMPLE"""
+    """We test whether to output of to_string will match EXAMPLE."""
     fsm_spec = FsmSpec.from_yaml(EXAMPLE)
     new_fsm = fsm_spec.to_string()
     new_fsm_spec = FsmSpec.from_yaml(new_fsm)

@@ -1,4 +1,4 @@
-"""Tests for the scaffold command"""
+"""Tests for the scaffold command."""
 
 import sys
 import subprocess
@@ -18,12 +18,12 @@ FSM_SPEC = Path("auto_dev/data/fsm/fsm_specification.yaml").absolute()
 
 
 def get_yaml_files(directory):
-    """Get all yaml files in a directory"""
+    """Get all yaml files in a directory."""
     return [str(f) for f in Path(directory).glob("*.yaml")]
 
 
 def get_paths_from_yaml(yaml_file):
-    """Get all paths from a yaml file"""
+    """Get all paths from a yaml file."""
     with open(yaml_file, encoding=DEFAULT_ENCODING) as f:
         spec = yaml.safe_load(f)
 
@@ -65,7 +65,7 @@ def test_scaffold_fsm_with_aea_run(cli_runner, spec, dummy_agent_tim):
 
 @pytest.mark.skip(reason="Needs chain contracts update")
 def test_scaffold_protocol(cli_runner, dummy_agent_tim, caplog):
-    """Test scaffold protocol"""
+    """Test scaffold protocol."""
 
     path = Path.cwd() / ".." / "tests" / "data" / "dummy_protocol.yaml"
     command = ["scaffold", "protocol", str(path)]
@@ -81,7 +81,7 @@ def test_scaffold_protocol(cli_runner, dummy_agent_tim, caplog):
 
 
 def test_scaffold_handler(cli_runner, dummy_agent_tim, openapi_test_case):
-    """Test scaffold handler"""
+    """Test scaffold handler."""
     openapi_file, expected_handlers = openapi_test_case
     openapi_spec_path, public_id = prepare_scaffold_inputs(openapi_file, dummy_agent_tim)
 
@@ -97,7 +97,7 @@ def test_scaffold_handler(cli_runner, dummy_agent_tim, openapi_test_case):
 
 
 def prepare_scaffold_inputs(openapi_file, dummy_agent_tim):
-    """Prepare inputs for scaffold command"""
+    """Prepare inputs for scaffold command."""
     assert Path.cwd() == Path(dummy_agent_tim)
     openapi_spec_path = f"../tests/data/openapi_examples/{openapi_file}"
     skill_name = f"skill_{openapi_file.replace('.yaml', '').replace('.yml', '')}"
@@ -107,7 +107,7 @@ def prepare_scaffold_inputs(openapi_file, dummy_agent_tim):
 
 
 def run_scaffold_command(cli_runner, openapi_spec_path, public_id, new_skill, auto_confirm):
-    """Run scaffold command"""
+    """Run scaffold command."""
     command = ["adev", "scaffold", "handler", str(openapi_spec_path), str(public_id)]
     if auto_confirm:
         command.append("--auto-confirm")
@@ -119,7 +119,7 @@ def run_scaffold_command(cli_runner, openapi_spec_path, public_id, new_skill, au
 
 
 def verify_scaffolded_files(skill_path):
-    """Verify if expected files are created/modified"""
+    """Verify if expected files are created/modified."""
     assert not (skill_path / "behaviours.py").exists()
     assert (skill_path / "strategy.py").exists()
     assert (skill_path / "dialogues.py").exists()
@@ -127,7 +127,7 @@ def verify_scaffolded_files(skill_path):
 
 
 def verify_handlers_content(skill_path, expected_handlers):
-    """Verify content of handlers.py"""
+    """Verify content of handlers.py."""
     handlers_content = (skill_path / "handlers.py").read_text()
     assert "class HttpHandler(Handler):" in handlers_content
     for handler in expected_handlers:
@@ -135,7 +135,7 @@ def verify_handlers_content(skill_path, expected_handlers):
 
 
 def verify_dynamic_handlers(openapi_spec_path, expected_handlers, openapi_file):
-    """Verify dynamically generated handlers"""
+    """Verify dynamically generated handlers."""
     dynamic_handlers = get_paths_from_yaml(openapi_spec_path)
     assert set(expected_handlers) == set(
         dynamic_handlers
@@ -143,12 +143,14 @@ def verify_dynamic_handlers(openapi_spec_path, expected_handlers, openapi_file):
 
 
 def verify_skill_yaml(skill_path):
-    """Verify content of skill.yaml"""
+    """Verify content of skill.yaml."""
     with open(skill_path / "skill.yaml", encoding=DEFAULT_ENCODING) as f:
         skill_yaml = yaml.safe_load(f)
     assert "eightballer/http:0.1.0" in skill_yaml["protocols"][0]
-    assert "behaviours" in skill_yaml and not skill_yaml["behaviours"]
-    assert "handlers" in skill_yaml and "http_handler" in skill_yaml["handlers"]
+    assert "behaviours" in skill_yaml
+    assert not skill_yaml["behaviours"]
+    assert "handlers" in skill_yaml
+    assert "http_handler" in skill_yaml["handlers"]
     assert "models" in skill_yaml
     assert "strategy" in skill_yaml["models"]
     assert "http_dialogues" in skill_yaml["models"]
@@ -159,8 +161,8 @@ class TestScaffoldConnection:
     """Test scaffold connection."""
 
     @classmethod
-    def setup_class(cls):
-        """Setup class"""
+    def setup_class(cls) -> None:
+        """Setup class."""
 
         cls.protocol_id = "zarathustra/sql_crud:0.1.0"
         cls.protocol_path = "../tests/data/crud_protocol.yaml"

@@ -18,7 +18,7 @@ class BaseTestRepo:
 
     @property
     def cli_args(self):
-        """CLI arguments"""
+        """CLI arguments."""
         return ["adev", "repo", "scaffold", self.repo_name, "-t", self.type_of_repo]
 
     @property
@@ -51,7 +51,7 @@ class BaseTestRepo:
         assert runner.return_code == 1, result.output
 
     def test_makefile(self, cli_runner, test_clean_filesystem):
-        """Test scaffolding of Makefile"""
+        """Test scaffolding of Makefile."""
         assert test_clean_filesystem
 
         runner = cli_runner(self.cli_args)
@@ -63,7 +63,7 @@ class BaseTestRepo:
         assert self.repo_path.exists()
 
     def test_make_command_executes(self, cli_runner, test_clean_filesystem):
-        """Test that the make command can execute properly"""
+        """Test that the make command can execute properly."""
         error_messages = {}
         assert test_clean_filesystem
 
@@ -78,8 +78,7 @@ class BaseTestRepo:
                 result = subprocess.run(
                     f"make {command}",
                     shell=True,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
+                    capture_output=True,
                     text=True,
                     check=False,
                 )
@@ -103,7 +102,7 @@ class TestRepoAutonomy(BaseTestRepo):
     make_commands = "fmt", "test", "lint", "hashes"
 
     def test_gitignore(self, cli_runner, test_clean_filesystem):
-        """Test the .gitignore works as expected"""
+        """Test the .gitignore works as expected."""
 
         assert test_clean_filesystem
         runner = cli_runner(self.cli_args)
@@ -135,7 +134,7 @@ class TestRepoAutonomy(BaseTestRepo):
             assert "packages" in result.stdout
 
     def test_run_single_agent(self, cli_runner, test_clean_filesystem):
-        """Test the scripts/run_single_agent.sh is generated"""
+        """Test the scripts/run_single_agent.sh is generated."""
 
         assert test_clean_filesystem
         runner = cli_runner(self.cli_args)
@@ -148,7 +147,7 @@ class TestRepoAutonomy(BaseTestRepo):
     def test_pyproject_versions(
         self,
     ):
-        """Test the pyproject.toml versions are updated"""
+        """Test the pyproject.toml versions are updated."""
 
         # We read in the pyproject.toml file and check the versions
         current_pyproject = self.parent_dir / "pyproject.toml"
