@@ -12,7 +12,7 @@ from auto_dev.cli_executor import CommandExecutor
 class Formatter:
     """Formatter class to run the formatter."""
 
-    def __init__(self, verbose, remote) -> None:
+    def __init__(self, verbose, remote):
         self.verbose = verbose
         self.remote = remote
 
@@ -24,10 +24,11 @@ class Formatter:
     def _remote_format_path(self, path, verbose=False):
         """Format the path."""
         # pylint: disable=R1732
-        with requests.Session() as session:
+        with requests.Session() as session, open(path, "rb", encoding=DEFAULT_ENCODING) as file:
+            data = file.read()
             result = session.post(
                 "http://localhost:26659/format",
-                data=open(path, "rb").read(),
+                data=data,
                 timeout=150,
             )
         if verbose:
@@ -45,6 +46,7 @@ class Formatter:
 
     def _format_path(self, path, verbose=False):
         """Format the path."""
+
         return all(
             [
                 self.run_sort(path, verbose=verbose),

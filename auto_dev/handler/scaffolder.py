@@ -1,4 +1,5 @@
 """Handler scaffolder."""
+# ruff: noqa: E501
 
 from pathlib import Path
 
@@ -12,7 +13,6 @@ from auto_dev.commands.metadata import read_yaml_file
 
 
 HTTP_PROTOCOL = "eightballer/http:0.1.0:bafybeihmhy6ax5uyjt7yxppn4viqswibcs5lsjhl3kvrsesorqe2u44jcm"
-
 HANDLER_HEADER_TEMPLATE = """
 # -*- coding: utf-8 -*-
 # ------------------------------------------------------------------------------

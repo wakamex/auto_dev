@@ -35,9 +35,9 @@ def test(ctx, path, watch) -> None:
     )
     try:
         packages = get_packages() if not path else [path]
-    except Exception as error:
+    except FileNotFoundError as error:
         msg = f"Unable to get packages are you in the right directory? {error}"
-        raise click.ClickException(msg)
+        raise click.ClickException(msg) from error
     results = {}
     for package in track(range(len(packages)), description="Testing..."):
         result = test_path(str(packages[package]), verbose=verbose, watch=watch)

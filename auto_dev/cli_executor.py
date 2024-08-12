@@ -1,4 +1,4 @@
-"""This is a simple command execution class.
+"""Simple command execution class.
 It is used to execute commands in a subprocess and return the output.
 It is also used to check if a command was successful or not.
 It is used by the lint and test functions.

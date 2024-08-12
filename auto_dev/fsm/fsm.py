@@ -1,8 +1,8 @@
 """Tools to parse fsm specs."""
 
-import collections
 from string import Template
 from pathlib import Path
+from collections import Counter
 from dataclasses import dataclass
 
 import yaml
@@ -151,7 +151,6 @@ class FsmSpec:
 
         if not start_states:
             # we need to determine the start state by using a counter
-            Counter = collections.Counter
             counter = Counter(states)
             start_states = [counter.most_common(1)[0][0]]
         else:

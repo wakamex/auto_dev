@@ -1,6 +1,7 @@
 """Template for the connection for the connection scaffolder."""
 
 # pylint: skip-file
+# ruff: noqa: E501
 
 from collections import namedtuple
 

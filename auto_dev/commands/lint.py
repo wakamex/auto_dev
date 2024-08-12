@@ -1,4 +1,4 @@
-"""Simple cli to allow users to perform the following actions against an autonomy repo;
+"""Simple cli to allow users to perform the following actions against an autonomy repo.
 
 - lint
 - test

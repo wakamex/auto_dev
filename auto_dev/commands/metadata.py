@@ -1,4 +1,4 @@
-"""This script is used to generate metadata for aea packages.
+"""Used to generate metadata for aea packages.
 - generate metadata. we read in a meta data file and generate a json file that can be uploaded to ipfs.
 - print metadata: we read in a meta data file and print it in a way that can be copy pasted into the frontend.
 """

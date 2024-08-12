@@ -149,7 +149,7 @@ class TestFolderSwapper:
 
     @classmethod
     def setup_class(cls) -> None:
-        """Setup class."""
+        """Setup the class."""
         cls.temp_dir = tempfile.TemporaryDirectory()  # pylint: disable=consider-using-with
         cls.a_dir = Path(tempfile.mkdtemp(dir=cls.temp_dir.name))
         cls.b_dir = Path(tempfile.mkdtemp(dir=cls.temp_dir.name))
@@ -177,9 +177,8 @@ class TestFolderSwapper:
             with folder_swapper(self.a_dir, self.b_dir):
                 msg = "Whoops!"
                 raise ZeroDivisionError(msg)
-        except ZeroDivisionError:
-            pass
-
+        except ZeroDivisionError as exc:
+            assert str(exc) == msg
         assert self.a_file_path.is_file()
         assert not self.b_file_path.exists()
 
@@ -191,6 +190,7 @@ def test_load_aea_ctx(dummy_agent_tim):
 
     def mock_func(ctx, *args, **kwargs):
         return ctx, args, kwargs  # pylint: disable=C3001
+
     mock_context = MagicMock(spec=click.Context)
 
     decorated_func = load_aea_ctx(mock_func)
@@ -207,6 +207,7 @@ def test_load_aea_ctx_without_config_fails():
 
     def mock_func(ctx, *args, **kwargs):
         return ctx, args, kwargs  # pylint: disable=C3001
+
     mock_context = MagicMock(spec=click.Context)
 
     decorated_func = load_aea_ctx(mock_func)

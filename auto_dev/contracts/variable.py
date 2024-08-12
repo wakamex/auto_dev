@@ -1,4 +1,4 @@
-"""This module contains the Variable class."""
+"""Module contains the Variable class."""
 
 from typing import Any
 from dataclasses import dataclass
@@ -13,7 +13,7 @@ class Variable:
 
     type: ParamType
     name: str
-    internalType: ParamType = None  # pylint: disable=C0103
+    internalType: ParamType = None  # noqa
     components: Any | None = None
     index: int | None = None
 

@@ -231,7 +231,7 @@ def tests(
     """
     logger = ctx.obj["LOGGER"]
     verbose = ctx.obj["VERBOSE"]
-    env = Environment(loader=FileSystemLoader(JINJA_TEMPLATE_FOLDER))
+    env = Environment(loader=FileSystemLoader(JINJA_TEMPLATE_FOLDER), autoescape=True)
     template = env.get_template("test_custom.jinja")
     output = template.render(
         name="test",
