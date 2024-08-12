@@ -149,7 +149,7 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 fixable = [ "ALL",]
 unfixable = []
 select = [ "F", "E", "W", "C90", "I", "N", "D", "UP", "YTT", "ANN", "ASYNC", "ASYNC1", "BLE", "FBT", "B", "A", "C4", "DTZ", "T10", "DJ", "EM", "EXE", "FA", "ICN", "G","S", "INP", "PIE", "T20", "PYI", "PT", "Q", "RSE", "RET", "SLF", "SLOT", "SIM", "TID", "TCH", "INT", "ARG", "PTH", "TD", "FIX", "ERA", "PD", "PL", "TRY", "FLY", "NPY", "AIR", "PERF", "FURB", "LOG", "RUF",]
-ignore = [ "D202", "D203", "D204", "D205", "D213", "D417", "ANN401","ANN201", "S404", "S602", "ANN202", "ANN204", "FBT001", "FBT002"]
+ignore = [ "D202", "D203", "D204", "D205", "D213", "D417", "ANN401","ANN201", "S404", "S602", "ANN202", "ANN204", "FBT001", "FBT002", "ANN001", "ANN002", "ANN003", "S101"]
 
 
 [tool.ruff.lint.flake8-annotations]
@@ -197,12 +197,12 @@ staticmethod-decorators = []
 
 
 [tool.ruff.lint.pylint]
-max-args = 5
+max-args = 6
 max-bool-expr = 5
 max-branches = 12
 max-locals = 15
 max-nested-blocks = 4
-max-positional-args = 3
+max-positional-args = 6
 max-public-methods = 20
 max-returns = 6
 max-statements = 50

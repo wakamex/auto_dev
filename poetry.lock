@@ -4878,11 +4878,11 @@ cffi = {version = ">=1.11", markers = "platform_python_implementation == \"PyPy\
 cffi = ["cffi (>=1.11)"]
 
 [extras]
-all = ["tbump", "pylama", "autoflake8"]
+all = ["tbump", "pylama", "autoflake8", "open-autonomy", "open-aea-ledger-ethereum", "open-aea-ledger-solana", "open-aea-ledger-cosmos"]
 dev = ["toml", "tbump"]
 doc = []
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.12"
-content-hash = "f3be47592adc5a251d47a59b0b6e76a8cb3351cb69edaf14d3daac83ddbf3d7e"
+content-hash = "a4302c559e7214564aab852aa92a789489de546edb94ab04898b6bce41f35b8c"

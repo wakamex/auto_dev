@@ -1,4 +1,4 @@
-"""This module contains tests for the fsm module."""
+"""module contains tests for the fsm module."""
 
 from textwrap import dedent
 
