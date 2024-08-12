@@ -30,6 +30,8 @@ We want to be able to update the hash of the package.
 """
 import logging
 import shutil
+import sys
+from enum import Enum
 from pathlib import Path
 from typing import Dict
 
@@ -138,10 +140,15 @@ def main(
     """
     We run the main function.
     """
-    proposed = get_proposed_dependency_updates(parent_repo=parent_repo, child_repo=child_repo)
+    try:
+        proposed = get_proposed_dependency_updates(parent_repo=parent_repo, child_repo=child_repo)
+    except FileNotFoundError as NotFound:
+        logger.debug(NotFound)
+        logger.error("The packages.json file does not exist. Exiting. 😢")
+        return False
     if not proposed:
         logger.info("No changes required. 😎")
-        return
+        return False
     for package_name, package_hash in proposed.items():
         logger.info(f"Updating {package_name} to {package_hash}")
     if not auto_confirm:
@@ -158,9 +165,21 @@ def main(
         child_path = child_repo / path
         shutil.copytree(parent_path, child_path)
     logger.info("Done. 😎")
+    return True
 
 
 cli = build_cli()
+
+
+class DependencyLocation(Enum):
+    REMOTE = "remote"
+    LOCAL = "local"
+
+
+class DependencyType(Enum):
+    AUTONOMY_PACKAGE = "autonomy"
+    REMOTE_GIT = "git"
+    IPFS = "ipfs"
 
 
 @cli.group()
@@ -169,7 +188,9 @@ def deps(
     ctx: click.Context,
 ) -> None:
     """
-    We update the dependencies.
+    commands for managing dependencies.
+    - update: Update both the packages.json from the parent repo and the packages in the child repo.
+    - generate_gitignore: Generate the gitignore file from the packages.json file.
     """
     ctx.obj["LOGGER"].info("Updating the dependencies... 📝")
 
@@ -177,7 +198,7 @@ def deps(
 @click.option(
     "-p",
     "--parent-repo",
-    default=PARENT,
+    default='.',
     help="The parent repo.",
     type=Path,
     required=True,
@@ -188,11 +209,18 @@ def deps(
     help="The child repo.",
     type=Path,
     required=True,
+    default='.',
 )
 @click.option(
     "--auto-confirm",
     default=False,
     help="Auto confirm the changes.",
+)
+@click.option(
+    "--location",
+    default=DependencyLocation.LOCAL,
+    type=DependencyLocation,
+    help="The location of the dependency.",
 )
 @deps.command()
 @click.pass_context
@@ -200,14 +228,25 @@ def update(
     ctx: click.Context,
     parent_repo: Path,
     child_repo: Path,
+    location: DependencyLocation = DependencyLocation.LOCAL,
     auto_confirm: bool = False,
 ) -> None:
     """
-    We update the dependencies.
+    We update aea packages.json dependencies from a parent repo.
+    Example usage:
+        adev deps update -p /path/to/parent/repo -c /path/to/child/repo
     """
+    # if the parent repo is `remote` we need to clone it.
+    if parent_repo == DependencyLocation.REMOTE:
+        breakpoint()
+        parent_repo = Path("parent_repo")
     logger = ctx.obj["LOGGER"]
     logger.info("Updating the dependencies... 📝")
-    main(parent_repo=parent_repo, child_repo=child_repo, auto_confirm=auto_confirm, logger=logger)
+
+    result = main(parent_repo=parent_repo, child_repo=child_repo, auto_confirm=auto_confirm, logger=logger)
+    if not result:
+        sys.exit(1)
+    logger.info("Done. 😎")
 
 
 # We have a command to generate the gitignore file.
@@ -217,7 +256,9 @@ def generate_gitignore(
     ctx: click.Context,
 ) -> None:
     """
-    We generate the gitignore file.
+    We generate the gitignore file from the packages.json file
+    Example usage:
+        adev deps generate_gitignore
     """
     package_dict = get_package_json(repo=Path())
     third_party_packages = package_dict.get("third_party", {})
