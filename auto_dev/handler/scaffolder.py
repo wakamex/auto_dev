@@ -6,12 +6,10 @@ from pathlib import Path
 import yaml
 from aea.configurations.base import PublicId
 
-from auto_dev.utils import get_logger
+from auto_dev.utils import change_dir, get_logger
 from auto_dev.constants import DEFAULT_ENCODING
 from auto_dev.cli_executor import CommandExecutor
 from auto_dev.commands.metadata import read_yaml_file
-from auto_dev.constants import DEFAULT_ENCODING
-from auto_dev.utils import change_dir, get_logger
 
 
 HTTP_PROTOCOL = "eightballer/http:0.1.0:bafybeihmhy6ax5uyjt7yxppn4viqswibcs5lsjhl3kvrsesorqe2u44jcm"
@@ -190,7 +188,7 @@ MAIN_HANDLER_TEMPLATE = """
 """
 
 
-class HandlerScaffolder:
+class ScaffolderConfig:
     """Handler Scaffolder."""
 
     def __init__(
@@ -202,7 +200,6 @@ class HandlerScaffolder:
         auto_confirm: bool = False,
     ):
         """Initialize HandlerScaffolder."""
-        self.logger = logger or get_logger()
         self.verbose = verbose
         self.spec_file_path = spec_file_path
         self.author = public_id.author
@@ -240,7 +237,7 @@ class HandlerScaffolder:
         self.generate_handler()
 
         with self._change_dir():
-            self.save_handler()
+            self.save_handler(self.config.output / "handlers.py")
             self.update_skill_yaml()
             self.move_and_update_my_model()
             self.remove_behaviours()
@@ -262,7 +259,7 @@ class HandlerScaffolder:
 
     def generate_handler(self) -> None:
         """Generate handler."""
-        
+
         if not self.config.new_skill:
             skill_path = Path("skills") / self.config.output
             if not skill_path.exists():
@@ -304,10 +301,9 @@ class HandlerScaffolder:
         )
         self.handler_code += main_handler
 
-    def save_handler(self, path, content) -> None:
-
+    def save_handler(self, path) -> None:
         """Save handler to file."""
-        path = Path('handlers.py')
+        path = Path("handlers.py")
         with open(path, "w", encoding=DEFAULT_ENCODING) as f:
             try:
                 f.write(self.handler_code)
@@ -378,10 +374,6 @@ class HandlerScaffolder:
         with open(dialogues_file, "w", encoding=DEFAULT_ENCODING) as f:
             f.write(DIALOGUES_CODE)
 
-    def fingerprint(self) -> None:
-        """Fingerprint the skill."""
-        skill_id = PublicId(self.author, self.output, "0.1.0")
-
     def fingerprint(self):
         """
         Fingerprint the skill
@@ -413,7 +405,7 @@ class HandlerScaffolder:
             self.logger.info(f"Auto confirming: {message}")
             return True
         response = input(f"{message} (y/n): ").lower().strip()
-        return response in ('y', 'yes')
+        return response in ("y", "yes")
 
     def present_actions(self):
         """Present the scaffold summary"""
@@ -438,7 +430,7 @@ class HandlerScaffolder:
 
         if not self.config.auto_confirm:
             confirm = input("Do you want to proceed? (y/n): ").lower().strip()
-            if confirm not in ('y', 'yes'):
+            if confirm not in ("y", "yes"):
                 self.logger.info("Scaffolding cancelled.")
                 return False
 
