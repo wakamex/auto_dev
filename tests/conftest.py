@@ -1,6 +1,4 @@
-"""
-Conftest for testing command-line interfaces.
-"""
+"""Conftest for testing command-line interfaces."""
 # pylint: disable=W0135
 
 import os
@@ -8,9 +6,10 @@ from pathlib import Path
 
 import pytest
 
-from auto_dev.cli_executor import CommandExecutor
-from auto_dev.constants import AUTONOMY_PACKAGES_FILE, DEFAULT_ENCODING, SAMPLE_PACKAGE_FILE, SAMPLE_PACKAGES_JSON
 from auto_dev.utils import isolated_filesystem
+from auto_dev.constants import DEFAULT_ENCODING, SAMPLE_PACKAGE_FILE, SAMPLE_PACKAGES_JSON, AUTONOMY_PACKAGES_FILE
+from auto_dev.cli_executor import CommandExecutor
+
 
 OPENAPI_TEST_CASES = [
     ("uspto.yaml", ["handle_get_", "handle_get_dataset_version_fields", "handle_post_dataset_version_records"]),
@@ -46,7 +45,7 @@ OPENAPI_TEST_CASES = [
 
 @pytest.fixture(params=OPENAPI_TEST_CASES)
 def openapi_test_case(request):
-    """Fixture for openapi test cases"""
+    """Fixture for openapi test cases."""
     return request.param
 
 
@@ -66,9 +65,7 @@ def test_clean_filesystem():
 
 @pytest.fixture
 def test_packages_filesystem(test_filesystem):
-    """
-    Fixure for testing packages.
-    """
+    """Fixure for testing packages."""
     (Path(test_filesystem) / "packages").mkdir(parents=True, exist_ok=True)
     with open(AUTONOMY_PACKAGES_FILE, "w", encoding=DEFAULT_ENCODING) as file:
         file.write(SAMPLE_PACKAGES_JSON["packages/packages.json"])
@@ -78,7 +75,7 @@ def test_packages_filesystem(test_filesystem):
         with open(Path(test_filesystem) / Path(file), "w", encoding=DEFAULT_ENCODING) as path:
             path.write(data)
 
-    yield test_filesystem
+    return test_filesystem
 
 
 @pytest.fixture
@@ -100,7 +97,8 @@ def dummy_agent_tim(test_filesystem, monkeypatch) -> Path:
     command_executor = CommandExecutor(command)
     result = command_executor.execute(verbose=True, shell=True)
     if not result:
-        raise ValueError(f"CLI command execution failed: `{command}`")
+        msg = f"CLI command execution failed: `{command}`"
+        raise ValueError(msg)
 
     os.chdir(str(Path.cwd() / agent))
 
@@ -112,6 +110,7 @@ def dummy_agent_tim(test_filesystem, monkeypatch) -> Path:
         command_executor = CommandExecutor(command.split())
         result = command_executor.execute(verbose=True)
         if not result:
-            raise ValueError(f"CLI command execution failed: `{command}`")
+            msg = f"CLI command execution failed: `{command}`"
+            raise ValueError(msg)
 
     return Path.cwd()

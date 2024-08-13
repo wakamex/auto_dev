@@ -1,6 +1,4 @@
-"""
-
-reads in 2 github repos.
+"""reads in 2 github repos.
 
 One is the parent repo, the other is the child repo.
 
@@ -29,87 +27,74 @@ We want to be able to update the hash of the package.
 
 """
 
-import logging
-import shutil
 import sys
+import shutil
+import logging
 import traceback
 from enum import Enum
 from pathlib import Path
-from typing import Dict
 
-import rich_click as click
 import yaml
+import rich_click as click
 
 from auto_dev.base import build_cli
-from auto_dev.constants import DEFAULT_ENCODING, FileType
 from auto_dev.utils import write_to_file
+from auto_dev.constants import DEFAULT_ENCODING, FileType
+
 
 PARENT = Path("repo_1")
 CHILD = Path("repo_2")
 
 
-def get_package_json(repo: Path) -> Dict[str, Dict[str, str]]:
-    """
-    We get the package json.
-    """
+def get_package_json(repo: Path) -> dict[str, dict[str, str]]:
+    """We get the package json."""
     package_json = repo / "packages" / "packages.json"
     with open(package_json, encoding=DEFAULT_ENCODING) as file_pointer:
-        package_dict = yaml.safe_load(file_pointer)
-    return package_dict
+        return yaml.safe_load(file_pointer)
 
 
-def write_package_json(repo: Path, package_dict: Dict[str, Dict[str, str]]) -> None:
-    """
-    We write the package json.
-    """
+def write_package_json(repo: Path, package_dict: dict[str, dict[str, str]]) -> None:
+    """We write the package json."""
     package_json = repo / "packages" / "packages.json"
     write_to_file(str(package_json), package_dict, FileType.JSON)
 
 
-def get_package_hashes(repo: Path) -> Dict[str, str]:
-    """
-    We get the package hashes.
-    """
+def get_package_hashes(repo: Path) -> dict[str, str]:
+    """We get the package hashes."""
     package_dict = get_package_json(repo)
     package_hashes = {}
-    for _, package_type_dict in package_dict.items():
+    for package_type_dict in package_dict.values():
         for package_name, package_hash in package_type_dict.items():
             package_hashes[package_name] = package_hash
     return package_hashes
 
 
-def get_proposed_dependency_updates(parent_repo: Path, child_repo: Path) -> Dict[str, str]:
-    """
-    We get the proposed dependency updates.
-    """
+def get_proposed_dependency_updates(parent_repo: Path, child_repo: Path) -> dict[str, str]:
+    """We get the proposed dependency updates."""
     parent_package_hashes = get_package_hashes(parent_repo)
     child_package_hashes = get_package_hashes(child_repo)
     proposed_dependency_updates = {}
     for package_name, package_hash in parent_package_hashes.items():
-        if package_name in child_package_hashes:
-            if package_hash != child_package_hashes[package_name]:
-                proposed_dependency_updates[package_name] = package_hash
+        if package_name in child_package_hashes and package_hash != child_package_hashes[package_name]:
+            proposed_dependency_updates[package_name] = package_hash
     return proposed_dependency_updates
 
 
-def update_package_json(repo: Path, proposed_dependency_updates: Dict[str, str]) -> None:
-    """
-    We update the package json.
-    """
+def update_package_json(repo: Path, proposed_dependency_updates: dict[str, str]) -> None:
+    """We update the package json."""
     package_dict = get_package_json(repo)
     for package_type, package_type_dict in package_dict.items():
-        for package_name, _ in package_type_dict.items():
+        for package_name in package_type_dict:
             if package_name in proposed_dependency_updates:
                 package_dict[package_type][package_name] = proposed_dependency_updates[package_name]
     write_package_json(repo, package_dict)
 
 
 def from_key_to_path(key: str) -> Path:
-    """
-    We get the path from the key string some examples of the keys are;
+    """We get the path from the key string some examples of the keys are;
     agent/eightballer/custom_balance_poller/0.1.0
     where the folder to be removed is;
-    packages/eightballer/agents/custom_balance_poller
+    packages/eightballer/agents/custom_balance_poller.
     """
     parts = key.split("/")
 
@@ -122,11 +107,9 @@ def from_key_to_path(key: str) -> Path:
     return Path(*path_list)
 
 
-def remove_old_package(repo: Path, proposed_dependency_updates: Dict[str, str]) -> None:
-    """
-    We remove the old package directories.
-    """
-    for package_name, _ in proposed_dependency_updates.items():
+def remove_old_package(repo: Path, proposed_dependency_updates: dict[str, str]) -> None:
+    """We remove the old package directories."""
+    for package_name in proposed_dependency_updates:
         path = from_key_to_path(package_name)
         path = repo / path
         if path.exists():
@@ -139,14 +122,12 @@ def main(
     logger: logging.Logger,
     auto_confirm: bool = False,
 ) -> None:
-    """
-    We run the main function.
-    """
+    """We run the main function."""
     try:
         proposed = get_proposed_dependency_updates(parent_repo=parent_repo, child_repo=child_repo)
     except FileNotFoundError:
         logger.debug(traceback.format_exc())
-        logger.error("The packages.json file does not exist. Exiting. 😢")
+        logger.exception("The packages.json file does not exist. Exiting. 😢")
         return False
     if not proposed:
         logger.info("No changes required. 😎")
@@ -161,7 +142,7 @@ def main(
     remove_old_package(repo=child_repo, proposed_dependency_updates=proposed)
     # we now copy the new packages over.
     logger.info("Copying the new packages over... 📝")
-    for package_name, _ in proposed.items():
+    for package_name in proposed:
         path = from_key_to_path(package_name)
         parent_path = parent_repo / path
         child_path = child_repo / path
@@ -174,18 +155,14 @@ cli = build_cli()
 
 
 class DependencyLocation(Enum):
-    """
-    We define the dependency location
-    """
+    """We define the dependency location."""
 
     REMOTE = "remote"
     LOCAL = "local"
 
 
 class DependencyType(Enum):
-    """
-    We define the dependency type.
-    """
+    """We define the dependency type."""
 
     AUTONOMY_PACKAGE = "autonomy"
     REMOTE_GIT = "git"
@@ -197,8 +174,7 @@ class DependencyType(Enum):
 def deps(
     ctx: click.Context,
 ) -> None:
-    """
-    commands for managing dependencies.
+    """Commands for managing dependencies.
     - update: Update both the packages.json from the parent repo and the packages in the child repo.
     - generate_gitignore: Generate the gitignore file from the packages.json file.
     """
@@ -241,10 +217,9 @@ def update(
     location: DependencyLocation = DependencyLocation.LOCAL,
     auto_confirm: bool = False,
 ) -> None:
-    """
-    We update aea packages.json dependencies from a parent repo.
+    """We update aea packages.json dependencies from a parent repo.
     Example usage:
-        adev deps update -p /path/to/parent/repo -c /path/to/child/repo
+        adev deps update -p /path/to/parent/repo -c /path/to/child/repo.
     """
     logger = ctx.obj["LOGGER"]
     logger.info("Updating the dependencies... 📝")
@@ -268,14 +243,13 @@ def update(
 def generate_gitignore(
     ctx: click.Context,
 ) -> None:
-    """
-    We generate the gitignore file from the packages.json file
+    """We generate the gitignore file from the packages.json file
     Example usage:
-        adev deps generate_gitignore
+        adev deps generate_gitignore.
     """
     package_dict = get_package_json(repo=Path())
     third_party_packages = package_dict.get("third_party", {})
-    third_party_paths = [from_key_to_path(key) for key in third_party_packages.keys()]
+    third_party_paths = [from_key_to_path(key) for key in third_party_packages]
     current_gitignore = Path(".gitignore").read_text(encoding=DEFAULT_ENCODING)
     for path in third_party_paths:
         # we check if the path is in the gitignore file.

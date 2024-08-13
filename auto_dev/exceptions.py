@@ -1,6 +1,4 @@
-"""
-Base exceptions for the auto_dev package.
-"""
+"""Base exceptions for the auto_dev package."""
 
 
 class OperationError(Exception):

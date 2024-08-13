@@ -1,11 +1,12 @@
-"""
-Contains the necessary templates for the contracts
-"""
+"""Contains the necessary templates for the contracts."""
 
 from string import Template
 
-from auto_dev.data.contracts.header import HEADER as CONTRACT_HEADER
-from auto_dev.data.contracts.header import IMPORTS as CONTRACT_IMPORTS
+from auto_dev.data.contracts.header import (
+    HEADER as CONTRACT_HEADER,
+    IMPORTS as CONTRACT_IMPORTS,
+)
+
 
 PUBLIC_ID = Template(
     """
@@ -29,7 +30,7 @@ _logger = logging.getLogger(
 )
 
 
-class $NAME\Contract(Contract):
+class $NAME\\Contract(Contract):
     \"\"\"The $NAME contract class.\"\"\"
 
     contract_id = PUBLIC_ID
@@ -187,7 +188,7 @@ args = {
 }
 
 
-def main(args):
+def main(args) -> None:
     """Run the main script."""
     public_id = PUBLIC_ID.substitute(args)
     args["PUBLIC_ID"] = public_id
@@ -197,8 +198,7 @@ def main(args):
 
     args["READ_ONLY_FUNCTIONS"] = "\n".join(read_functions)
 
-    result = CONTRACT_TEMPLATE.substitute(args)
-    print(result)
+    CONTRACT_TEMPLATE.substitute(args)
 
     # we next need to parse the write functions and generate the corresponding tests
 

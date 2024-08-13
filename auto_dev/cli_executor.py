@@ -1,5 +1,4 @@
-"""
-This is a simple command execution class.
+"""Simple command execution class.
 It is used to execute commands in a subprocess and return the output.
 It is also used to check if a command was successful or not.
 It is used by the lint and test functions.
@@ -8,9 +7,9 @@ It is used by the lint and test functions.
 
 import os
 import subprocess
-from typing import List, Optional, Union
 
 from .utils import get_logger
+
 
 logger = get_logger()
 
@@ -18,7 +17,7 @@ logger = get_logger()
 class CommandExecutor:
     """A simple command executor."""
 
-    def __init__(self, command: Union[str, List[str]], cwd: Optional[str] = None):
+    def __init__(self, command: str | list[str], cwd: str | None = None):
         """Initialize the command executor."""
         self.command = command
         self.cwd = str(cwd) if cwd else "."
@@ -36,8 +35,7 @@ class CommandExecutor:
         try:
             result = subprocess.run(
                 self.command,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                capture_output=True,
                 cwd=self.cwd,
                 check=False,
                 env=os.environ,
@@ -58,11 +56,11 @@ class CommandExecutor:
                 return False
             return True
         except Exception as error:  # pylint: disable=broad-except
-            logger.error("Command failed: %s", error)
+            logger.exception("Command failed: %s", error)
             self.exception = error
             return False
 
-    def _execute_stream(self, verbose: bool = True, shell: bool = False):
+    def _execute_stream(self, verbose: bool = True, shell: bool = False) -> bool | None:
         """Stream the command output. Especially useful for long running commands."""
         logger.debug(f"Executing command:\n\"\"\n{' '.join(self.command)}\n\"\"")
         try:
@@ -90,7 +88,7 @@ class CommandExecutor:
                     return False
                 return True
         except Exception as error:  # pylint: disable=broad-except
-            logger.error("Command failed: %s", error)
+            logger.exception("Command failed: %s", error)
             self.exception = error
             return False
 
