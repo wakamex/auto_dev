@@ -27,35 +27,27 @@ We want to be able to update the hash of the package.
 
 """
 
-import logging
 import os
-import shutil
 import sys
 import shutil
 import logging
 import traceback
-from dataclasses import dataclass
 from enum import Enum
-from pathlib import Path
 from typing import Dict, List
+from pathlib import Path
+from dataclasses import dataclass
 
-import requests
-import rich_click as click
 import toml
 import yaml
+import requests
+import rich_click as click
 from rich import print_json
 from rich.progress import track
 
 from auto_dev.base import build_cli
-from auto_dev.constants import DEFAULT_ENCODING, DEFAULT_TIMEOUT, FileType
-from auto_dev.exceptions import AuthenticationError, NetworkTimeoutError
-
-import yaml
-import rich_click as click
-
-from auto_dev.base import build_cli
 from auto_dev.utils import write_to_file
-from auto_dev.constants import DEFAULT_ENCODING, FileType
+from auto_dev.constants import DEFAULT_TIMEOUT, DEFAULT_ENCODING, FileType
+from auto_dev.exceptions import AuthenticationError, NetworkTimeoutError
 
 
 PARENT = Path("repo_1")
@@ -181,7 +173,6 @@ class DependencyType(Enum):
 class DependencyLocation(Enum):
     """Location of the dependency."""
 
-
     LOCAL = "local"
     REMOTE = "remote"
 
@@ -254,7 +245,7 @@ class GitDependency(Dependency):
 
         if data.status_code != 200:
             raise NetworkTimeoutError(f"Error: {data.status_code} {data.text}")
-        dl_url = data.json()['download_url']
+        dl_url = data.json()["download_url"]
         data = requests.get(dl_url, headers=self.headers, timeout=DEFAULT_TIMEOUT).json()
         autonomy_packages = data["dev"]
         return autonomy_packages
@@ -263,7 +254,7 @@ class GitDependency(Dependency):
 @cli.group()
 @click.pass_context
 def deps(
-    ctx: click.Context,  # pylint: disable=unused-argument
+    ctx: click.Context,  # noqa
 ) -> None:
     """Commands for managing dependencies.
     - update: Update both the packages.json from the parent repo and the packages in the child repo.
@@ -395,7 +386,7 @@ def verify(
     for dependency in track(autonomy_version_set.upstream_dependency):
         click.echo(f"   Verifying:   {dependency.name}")
         remote_packages = dependency.get_all_autonomy_packages()
-        local_packages = get_package_json(Path())['third_party']
+        local_packages = get_package_json(Path())["third_party"]
         diffs = {}
         for package_name, package_hash in remote_packages.items():
             if package_name in local_packages:
@@ -409,7 +400,7 @@ def verify(
             remove_old_package(repo=Path(), proposed_dependency_updates=diffs)
             changes.append(dependency.name)
 
-        pyproject = toml.load("pyproject.toml")['tool']['poetry']['dependencies']
+        pyproject = toml.load("pyproject.toml")["tool"]["poetry"]["dependencies"]
         if dependency.name in pyproject:
             current_version = pyproject[dependency.name]
             expected_version = f"=={dependency.get_latest_version()[1:]}"

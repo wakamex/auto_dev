@@ -10,13 +10,14 @@ from aea.cli import cli as aea_cli
 from aea.configurations.base import PublicId
 
 from auto_dev.cli import cli
+from auto_dev.utils import get_logger
 from auto_dev.constants import DEFAULT_ENCODING
 from auto_dev.handler.scaffolder import HandlerScaffoldBuilder
 from auto_dev.protocols.scaffolder import read_protocol
-from auto_dev.utils import get_logger
 
 
 FSM_SPEC = Path("auto_dev/data/fsm/fsm_specification.yaml").absolute()
+
 
 class Mockers:
     """Class containing mock objects for testing"""
@@ -27,6 +28,7 @@ class Mockers:
         def __init__(self):
             self.return_code = 0
             self.output = ""
+
 
 def get_yaml_files(directory):
     """Get all yaml files in a directory."""
