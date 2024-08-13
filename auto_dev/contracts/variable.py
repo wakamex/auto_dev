@@ -1,12 +1,10 @@
-"""
-This module contains the Variable class.
-"""
+"""Module contains the Variable class."""
 
+from typing import Any
 from dataclasses import dataclass
-from typing import Any, Optional
 
-from auto_dev.contracts.param_type import ParamType
 from auto_dev.contracts.utils import PARAM_TO_STR_MAPPING
+from auto_dev.contracts.param_type import ParamType
 
 
 @dataclass
@@ -15,21 +13,21 @@ class Variable:
 
     type: ParamType
     name: str
-    internalType: ParamType = None  # pylint: disable=C0103
-    components: Optional[Any] = None
-    index: Optional[int] = None
+    internalType: ParamType = None  # noqa
+    components: Any | None = None
+    index: int | None = None
 
-    def to_str_params(self):
+    def to_str_params(self) -> str:
         """Parse the variable to string to be passed as a parameter to a function."""
         return f"{self._name}: {self.python_type}"
 
-    def to_str_arg(self):
+    def to_str_arg(self) -> str:
         """Parse the variable to string to be passed as an argument to a function."""
         if self.name == "":
             return f"{self._name}"
         return f"{self._name}={self._name}"
 
-    def to_str_return(self):
+    def to_str_return(self) -> str:
         """Parse the variable to string to be returned by a function."""
         result_name = self.name if self.name != "" else self.python_type.lower()
         return f"'{result_name}': result"
