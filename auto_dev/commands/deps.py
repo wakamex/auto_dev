@@ -30,18 +30,25 @@ We want to be able to update the hash of the package.
 """
 
 import logging
+import os
 import shutil
 import sys
 import traceback
+from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List
 
+import requests
 import rich_click as click
+import toml
 import yaml
+from rich import print_json
+from rich.progress import track
 
 from auto_dev.base import build_cli
-from auto_dev.constants import DEFAULT_ENCODING, FileType
+from auto_dev.constants import DEFAULT_ENCODING, DEFAULT_TIMEOUT, FileType
+from auto_dev.exceptions import AuthenticationError, NetworkTimeoutError
 from auto_dev.utils import write_to_file
 
 PARENT = Path("repo_1")
@@ -173,36 +180,105 @@ def main(
 cli = build_cli()
 
 
-class DependencyLocation(Enum):
-    """
-    We define the dependency location
-    """
-
-    REMOTE = "remote"
-    LOCAL = "local"
-
-
 class DependencyType(Enum):
-    """
-    We define the dependency type.
-    """
+    """Type of dependency."""
 
-    AUTONOMY_PACKAGE = "autonomy"
-    REMOTE_GIT = "git"
-    IPFS = "ipfs"
+    AUTONOMY = "autonomy"
+    PYTHON = "python"
+    GIT = "git"
+
+
+class DependencyLocation(Enum):
+    """Location of the dependency."""
+
+    LOCAL = "local"
+    REMOTE = "remote"
+
+
+@dataclass
+class Dependency:
+    """A dependency."""
+
+    name: str
+    version: str
+    location: DependencyLocation
+
+
+@dataclass
+class PythonDependency(Dependency):
+    """A python dependency."""
+
+    type: DependencyType.PYTHON
+
+
+@dataclass
+class AutonomyDependency(Dependency):
+    """An autonomy dependency."""
+
+    type: DependencyType.AUTONOMY
+
+
+@dataclass
+class GitDependency(Dependency):
+    """A git dependency."""
+
+    type = DependencyType.GIT
+    autonomy_dependencies: Dict[str, Dependency] = None
+    url: str = None
+
+    @property
+    def headers(self) -> Dict[str, str]:
+        """Get the headers."""
+        headers = {
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28",
+            "Authorization": f"Bearer {os.getenv('GITHUB_TOKEN')}",
+        }
+        return headers
+
+    def get_latest_version(self) -> str:
+        """Get the latest version."""
+        if self.location == DependencyLocation.LOCAL:
+            return self.version
+        return self._get_latest_remote_version()
+
+    def _get_latest_remote_version(self) -> str:
+        """Get the latest remote version."""
+        tag_url = f"{self.url}/releases"
+        res = requests.get(tag_url, headers=self.headers, timeout=DEFAULT_TIMEOUT)
+        if res.status_code != 200:
+            if res.status_code == 403:
+                raise AuthenticationError("Error: Rate limit exceeded. Please add a github token.")
+            raise NetworkTimeoutError(f"Error: {res.status_code} {res.text}")
+        data = res.json()
+        latest_version = data[0]["tag_name"]
+        return latest_version
+
+    def get_all_autonomy_packages(self):
+        """Read in the autonomy packages. the are located in the remote url."""
+        tag = self.get_latest_version()
+        file_path = "packages/packages.json"
+        remote_url = f"{self.url}/contents/{file_path}?ref={tag}"
+        data = requests.get(remote_url, headers=self.headers, timeout=DEFAULT_TIMEOUT)
+
+        if data.status_code != 200:
+            raise NetworkTimeoutError(f"Error: {data.status_code} {data.text}")
+        dl_url = data.json()['download_url']
+        data = requests.get(dl_url, headers=self.headers, timeout=DEFAULT_TIMEOUT).json()
+        autonomy_packages = data["dev"]
+        return autonomy_packages
 
 
 @cli.group()
 @click.pass_context
 def deps(
-    ctx: click.Context,
+    ctx: click.Context,  # pylint: disable=unused-argument
 ) -> None:
     """
     commands for managing dependencies.
     - update: Update both the packages.json from the parent repo and the packages in the child repo.
     - generate_gitignore: Generate the gitignore file from the packages.json file.
     """
-    ctx.obj["LOGGER"].info("Updating the dependencies... 📝")
 
 
 @click.option(
@@ -284,6 +360,86 @@ def generate_gitignore(
         with open(".gitignore", "a", encoding=DEFAULT_ENCODING) as file_pointer:
             file_pointer.write(f"\n{path}")
     ctx.obj["LOGGER"].info("Done. 😎")
+
+
+@dataclass
+class AutonomyVersionSet:
+    """A set of autonomy versions."""
+
+    upstream_dependency: List[GitDependency]
+
+
+open_autonomy_repo = GitDependency(
+    name="open-autonomy",
+    version="0.15.2",
+    location=DependencyLocation.REMOTE,
+    url="https://api.github.com/repos/valory-xyz/open-autonomy",
+)
+
+open_aea_repo = GitDependency(
+    name="open-aea",
+    version="1.55.0",
+    location=DependencyLocation.REMOTE,
+    url="https://api.github.com/repos/valory-xyz/open-aea",
+)
+
+autonomy_version_set = AutonomyVersionSet(
+    upstream_dependency=[
+        open_autonomy_repo,
+        open_aea_repo,
+    ]
+)
+
+
+@deps.command()
+@click.pass_context
+def verify(
+    ctx: click.Context,
+) -> None:
+    """
+    We verify the packages.json file.
+    Example usage:
+        adev deps verify
+    """
+    ctx.obj["LOGGER"].info("Verifying the dependencies against the remote github... 📝")
+    issues = []
+    changes = []
+    for dependency in track(autonomy_version_set.upstream_dependency):
+        remote_packages = dependency.get_all_autonomy_packages()
+        local_packages = get_package_json(Path())['third_party']
+        diffs = {}
+        for package_name, package_hash in remote_packages.items():
+            if package_name in local_packages:
+                if package_hash != local_packages[package_name]:
+                    diffs[package_name] = package_hash
+
+        if diffs:
+            print_json(data=diffs)
+            click.confirm("Do you want to update the package?\n", abort=True)
+            update_package_json(repo=Path(), proposed_dependency_updates=diffs)
+            remove_old_package(repo=Path(), proposed_dependency_updates=diffs)
+            changes.append(dependency.name)
+
+        pyproject = toml.load("pyproject.toml")['tool']['poetry']['dependencies']
+        if dependency.name in pyproject:
+            current_version = pyproject[dependency.name]
+            expected_version = f"=={dependency.get_latest_version()[1:]}"
+            if current_version != expected_version:
+                issues.append(
+                    f"Please update the version of {dependency.name} from `{current_version}` to `{expected_version}`\n"
+                )
+
+    if issues:
+        for issue in issues:
+            print(issue)
+        sys.exit(1)
+
+    if changes:
+        for change in changes:
+            print(f"Updated {change} successfully. ✅")
+        print("Please verify the proposed changes and commit them! 📝")
+        sys.exit(0)
+    print("No changes required. 😎")
 
 
 if __name__ == "__main__":
