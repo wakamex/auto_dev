@@ -1,6 +1,8 @@
 """Template for the tests for the connection scaffolder."""
+# ruff: noqa: E501
 
 from collections import namedtuple
+
 
 HEADER = """
 # -*- coding: utf-8 -*-

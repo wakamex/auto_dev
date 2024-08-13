@@ -1,5 +1,4 @@
-"""
-Simple cli to allow users to perform the following actions against an autonomy repo;
+"""Simple cli to allow users to perform the following actions against an autonomy repo.
 
 - lint
 - test
@@ -15,6 +14,7 @@ from rich.progress import track
 from auto_dev.base import build_cli
 from auto_dev.lint import check_path
 from auto_dev.utils import get_paths
+
 
 cli = build_cli()
 
@@ -35,10 +35,8 @@ cli = build_cli()
     default=False,
 )
 @click.pass_context
-def lint(ctx, path, changed_only):
-    """
-    Runs the linting tooling
-    """
+def lint(ctx, path, changed_only) -> None:
+    """Runs the linting tooling."""
     logger = ctx.obj["LOGGER"]
     verbose = ctx.obj["VERBOSE"]
     num_processes = ctx.obj["NUM_PROCESSES"]
@@ -60,7 +58,8 @@ def lint(ctx, path, changed_only):
             if not result:
                 logger.error(f"Linting failed for {file_path}")
     if failed > 0:
-        raise click.ClickException("Linting failed!")
+        msg = "Linting failed!"
+        raise click.ClickException(msg)
 
 
 def single_thread_lint(paths, verbose, logger):
@@ -79,7 +78,7 @@ def multi_thread_lint(paths, verbose, num_processes):
     """Run the linting in parallel."""
     with Pool(num_processes) as pool:
         results = pool.map(partial(check_path, verbose=verbose), paths)
-    return dict(zip(paths, results))
+    return dict(zip(paths, results, strict=False))
 
 
 if __name__ == "__main__":

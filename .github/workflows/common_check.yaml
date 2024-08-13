@@ -58,7 +58,7 @@ jobs:
 
       - name: Format
         run: |
-          poetry run adev -n 0 fmt -p .
+          poetry run adev -n 0 fmt -p . || poetry run adev -n 0 -v fmt -p .
 
       - name: Lint
         run: |

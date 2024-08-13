@@ -1,6 +1,4 @@
-"""
-Module for testing the project.
-"""
+"""Module for testing the project."""
 
 from multiprocessing import cpu_count
 
@@ -13,9 +11,8 @@ def test_path(
     watch: bool = False,
     multiple: bool = False,
 ) -> bool:
-    """
-    Check the path for linting errors.
-    :param path: The path to check
+    """Check the path for linting errors.
+    :param path: The path to check.
     """
     extra_args = []
     if multiple:
@@ -31,5 +28,4 @@ def test_path(
         + (["-w"] if watch else [])
         + extra_args
     )
-    result = command.execute(verbose=verbose, stream=True)
-    return result
+    return command.execute(verbose=verbose, stream=True)

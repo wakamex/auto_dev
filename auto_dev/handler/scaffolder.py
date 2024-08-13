@@ -1,17 +1,18 @@
 """Handler scaffolder."""
+# ruff: noqa: E501
 
 from pathlib import Path
 
 import yaml
 from aea.configurations.base import PublicId
 
+from auto_dev.utils import change_dir, get_logger
+from auto_dev.constants import DEFAULT_ENCODING
 from auto_dev.cli_executor import CommandExecutor
 from auto_dev.commands.metadata import read_yaml_file
-from auto_dev.constants import DEFAULT_ENCODING
-from auto_dev.utils import change_dir, get_logger
+
 
 HTTP_PROTOCOL = "eightballer/http:0.1.0:bafybeihmhy6ax5uyjt7yxppn4viqswibcs5lsjhl3kvrsesorqe2u44jcm"
-
 HANDLER_HEADER_TEMPLATE = """
 # -*- coding: utf-8 -*-
 # ------------------------------------------------------------------------------
@@ -188,7 +189,7 @@ MAIN_HANDLER_TEMPLATE = """
 
 
 class ScaffolderConfig:
-    """Configuration for HandlerScaffolder."""
+    """Handler Scaffolder."""
 
     def __init__(
         self,
@@ -198,6 +199,8 @@ class ScaffolderConfig:
         new_skill: bool = False,
         auto_confirm: bool = False,
     ):
+        """Initialize HandlerScaffolder."""
+        self.verbose = verbose
         self.spec_file_path = spec_file_path
         self.author = public_id.author
         self.output = public_id.name
@@ -234,8 +237,8 @@ class HandlerScaffolder:
         self.generate_handler()
 
         with self._change_dir():
-            self.save_handler()
-            self.update_skill_yaml()
+            self.save_handler(self.config.output / Path("handlers.py"))
+            self.update_skill_yaml(Path("skill.yaml"))
             self.move_and_update_my_model()
             self.remove_behaviours()
             self.create_dialogues()
@@ -247,13 +250,12 @@ class HandlerScaffolder:
     def _change_dir(self):
         return change_dir(Path("skills") / self.config.output)
 
-    def create_new_skill(self):
-        """
-        Create a new skill
-        """
+    def create_new_skill(self) -> None:
+        """Create a new skill."""
         skill_cmd = f"aea scaffold skill {self.config.output}".split(" ")
         if not CommandExecutor(skill_cmd).execute(verbose=self.config.verbose):
-            raise ValueError("Failed to scaffold skill.")
+            msg = "Failed to scaffold skill."
+            raise ValueError(msg)
 
     def generate_handler(self) -> None:
         """Generate handler."""
@@ -268,14 +270,16 @@ class HandlerScaffolder:
 
         for path, path_spec in openapi_spec.get("paths", {}).items():
             for method, operation in path_spec.items():  # noqa
-                method_name: str = f"handle_{method.lower()}_{path.lstrip('/').replace('/', '_').replace('{', '').replace('}', '')}"  # noqa
+                method_name: str = (
+                    f"handle_{method.lower()}_{path.lstrip('/').replace('/', '_').replace('{', '').replace('}', '')}"
+                )
                 params = []
                 if "{" in path:
                     params.append("id")
-                if method.lower() in ["post", "put", "patch", "delete"]:
+                if method.lower() in {"post", "put", "patch", "delete"}:
                     params.append("body")
 
-                param_str: str = ", ".join(["self"] + params)
+                param_str: str = ", ".join(["self", *params])
 
                 method_code: str = f"""
     def {method_name}({param_str}):
@@ -297,20 +301,18 @@ class HandlerScaffolder:
         )
         self.handler_code += main_handler
 
-    def save_handler(self):
+    def save_handler(self, path) -> None:
         """Save handler to file."""
-        path = Path('handlers.py')
+        path = Path("handlers.py")
         with open(path, "w", encoding=DEFAULT_ENCODING) as f:
             try:
                 f.write(self.handler_code)
             except Exception as e:
-                raise ValueError(f"Error writing to file: {e}") from e
+                msg = f"Error writing to file: {e}"
+                raise ValueError(msg) from e
 
-    def update_skill_yaml(self):
-        """
-        Update the skill.yaml file
-        """
-        file = Path("skill.yaml")
+    def update_skill_yaml(self, file) -> None:
+        """Update the skill.yaml file."""
         skill_yaml = read_yaml_file(file)
 
         skill_yaml["protocols"] = [HTTP_PROTOCOL]
@@ -336,9 +338,8 @@ class HandlerScaffolder:
         with open(file, "w", encoding=DEFAULT_ENCODING) as f:
             yaml.safe_dump(skill_yaml, f, sort_keys=False)
 
-    def move_and_update_my_model(self):
-        """
-        Reads in the my_model.py file and updates it.
+    def move_and_update_my_model(self) -> None:
+        """Reads in the my_model.py file and updates it.
         We replace the name MyModel with the name Strategy.
         """
         my_model_file = Path("my_model.py")
@@ -353,28 +354,22 @@ class HandlerScaffolder:
             ):
                 my_model_file.unlink()
                 strategy_file.write_text(strategy_code, encoding=DEFAULT_ENCODING)
-                print(f"'{my_model_file}' removed and '{strategy_file}' created.")
             else:
-                print("Operation cancelled.")
+                pass
 
-    def remove_behaviours(self):
-        """
-        Remove the behaviours.py file.
-        """
+    def remove_behaviours(self) -> None:
+        """Remove the behaviours.py file."""
         behaviours_file = Path("behaviours.py")
         if behaviours_file.exists():
             if self.confirm_action(f"Are you sure you want to remove the file '{behaviours_file}'?"):
                 behaviours_file.unlink()
-                print(f"File '{behaviours_file}' removed.")
             else:
-                print("Operation cancelled.")
+                pass
         else:
-            print(f"'{behaviours_file}' does not exist.")
+            pass
 
-    def create_dialogues(self):
-        """
-        Create the dialogues
-        """
+    def create_dialogues(self) -> None:
+        """Create the dialogues."""
         dialogues_file = "dialogues.py"
         with open(dialogues_file, "w", encoding=DEFAULT_ENCODING) as f:
             f.write(DIALOGUES_CODE)
@@ -387,12 +382,11 @@ class HandlerScaffolder:
         cli_executor = CommandExecutor(f"aea fingerprint skill {skill_id}".split())
         result = cli_executor.execute(verbose=True)
         if not result:
-            raise ValueError(f"Fingerprinting failed: {skill_id}")
+            msg = f"Fingerprinting failed: {skill_id}"
+            raise ValueError(msg)
 
-    def aea_install(self):
-        """
-        Install the aea
-        """
+    def aea_install(self) -> None:
+        """Install the aea."""
         install_cmd = ["aea", "install"]
         if not CommandExecutor(install_cmd).execute(verbose=self.config.verbose):
             raise ValueError(f"Failed to execute {install_cmd}.")
@@ -411,7 +405,7 @@ class HandlerScaffolder:
             self.logger.info(f"Auto confirming: {message}")
             return True
         response = input(f"{message} (y/n): ").lower().strip()
-        return response in ('y', 'yes')
+        return response in ("y", "yes")
 
     def present_actions(self):
         """Present the scaffold summary"""
@@ -436,7 +430,7 @@ class HandlerScaffolder:
 
         if not self.config.auto_confirm:
             confirm = input("Do you want to proceed? (y/n): ").lower().strip()
-            if confirm not in ('y', 'yes'):
+            if confirm not in ("y", "yes"):
                 self.logger.info("Scaffolding cancelled.")
                 return False
 

@@ -1,14 +1,13 @@
-"""
-Test file operations.
-"""
+"""Test file operations."""
 
 from pathlib import Path
 
 import pytest
 
-from auto_dev.enums import FileOperation, FileType
-from auto_dev.exceptions import NotFound
+from auto_dev.enums import FileType, FileOperation
 from auto_dev.utils import FileLoader
+from auto_dev.exceptions import NotFound
+
 
 FILE_NAME = "file"
 

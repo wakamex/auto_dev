@@ -1,6 +1,4 @@
-"""
-Test the contracts module.
-"""
+"""Test the contracts module."""
 
 import shutil
 from pathlib import Path
@@ -10,6 +8,7 @@ import responses
 
 from auto_dev.commands.scaffold import BlockExplorer, ContractScaffolder
 
+
 KNOWN_ADDRESS = "0xc939df369C0Fc240C975A6dEEEE77d87bCFaC259"
 BLOCK_EXPLORER_URL = "https://api.etherscan.io"
 BLOCK_EXPLORER_API_KEY = None
@@ -17,17 +16,13 @@ BLOCK_EXPLORER_API_KEY = None
 
 @pytest.fixture
 def block_explorer():
-    """
-    Block explorer fixture.
-    """
+    """Block explorer fixture."""
     return BlockExplorer(BLOCK_EXPLORER_URL, BLOCK_EXPLORER_API_KEY)
 
 
 @responses.activate
 def test_block_explorer(block_explorer):
-    """
-    Test the block explorer.
-    """
+    """Test the block explorer."""
     responses.add(
         responses.GET,
         f"{BLOCK_EXPLORER_URL}/api?module=contract&action=getabi&address={KNOWN_ADDRESS}",
@@ -41,9 +36,7 @@ def test_block_explorer(block_explorer):
 # we now test the scaffolder
 @pytest.fixture
 def scaffolder(block_explorer):
-    """
-    Scaffolder fixture.
-    """
+    """Scaffolder fixture."""
     return ContractScaffolder(block_explorer, "eightballer")
 
 
@@ -65,9 +58,7 @@ def test_scaffolder_generate(scaffolder):
 
 @responses.activate
 def test_scaffolder_generate_openaea_contract(scaffolder, test_filesystem):
-    """
-    Test the scaffolder.
-    """
+    """Test the scaffolder."""
     del test_filesystem
     responses.add(
         responses.GET,
@@ -85,9 +76,7 @@ def test_scaffolder_generate_openaea_contract(scaffolder, test_filesystem):
 
 
 def test_scaffolder_from_abi(scaffolder, test_filesystem):
-    """
-    Test the scaffolder using an ABI file.
-    """
+    """Test the scaffolder using an ABI file."""
     assert test_filesystem
     path = Path() / "tests" / "data" / "dummy_abi.json"
     new_contract = scaffolder.from_abi(str(path), KNOWN_ADDRESS, "new_contract")

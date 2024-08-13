@@ -1,6 +1,4 @@
-"""
-Enums for auto_dev.
-"""
+"""Enums for auto_dev."""
 
 from enum import Enum
 

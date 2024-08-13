@@ -1,8 +1,10 @@
 """Template for the connection for the connection scaffolder."""
 
 # pylint: skip-file
+# ruff: noqa: E501
 
 from collections import namedtuple
+
 
 HEADER = """
 # -*- coding: utf-8 -*-
@@ -231,7 +233,7 @@ class {name_camelcase}AsyncChannel(BaseAsyncChannel):  # pylint: disable=too-man
 
         :param loop: asyncio event loop to use
         \"\"\"
-        
+
         if self.is_stopped:
             self._loop = loop
             self._in_queue = asyncio.Queue()
