@@ -4906,7 +4906,7 @@ cffi = {version = ">=1.11", markers = "platform_python_implementation == \"PyPy\
 cffi = ["cffi (>=1.11)"]
 
 [extras]
-all = ["tbump", "pylama", "autoflake8", "open-autonomy", "open-aea-ledger-ethereum", "open-aea-ledger-solana", "open-aea-ledger-cosmos"]
+all = ["tbump", "ruff", "pylama", "autoflake8", "open-autonomy", "open-aea-ledger-ethereum", "open-aea-ledger-solana", "open-aea-ledger-cosmos"]
 dev = ["toml", "tbump"]
 doc = []
 
