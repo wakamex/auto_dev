@@ -401,10 +401,11 @@ def verify(
     Example usage:
         adev deps verify
     """
-    ctx.obj["LOGGER"].info("Verifying the dependencies against the remote github... 📝")
+    ctx.obj["LOGGER"].info("Verifying the dependencies against the version set specified. 📝")
     issues = []
     changes = []
     for dependency in track(autonomy_version_set.upstream_dependency):
+        click.echo(f"   Verifying:   {dependency.name}")
         remote_packages = dependency.get_all_autonomy_packages()
         local_packages = get_package_json(Path())['third_party']
         diffs = {}
