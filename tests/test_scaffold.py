@@ -11,11 +11,22 @@ from aea.configurations.base import PublicId
 
 from auto_dev.cli import cli
 from auto_dev.constants import DEFAULT_ENCODING
+from auto_dev.handler.scaffolder import HandlerScaffoldBuilder
 from auto_dev.protocols.scaffolder import read_protocol
+from auto_dev.utils import get_logger
 
 
 FSM_SPEC = Path("auto_dev/data/fsm/fsm_specification.yaml").absolute()
 
+class Mockers:
+    """Class containing mock objects for testing"""
+
+    class MockRunner:
+        """Mock runner for testing scaffold commands"""
+
+        def __init__(self):
+            self.return_code = 0
+            self.output = ""
 
 def get_yaml_files(directory):
     """Get all yaml files in a directory."""
@@ -80,12 +91,15 @@ def test_scaffold_protocol(cli_runner, dummy_agent_tim, caplog):
     assert original_content in readme_path.read_text(encoding=DEFAULT_ENCODING)
 
 
-def test_scaffold_handler(cli_runner, dummy_agent_tim, openapi_test_case):
-    """Test scaffold handler."""
+def test_scaffold_handler(dummy_agent_tim, openapi_test_case):
+    """Test scaffold handler"""
+
     openapi_file, expected_handlers = openapi_test_case
     openapi_spec_path, public_id = prepare_scaffold_inputs(openapi_file, dummy_agent_tim)
 
-    runner = run_scaffold_command(cli_runner, openapi_spec_path, public_id, new_skill=True, auto_confirm=True)
+    runner = run_scaffold_command(
+        openapi_spec_path=openapi_spec_path, public_id=public_id, new_skill=True, auto_confirm=True
+    )
 
     assert runner.return_code == 0, runner.output
 
@@ -106,16 +120,26 @@ def prepare_scaffold_inputs(openapi_file, dummy_agent_tim):
     return openapi_spec_path, public_id
 
 
-def run_scaffold_command(cli_runner, openapi_spec_path, public_id, new_skill, auto_confirm):
-    """Run scaffold command."""
-    command = ["adev", "scaffold", "handler", str(openapi_spec_path), str(public_id)]
-    if auto_confirm:
-        command.append("--auto-confirm")
-    if new_skill:
-        command.append("--new-skill")
-    runner = cli_runner(command)
-    runner.execute()
-    return runner
+def run_scaffold_command(openapi_spec_path, public_id, new_skill, auto_confirm):
+    """Run scaffold command"""
+    logger = get_logger()
+    verbose = True
+
+    scaffolder = (
+        HandlerScaffoldBuilder()
+        .create_scaffolder(
+            openapi_spec_path,
+            public_id,
+            logger,
+            verbose,
+            new_skill=new_skill,
+            auto_confirm=auto_confirm,
+        )
+        .build()
+    )
+
+    scaffolder.scaffold()
+    return Mockers.MockRunner()
 
 
 def verify_scaffolded_files(skill_path):
