@@ -270,8 +270,10 @@ class HandlerScaffolder:
             for method, operation in path_spec.items():  # noqa
                 method_name: str = f"handle_{method.lower()}_{path.lstrip('/').replace('/', '_').replace('{', '').replace('}', '')}"  # noqa
                 params = []
-                if "{" in path:
-                    params.append("id")
+
+                path_params = [param.strip('{}') for param in path.split('/') if param.startswith('{') and param.endswith('}')]
+                params.extend(path_params)
+
                 if method.lower() in ["post", "put", "patch", "delete"]:
                     params.append("body")
 
