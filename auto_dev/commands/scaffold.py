@@ -23,9 +23,9 @@ from auto_dev.connections.scaffolder import ConnectionScaffolder
 from auto_dev.constants import BASE_FSM_SKILLS, DEFAULT_ENCODING, JINJA_TEMPLATE_FOLDER
 from auto_dev.contracts.block_explorer import BlockExplorer
 from auto_dev.contracts.contract_scafolder import ContractScaffolder
-from auto_dev.handler.scaffolder import HandlerScaffolder
+from auto_dev.handler.scaffolder import HandlerScaffoldBuilder
 from auto_dev.protocols.scaffolder import ProtocolScaffolder
-from auto_dev.utils import camel_to_snake, change_dir, load_aea_ctx, remove_suffix
+from auto_dev.utils import camel_to_snake, load_aea_ctx, remove_suffix
 
 cli = build_cli()
 
@@ -196,32 +196,20 @@ def handler(ctx, spec_file, public_id, new_skill, auto_confirm):
     if not Path(DEFAULT_AEA_CONFIG_FILE).exists():
         raise ValueError(f"No {DEFAULT_AEA_CONFIG_FILE} found in current directory")
 
-    scaffolder = HandlerScaffolder(
-        spec_file, public_id, logger=logger, verbose=verbose, new_skill=new_skill, auto_confirm=auto_confirm
+    scaffolder = (
+        HandlerScaffoldBuilder()
+        .create_scaffolder(
+            spec_file,
+            public_id,
+            logger,
+            verbose,
+            new_skill=new_skill,
+            auto_confirm=auto_confirm
+        )
+        .build()
     )
-    if auto_confirm:
-        scaffolder.confirm_action = lambda _: True
-    if new_skill:
-        scaffolder.create_new_skill()
 
-    handler_code = scaffolder.generate()
-    if handler_code is None:
-        logger.error("Handler generation failed. Exiting.")
-        return 1
-
-    with change_dir(Path("skills") / public_id.name):
-        output_path = Path("handlers.py")
-        scaffolder.save_handler(output_path, handler_code)
-        skill_yaml_file = "skill.yaml"
-
-        scaffolder.update_skill_yaml(skill_yaml_file)
-        scaffolder.move_and_update_my_model()
-        scaffolder.remove_behaviours()
-        scaffolder.create_dialogues()
-
-    scaffolder.fingerprint()
-    scaffolder.aea_install()
-    scaffolder.add_protocol()
+    scaffolder.scaffold()
 
     return 0
 
