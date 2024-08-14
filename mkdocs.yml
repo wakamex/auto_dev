@@ -18,9 +18,12 @@ theme:
   language: en
   #logo: assets/logo.png
   palette:
-    scheme: preference
-    primary: indigo
-    accent: indigo
+    primary: blue_grey
+    accent: blue
+    scheme: slate
+  font:
+    code: Roboto Mono
+    text: Source Sans Pro
   features:
     - navigation.indexes
     - navigation.instant
