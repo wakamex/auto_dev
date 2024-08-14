@@ -81,6 +81,7 @@ mkdocstrings = {extras = ["python"], version = "^0.25.2"}
 responses = "^0.23.1"
 mkdocs = "^1.6.0"
 mkdocs-include-markdown-plugin = "^3.6.1"
+mkdocs-mermaid2-plugin = "^1.1.1"
 mkdocs-material = "^9.5.31"
 mkdocstrings-python = "^1.10.7"
 twine = "^5.1.1"

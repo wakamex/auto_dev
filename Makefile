@@ -9,6 +9,7 @@ fmt:
 test:
 	poetry run adev -v test -p tests
 
+.PHONY: docs
 docs:
 	poetry run mkdocs build
 

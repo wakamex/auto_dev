@@ -1,9 +1,5 @@
 # API Reference
 
-## auto_dev module
-
-::: auto_dev
-
-## auto_dev commands
+## AutoDev commands
 
 ::: auto_dev.commands

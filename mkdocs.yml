@@ -29,6 +29,7 @@ theme:
     - navigation.instant
     - navigation.tabs.sticky
     - navigation.expand
+    - content.code.copy
 markdown_extensions:
   - pymdownx.emoji
   - pymdownx.critic
@@ -41,15 +42,24 @@ markdown_extensions:
       generic: true
   - pymdownx.highlight:
       linenums: false
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
   - pymdownx.superfences
   - pymdownx.inlinehilite
   - pymdownx.details
   - admonition
   - toc:
-      baselevel: 2
+      baselevel: 3
       permalink: true
       slugify: !!python/name:pymdownx.slugs.uslugify
   - meta
+  - pymdownx.superfences:
+        # make exceptions to highlighting of code:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:mermaid2.fence_mermaid_custom
 plugins:
   - include-markdown
   - search:
@@ -68,22 +78,8 @@ extra_css:
   - stylesheets/extra.css
 extra:
   social:
-    - icon: fontawesome/brands/twitter
-      # replace with your own tweet link below
-      link: https://github.com/waynerv/cookiecutter-pypackage
-      name: Tweet
-    - icon: fontawesome/brands/facebook
-      # replace with your own facebook link below
-      link: https://github.com/waynerv/cookiecutter-pypackage
-      name: Facebook
     - icon: fontawesome/brands/github
       link: https://github.com/8ball030/auto_dev
       name: Github
     - icon: material/email
       link: "mailto:8ball030@gmail.com"
-  # to enable disqus, uncomment the following and put your disqus id below
-  # disqus: disqus_id
-# uncomment the following and put your google tracking id below to enable GA
-#google_analytics:
-  #- UA-xxx
-  #- auto
