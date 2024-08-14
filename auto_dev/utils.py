@@ -130,6 +130,8 @@ def get_paths(path: str | None = None, changed_only: bool = False):
     def filter_protobuf_files(file_path: str) -> bool:
         regexs = [
             "_pb2.py",
+            "message.py",
+            "serialization.py",
         ]
         return any(regex in file_path for regex in regexs)
 
