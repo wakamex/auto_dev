@@ -12,6 +12,9 @@ test:
 docs:
 	poetry run mkdocs build
 
+docs-serve:
+	poetry run mkdocs serve
+
 all: fmt lint test
 
 submit: install fmt lint test

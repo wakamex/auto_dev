@@ -16,7 +16,7 @@ click.rich_click.USE_RICH_MARKUP = True
 
 @dataclass
 class CLIs:
-    """C;I class."""
+    """CLI class."""
 
     plugin_folder: str = PLUGIN_FOLDER
 

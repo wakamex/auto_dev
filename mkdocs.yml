@@ -6,7 +6,10 @@ repo_name: 8ball030/auto_dev
 nav:
   - Home: index.md
   - Installation: installation.md
-  - Usage: usage.md
+  - Usage: 
+    - Overview: usage.md
+    - FSM: fsm.md
+    - OpenAPI: openapi.md
   - Modules: api.md
   - Contributing: contributing.md
   - Changelog: changelog.md
@@ -22,10 +25,9 @@ theme:
     - navigation.indexes
     - navigation.instant
     - navigation.tabs.sticky
+    - navigation.expand
 markdown_extensions:
-  - pymdownx.emoji:
-      emoji_index: !!python/name:materialx.emoji.twemoji
-      emoji_generator: !!python/name:materialx.emoji.to_svg
+  - pymdownx.emoji
   - pymdownx.critic
   - pymdownx.caret
   - pymdownx.mark
@@ -49,9 +51,18 @@ plugins:
   - include-markdown
   - search:
       lang: en
+  - autorefs
   - mkdocstrings:
-      watch:
-        - auto_dev
+      default_handler: python
+      handlers:
+        python:
+          options:
+            show_root_heading: true
+            show_source: false
+            show_submodules: true
+            docstring_style: sphinx
+extra_css:
+  - stylesheets/extra.css
 extra:
   social:
     - icon: fontawesome/brands/twitter
