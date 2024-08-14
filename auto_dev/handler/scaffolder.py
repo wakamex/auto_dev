@@ -274,9 +274,11 @@ class HandlerScaffolder:
                     f"handle_{method.lower()}_{path.lstrip('/').replace('/', '_').replace('{', '').replace('}', '')}"
                 )
                 params = []
-                if "{" in path:
-                    params.append("id")
-                if method.lower() in {"post", "put", "patch", "delete"}:
+
+                path_params = [param.strip('{}') for param in path.split('/') if param.startswith('{') and param.endswith('}')]
+                params.extend(path_params)
+
+                if method.lower() in ["post", "put", "patch", "delete"]:
                     params.append("body")
 
                 param_str: str = ", ".join(["self", *params])
