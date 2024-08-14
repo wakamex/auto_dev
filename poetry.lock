@@ -4708,9 +4708,9 @@ cffi = ["cffi (>=1.11)"]
 [extras]
 all = ["autoflake8", "pylama", "tbump"]
 dev = ["tbump", "toml"]
-doc = []
+doc = ["mkdocstrings"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.12"
-content-hash = "3b9a702cb84bcfbdbc31d0f172b457d0ba16fe92bdf1320ba70846de95434f09"
+content-hash = "b0807531623b374d8a9b4baf81fdc0af32fbefaefa31a19bc2feb5c274cf14b2"
