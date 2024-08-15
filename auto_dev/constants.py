@@ -11,7 +11,7 @@ DEFAULT_ENCODING = "utf-8"
 DEFAULT_TIMEOUT = 10
 # package directory
 PACKAGE_DIR = os.path.dirname(os.path.abspath(__file__))
-DEFAULT_PYLAMA_CONFIG = Path(PACKAGE_DIR) / "data" / "pylama.ini"
+DEFAULT_RUFF_CONFIG = Path(PACKAGE_DIR) / "data" / "ruff.toml"
 AUTONOMY_PACKAGES_FILE = "packages/packages.json"
 AUTO_DEV_FOLDER = os.path.join(os.path.dirname(__file__))
 PLUGIN_FOLDER = os.path.join(AUTO_DEV_FOLDER, "commands")

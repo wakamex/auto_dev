@@ -275,7 +275,9 @@ class HandlerScaffolder:
                 )
                 params = []
 
-                path_params = [param.strip('{}') for param in path.split('/') if param.startswith('{') and param.endswith('}')]
+                path_params = [
+                    param.strip("{}") for param in path.split("/") if param.startswith("{") and param.endswith("}")
+                ]
                 params.extend(path_params)
 
                 if method.lower() in ["post", "put", "patch", "delete"]:

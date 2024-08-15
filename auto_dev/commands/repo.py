@@ -102,7 +102,12 @@ class RepoScaffolder:
             rel_path = file.relative_to(template_folder)
             content = file.read_text(encoding=DEFAULT_ENCODING)
             if file.suffix == ".template":
-                content = content.format(**self.scaffold_kwargs)
+                try:
+                    content = content.format(**self.scaffold_kwargs)
+                except IndexError as e:
+                    self.logger.error(f"Error formatting {file}")
+                    self.logger.error(f"Error: {e}")
+                    continue
                 target_file_path = new_repo_dir / rel_path.with_suffix("")
             else:
                 target_file_path = new_repo_dir / rel_path

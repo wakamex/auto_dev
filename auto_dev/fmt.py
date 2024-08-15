@@ -5,7 +5,7 @@ from multiprocessing import Pool
 import requests
 from rich.progress import track
 
-from auto_dev.constants import DEFAULT_ENCODING
+from auto_dev.constants import DEFAULT_ENCODING, DEFAULT_RUFF_CONFIG
 from auto_dev.cli_executor import CommandExecutor
 
 
@@ -57,15 +57,7 @@ class Formatter:
     @staticmethod
     def run_format(path, verbose=False):
         """Run black on the path."""
-        command = CommandExecutor(
-            [
-                "poetry",
-                "run",
-                "ruff",
-                "format",
-                str(path),
-            ]
-        )
+        command = CommandExecutor(["poetry", "run", "ruff", "format", str(path), "--config", str(DEFAULT_RUFF_CONFIG)])
         return command.execute(verbose=verbose)
 
     @staticmethod
@@ -81,6 +73,8 @@ class Formatter:
                 "I",
                 "--fix",
                 str(path),
+                "--config",
+                str(DEFAULT_RUFF_CONFIG),
             ]
         )
         return command.execute(verbose=verbose)
