@@ -362,12 +362,38 @@ open_aea_repo = GitDependency(
     url="https://api.github.com/repos/valory-xyz/open-aea",
 )
 
+auto_dev_repo = GitDependency(
+    name="autonomy-dev",
+    version="0.2.72",
+    location=DependencyLocation.REMOTE,
+    url="https://api.github.com/repos/8ball030/auto_dev",
+)
+
 autonomy_version_set = AutonomyVersionSet(
     upstream_dependency=[
         open_autonomy_repo,
         open_aea_repo,
     ]
 )
+
+poetry_dependencies = [
+    auto_dev_repo,
+]
+
+
+def handle_output(issues, changes) -> None:
+    """Handle the output."""
+    if issues:
+        for issue in issues:
+            print(issue)
+        sys.exit(1)
+
+    if changes:
+        for change in changes:
+            print(f"Updated {change} successfully. ✅")
+        print("Please verify the proposed changes and commit them! 📝")
+        sys.exit(0)
+    print("No changes required. 😎")
 
 
 @deps.command()
@@ -383,6 +409,7 @@ def verify(
     ctx.obj["LOGGER"].info("Verifying the dependencies against the version set specified. 📝")
     issues = []
     changes = []
+    click.echo("Verifying autonomy dependencies... 📝")
     for dependency in track(autonomy_version_set.upstream_dependency):
         click.echo(f"   Verifying:   {dependency.name}")
         remote_packages = dependency.get_all_autonomy_packages()
@@ -409,17 +436,18 @@ def verify(
                     f"Please update the version of {dependency.name} from `{current_version}` to `{expected_version}`\n"
                 )
 
-    if issues:
-        for issue in issues:
-            print(issue)
-        sys.exit(1)
+    click.echo("Verifying poetry dependencies... 📝")
+    for dependency in track(poetry_dependencies):
+        click.echo(f"   Verifying:   {dependency.name}")
+        raw = toml.load("pyproject.toml")["tool"]["poetry"]["dependencies"]
+        current_version = str(raw[dependency.name])
+        expected_version = f"{dependency.get_latest_version()[1:]}"
+        if current_version.find(expected_version) == -1:
+            issues.append(
+                f"Update the poetry version of {dependency.name} from `{current_version}` to `{expected_version}`\n"
+            )
 
-    if changes:
-        for change in changes:
-            print(f"Updated {change} successfully. ✅")
-        print("Please verify the proposed changes and commit them! 📝")
-        sys.exit(0)
-    print("No changes required. 😎")
+    handle_output(issues, changes)
 
 
 if __name__ == "__main__":

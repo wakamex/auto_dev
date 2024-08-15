@@ -24,7 +24,8 @@ tag_template = "v{new_version}"
 # tbump.toml location.
 [[file]]
 src = "pyproject.toml"
-
+[[file]]
+src = "auto_dev/commands/deps.py"
 [[file]]
 src = "auto_dev/data/repo/templates/autonomy/pyproject.toml.template"
 [[file]]
