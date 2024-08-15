@@ -1,9 +1,7 @@
-"""
-Simple cli to allow users to perform the following actions against an autonomy repo;
-
-"""
+"""Simple cli to allow users to perform the following actions against an autonomy repo."""
 
 from auto_dev.base import build_cli
+
 
 cli = build_cli(plugins=True)
 

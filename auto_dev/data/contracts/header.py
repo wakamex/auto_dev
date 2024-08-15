@@ -1,8 +1,4 @@
-"""
-
-Constants for the contract generation.
-
-"""
+"""Constants for the contract generation."""
 
 IMPORTS = """
 import logging

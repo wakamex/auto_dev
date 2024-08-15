@@ -1,5 +1,4 @@
-"""
-Module to allow the scaffolding of contracts.
+"""Module to allow the scaffolding of contracts.
 Contains a BlockExplorer class to allow the user to interact with
 the blockchain explorer.
 
@@ -11,31 +10,30 @@ Also contains a Contract, which we will use to allow the user to;
 
 from pathlib import Path
 
-import rich_click as click
 import yaml
+import rich_click as click
+from jinja2 import Environment, FileSystemLoader
 from aea.configurations.constants import DEFAULT_AEA_CONFIG_FILE, PROTOCOL_LANGUAGE_PYTHON, SUPPORTED_PROTOCOL_LANGUAGES
 from aea.configurations.data_types import PublicId
-from jinja2 import Environment, FileSystemLoader
 
 from auto_dev.base import build_cli
-from auto_dev.cli_executor import CommandExecutor
-from auto_dev.connections.scaffolder import ConnectionScaffolder
+from auto_dev.utils import change_dir, load_aea_ctx, remove_suffix, camel_to_snake
 from auto_dev.constants import BASE_FSM_SKILLS, DEFAULT_ENCODING, JINJA_TEMPLATE_FOLDER
+from auto_dev.cli_executor import CommandExecutor
+from auto_dev.handler.scaffolder import HandlerScaffolder, HandlerScaffoldBuilder
+from auto_dev.protocols.scaffolder import ProtocolScaffolder
+from auto_dev.connections.scaffolder import ConnectionScaffolder
 from auto_dev.contracts.block_explorer import BlockExplorer
 from auto_dev.contracts.contract_scafolder import ContractScaffolder
-from auto_dev.handler.scaffolder import HandlerScaffoldBuilder
-from auto_dev.protocols.scaffolder import ProtocolScaffolder
-from auto_dev.utils import camel_to_snake, load_aea_ctx, remove_suffix
+
 
 cli = build_cli()
 
 
 # we have a new command group called scaffold.
 @cli.group()
-def scaffold():
-    """
-    Scaffold a (set of) components.
-    """
+def scaffold() -> None:
+    """Scaffold a (set of) components."""
 
 
 @scaffold.command()
@@ -50,16 +48,14 @@ def scaffold():
 @click.pass_context
 def contract(  # pylint: disable=R0914
     ctx, address, name, block_explorer_url, block_explorer_api_key, read_functions, write_functions, from_abi, from_file
-):
-    """
-    Scaffold a contract.
-    """
+) -> None:
+    """Scaffold a contract."""
     logger = ctx.obj["LOGGER"]
     if address is None and name is None and from_file is None:
         logger.error("Must provide either an address and name or a file containing a list of addresses and names.")
         return
     if from_file is not None:
-        with open(from_file, "r", encoding=DEFAULT_ENCODING) as file_pointer:
+        with open(from_file, encoding=DEFAULT_ENCODING) as file_pointer:
             yaml_dict = yaml.safe_load(file_pointer)
         for contract_name, contract_address in yaml_dict["contracts"].items():
             ctx.invoke(
@@ -103,28 +99,29 @@ def contract(  # pylint: disable=R0914
 
 @scaffold.command()
 @click.option("--spec", default=None, required=False)
-def fsm(spec):
-    """
-    Scaffold a FSM.
+def fsm(spec) -> None:
+    """Scaffold a FSM.
 
     usage: `adev scaffold fsm [--spec fsm_specification.yaml]`
     """
-
     if not Path(DEFAULT_AEA_CONFIG_FILE).exists():
-        raise ValueError(f"No {DEFAULT_AEA_CONFIG_FILE} found in current directory")
+        msg = f"No {DEFAULT_AEA_CONFIG_FILE} found in current directory"
+        raise ValueError(msg)
 
     for skill, ipfs_hash in BASE_FSM_SKILLS.items():
         command = CommandExecutor(["autonomy", "add", "skill", ipfs_hash])
         result = command.execute(verbose=True)
         if not result:
-            raise ValueError(f"Adding failed for skill: {skill}")
+            msg = f"Adding failed for skill: {skill}"
+            raise ValueError(msg)
 
     if not spec:
         return
 
     path = Path(spec)
     if not path.exists():
-        raise click.ClickException(f"Specified spec '{path}' does not exist.")
+        msg = f"Specified spec '{path}' does not exist."
+        raise click.ClickException(msg)
 
     fsm_spec = yaml.safe_load(path.read_text(encoding=DEFAULT_ENCODING))
     name = camel_to_snake(remove_suffix(fsm_spec["label"], "App"))
@@ -132,7 +129,8 @@ def fsm(spec):
     command = CommandExecutor(["autonomy", "scaffold", "fsm", name, "--spec", str(spec)])
     result = command.execute(verbose=True)
     if not result:
-        raise ValueError(f"FSM scaffolding failed for spec: {spec}")
+        msg = f"FSM scaffolding failed for spec: {spec}"
+        raise ValueError(msg)
 
 
 @scaffold.command()
@@ -147,8 +145,7 @@ def fsm(spec):
 )
 @click.pass_context
 def protocol(ctx, protocol_specification_path: str, language: str) -> None:
-    """Scaffold a protocol"""
-
+    """Scaffold a protocol."""
     logger = ctx.obj["LOGGER"]
     verbose = ctx.obj["VERBOSE"]
     scaffolder = ProtocolScaffolder(protocol_specification_path, language, logger=logger, verbose=verbose)
@@ -164,15 +161,13 @@ def connection(  # pylint: disable=R0914
     ctx,
     name,
     protocol: PublicId,
-):
-    """
-    Scaffold a connection.
-    """
-
+) -> None:
+    """Scaffold a connection."""
     logger = ctx.obj["LOGGER"]
 
     if protocol not in ctx.aea_ctx.agent_config.protocols:
-        raise click.ClickException(f"Protocol {protocol} not found in agent configuration.")
+        msg = f"Protocol {protocol} not found in agent configuration."
+        raise click.ClickException(msg)
 
     scaffolder = ConnectionScaffolder(ctx, name, protocol)
     scaffolder.generate()
@@ -187,25 +182,18 @@ def connection(  # pylint: disable=R0914
 @click.option("--new-skill", is_flag=True, default=False, help="Create a new skill")
 @click.option("--auto-confirm", is_flag=True, default=False, help="Auto confirm all actions")
 @click.pass_context
-def handler(ctx, spec_file, public_id, new_skill, auto_confirm):
+def handler(ctx, spec_file, public_id, new_skill, auto_confirm) -> int:
     """Generate an AEA handler from an OpenAPI 3 specification."""
-
     logger = ctx.obj["LOGGER"]
     verbose = ctx.obj["VERBOSE"]
 
     if not Path(DEFAULT_AEA_CONFIG_FILE).exists():
-        raise ValueError(f"No {DEFAULT_AEA_CONFIG_FILE} found in current directory")
+        msg = f"No {DEFAULT_AEA_CONFIG_FILE} found in current directory"
+        raise ValueError(msg)
 
     scaffolder = (
         HandlerScaffoldBuilder()
-        .create_scaffolder(
-            spec_file,
-            public_id,
-            logger,
-            verbose,
-            new_skill=new_skill,
-            auto_confirm=auto_confirm
-        )
+        .create_scaffolder(spec_file, public_id, logger, verbose, new_skill=new_skill, auto_confirm=auto_confirm)
         .build()
     )
 
@@ -218,22 +206,19 @@ def handler(ctx, spec_file, public_id, new_skill, auto_confirm):
 @click.pass_context
 def tests(
     ctx,
-):
-    """
-    Generate tests for an aea component in the current directory
+) -> None:
+    """Generate tests for an aea component in the current directory
     AEA handler from an OpenAPI 3 specification.
     """
-
     logger = ctx.obj["LOGGER"]
     verbose = ctx.obj["VERBOSE"]
-    env = Environment(loader=FileSystemLoader(JINJA_TEMPLATE_FOLDER))
+    env = Environment(loader=FileSystemLoader(JINJA_TEMPLATE_FOLDER), autoescape=True)
     template = env.get_template("test_custom.jinja")
     output = template.render(
         name="test",
     )
     if verbose:
         logger.info(f"Generated tests: {output}")
-        print(output)
 
 
 if __name__ == "__main__":
