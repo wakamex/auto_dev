@@ -10,7 +10,17 @@ nav:
     - Overview: usage.md
     - FSM: fsm.md
     - OpenAPI: openapi.md
-  - Modules: api.md
+  - API Reference:
+    - Overview: api/index.md
+    - auto_dev: api/auto_dev.md
+    - Commands: api/commands.md
+    - Connections: api/connections.md
+    - Contracts: api/contracts.md
+    - FSM: api/fsm.md
+    - Handler: api/handler.md
+    - Protocols: api/protocols.md
+    - Utils: api/utils.md
+    - Constants: api/constants.md
   - Contributing: contributing.md
   - Changelog: changelog.md
 theme:
@@ -69,6 +79,7 @@ plugins:
       default_handler: python
       handlers:
         python:
+          paths: [auto_dev]
           options:
             show_root_heading: true
             show_source: false
