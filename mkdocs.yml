@@ -28,9 +28,27 @@ theme:
   language: en
   #logo: assets/logo.png
   palette:
-    primary: blue_grey
-    accent: blue
-    scheme: slate
+    # Automatic mode
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+    # Light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      accent: blue
+      primary: blue_grey
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    # Dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      accent: blue
+      primary: blue_grey
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to system preference
   font:
     code: Roboto Mono
     text: Source Sans Pro
