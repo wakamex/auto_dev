@@ -392,7 +392,7 @@ def handle_output(issues, changes) -> None:
         for change in changes:
             print(f"Updated {change} successfully. ✅")
         print("Please verify the proposed changes and commit them! 📝")
-        sys.exit(0)
+        sys.exit(1)
     print("No changes required. 😎")
 
 
