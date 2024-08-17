@@ -207,6 +207,8 @@ class GitDependency(Dependency):
     type = DependencyType.GIT
     autonomy_dependencies: Dict[str, Dependency] = None
     url: str = None
+    plugins: List[str] = None
+    extras: List[str] = None
 
     @property
     def headers(self) -> Dict[str, str]:
@@ -353,6 +355,7 @@ open_autonomy_repo = GitDependency(
     version="0.15.2",
     location=DependencyLocation.REMOTE,
     url="https://api.github.com/repos/valory-xyz/open-autonomy",
+    plugins=["open-aea-test-autonomy"],
 )
 
 open_aea_repo = GitDependency(
@@ -360,6 +363,12 @@ open_aea_repo = GitDependency(
     version="1.55.0",
     location=DependencyLocation.REMOTE,
     url="https://api.github.com/repos/valory-xyz/open-aea",
+    plugins=[
+        "open-aea-ledger-ethereum",
+        "open-aea-ledger-solana",
+        "open-aea-ledger-cosmos",
+        "open-aea-cli-ipfs",
+    ],
 )
 
 auto_dev_repo = GitDependency(
@@ -367,6 +376,7 @@ auto_dev_repo = GitDependency(
     version="0.2.73",
     location=DependencyLocation.REMOTE,
     url="https://api.github.com/repos/8ball030/auto_dev",
+    extras=["all"],
 )
 
 autonomy_version_set = AutonomyVersionSet(
@@ -378,6 +388,8 @@ autonomy_version_set = AutonomyVersionSet(
 
 poetry_dependencies = [
     auto_dev_repo,
+    open_autonomy_repo,
+    open_aea_repo,
 ]
 
 
@@ -437,16 +449,33 @@ def verify(
                 )
 
     click.echo("Verifying poetry dependencies... 📝")
+    cmd = "poetry add "
     for dependency in track(poetry_dependencies):
         click.echo(f"   Verifying:   {dependency.name}")
         raw = toml.load("pyproject.toml")["tool"]["poetry"]["dependencies"]
+
         current_version = str(raw[dependency.name])
         expected_version = f"{dependency.get_latest_version()[1:]}"
         if current_version.find(expected_version) == -1:
             issues.append(
                 f"Update the poetry version of {dependency.name} from `{current_version}` to `{expected_version}`\n"
             )
-
+            if dependency.extras is not None:
+                extras = ",".join(dependency.extras)
+                cmd += f"{dependency.name}[{extras}]@=={expected_version} "
+            else:
+                cmd += f"{dependency.name}@=={expected_version} "
+            if dependency.plugins:
+                for plugin in dependency.plugins:
+                    cmd += f"{plugin}@=={expected_version} "
+    if issues:
+        click.echo(f"Please run the following command to update the poetry dependencies.")
+        click.echo(f"{cmd}\n")
+        confirm = click.confirm("Do you want to update the poetry dependencies now?", abort=True)
+        if confirm:
+            os.system(cmd)
+            click.echo("Done. 😎")
+            sys.exit(0)
     handle_output(issues, changes)
 
 
