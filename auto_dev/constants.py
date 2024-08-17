@@ -108,3 +108,4 @@ class CheckResult(Enum):
     PASS = "PASS"
     FAIL = "FAIL"
     MODIFIED = "MODIFIED"
+    SKIPPED = "SKIPPED"
