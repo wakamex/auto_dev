@@ -41,8 +41,14 @@ cli = build_cli()
     type=str,
     required=True,
 )
+@click.option(
+    "-y",
+    "--yes",
+    help="Automatically answer yes to all questions.",
+    is_flag=True,
+)
 @click.pass_context
-def improve(ctx, path, type_of_repo, author, name) -> None:
+def improve(ctx, path, type_of_repo, author, name, yes) -> None:
     """Improves downstream repos by verifying the context of scaffolded files."""
     if path is None:
         path = Path.cwd()
@@ -57,11 +63,20 @@ def improve(ctx, path, type_of_repo, author, name) -> None:
         verbose=verbose,
         render_overrides={"author": author, "project_name": name},
     )
-    results = scaffolder.verify(True)
-    passed = results.count(CheckResult.PASS)
+    results = scaffolder.verify(True, yes=yes)
     failed = results.count(CheckResult.FAIL)
     modified = results.count(CheckResult.MODIFIED)
-    logger.info(f"Verification completed with {passed} passed and {failed} failed and {modified} modified.")
+    logger.info(f"""Verification completed with results:
+        Pased:    - {results.count(CheckResult.PASS)}
+        Failed:   - {failed}
+        Modified: - {modified}
+        Skipped:  - {results.count(CheckResult.SKIPPED)}
+        """)
+
+    if modified:
+        msg = f"Verification completed with {modified} modified."
+        raise click.ClickException(msg)
     if failed:
         msg = f"Verification failed with {failed} failed."
         raise click.ClickException(msg)
+    logger.info("Verification completed successfully. All files are formatted correctly.")

@@ -35,6 +35,15 @@ from auto_dev.cli_executor import CommandExecutor
 
 AGENT_PREFIX = "AutoDev: ->: {msg}"
 
+SKIPS = [
+    "poetry.lock",
+    "pyproject.toml",
+    ".gitignore",
+    "README.md",
+    "packages.json",
+    "tbump.toml",
+]
+
 
 def execute_commands(*commands: str, verbose: bool, logger, shell: bool = False) -> None:
     """Execute commands."""
@@ -119,6 +128,7 @@ class RepoScaffolder:
     def verify(
         self,
         fix_differences=False,
+        yes=False,
     ):
         """Scaffold files for a new repo."""
         template_folder = TEMPLATES[self.type_of_repo]
@@ -135,6 +145,9 @@ class RepoScaffolder:
                 target_file_path = rel_path.with_suffix("")
             else:
                 target_file_path = rel_path
+            if target_file_path.name in SKIPS:
+                results.append(CheckResult.SKIPPED)
+                continue
             self.logger.debug(f"Scaffolding `{target_file_path!s}`")
             actual_file = Path(target_file_path)
             actual_content = ""
@@ -151,7 +164,7 @@ class RepoScaffolder:
                     print(diff)
 
                 if fix_differences:
-                    if click.confirm("Do you want to fix the differences(y/n)?\n"):
+                    if yes or click.confirm("Do you want to fix the differences(y/n)?\n"):
                         self.logger.info(f"Fixing differences in {target_file_path}")
                         Path(target_file_path).write_text(content, encoding=DEFAULT_ENCODING)
                         results.append(CheckResult.MODIFIED)
