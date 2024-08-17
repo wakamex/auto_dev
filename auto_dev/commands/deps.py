@@ -407,6 +407,29 @@ def handle_output(issues, changes) -> None:
         sys.exit(1)
     print("No changes required. 😎")
 
+def get_update_command(poetry_dependencies: Dependency) -> str:
+    """Get the update command."""
+    issues = []
+    cmd = "poetry add "
+    for dependency in track(poetry_dependencies):
+        click.echo(f"   Verifying:   {dependency.name}")
+        raw = toml.load("pyproject.toml")["tool"]["poetry"]["dependencies"]
+
+        current_version = str(raw[dependency.name])
+        expected_version = f"{dependency.get_latest_version()[1:]}"
+        if current_version.find(expected_version) == -1:
+            issues.append(
+                f"Update the poetry version of {dependency.name} from `{current_version}` to `{expected_version}`\n"
+            )
+            if dependency.extras is not None:
+                extras = ",".join(dependency.extras)
+                cmd += f"{dependency.name}[{extras}]@=={expected_version} "
+            else:
+                cmd += f"{dependency.name}@=={expected_version} "
+            if dependency.plugins:
+                for plugin in dependency.plugins:
+                    cmd += f"{plugin}@=={expected_version} "
+    return cmd, issues
 
 @deps.command()
 @click.pass_context
@@ -449,31 +472,15 @@ def verify(
                 )
 
     click.echo("Verifying poetry dependencies... 📝")
-    cmd = "poetry add "
-    for dependency in track(poetry_dependencies):
-        click.echo(f"   Verifying:   {dependency.name}")
-        raw = toml.load("pyproject.toml")["tool"]["poetry"]["dependencies"]
+    cmd, poetry_issues = get_update_command(poetry_dependencies)
+    issues.extend(poetry_issues)
 
-        current_version = str(raw[dependency.name])
-        expected_version = f"{dependency.get_latest_version()[1:]}"
-        if current_version.find(expected_version) == -1:
-            issues.append(
-                f"Update the poetry version of {dependency.name} from `{current_version}` to `{expected_version}`\n"
-            )
-            if dependency.extras is not None:
-                extras = ",".join(dependency.extras)
-                cmd += f"{dependency.name}[{extras}]@=={expected_version} "
-            else:
-                cmd += f"{dependency.name}@=={expected_version} "
-            if dependency.plugins:
-                for plugin in dependency.plugins:
-                    cmd += f"{plugin}@=={expected_version} "
     if issues:
         click.echo(f"Please run the following command to update the poetry dependencies.")
         click.echo(f"{cmd}\n")
         confirm = click.confirm("Do you want to update the poetry dependencies now?", abort=True)
         if confirm:
-            os.system(cmd)
+            os.system(cmd)  # noqa
             click.echo("Done. 😎")
             sys.exit(0)
     handle_output(issues, changes)
