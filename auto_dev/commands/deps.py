@@ -349,9 +349,8 @@ class AutonomyDepenencies:
 
     upstream_dependency: List[GitDependency]
 
-
     def to_dict(self):
-        """return a list of the upstream dependencies."""    
+        """return a list of the upstream dependencies."""
         return [
             {
                 "name": dependency.name,
@@ -364,15 +363,15 @@ class AutonomyDepenencies:
             for dependency in self.upstream_dependency
         ]
 
+
 @dataclass
 class PoetryDependencies:
     """A set of poetry dependencies."""
 
-    poetry_dependencies: List[GitDependency] 
-
+    poetry_dependencies: List[GitDependency]
 
     def to_dict(self):
-        """return a list of the poetry dependencies."""    
+        """return a list of the poetry dependencies."""
         return [
             {
                 "name": dependency.name,
@@ -383,7 +382,8 @@ class PoetryDependencies:
                 "extras": dependency.extras,
             }
             for dependency in self.poetry_dependencies
-        ]  
+        ]
+
 
 open_autonomy_repo = GitDependency(
     name="open-autonomy",
@@ -421,14 +421,13 @@ autonomy_version_set = AutonomyDepenencies(
     ]
 )
 
-poetry_dependencies = PoetryDependencies([
-    auto_dev_repo,
-    open_autonomy_repo,
-    open_aea_repo,
-])
-
-
-
+poetry_dependencies = PoetryDependencies(
+    [
+        auto_dev_repo,
+        open_autonomy_repo,
+        open_aea_repo,
+    ]
+)
 
 
 # We then use this to contruct a to_yaml function such that we can read in from a configfile.
@@ -473,15 +472,17 @@ poetry_dependencies:
 
 
 class VersionSetLoader:
+    """We load the version set."""
     autonomy_dependencies: AutonomyDepenencies
     poetry_dependencies: PoetryDependencies
-
 
     def __init__(self, config_file: Path = DEFAULT_ADEV_CONFIG_FILE):
         self.config_file = config_file
 
-    def write_config(self,):
-
+    def write_config(
+        self,
+    ):
+        """Write the config file."""
         data = {
             "autonomy_dependencies": self.autonomy_dependencies.to_dict(),
             "poetry_dependencies": self.poetry_dependencies.to_dict(),
@@ -489,6 +490,7 @@ class VersionSetLoader:
         FileLoader(self.config_file, FileType.YAML).write(data)
 
     def load_config(self):
+        """Load the config file."""
         with open(self.config_file, "r") as file_pointer:
             data = yaml.safe_load(file_pointer)
         self.autonomy_dependencies = AutonomyDepenencies(
@@ -520,9 +522,6 @@ class VersionSetLoader:
         )
 
 
-
-
-
 def handle_output(issues, changes) -> None:
     """Handle the output."""
     if issues:
@@ -536,6 +535,7 @@ def handle_output(issues, changes) -> None:
         print("Please verify the proposed changes and commit them! 📝")
         sys.exit(1)
     print("No changes required. 😎")
+
 
 def get_update_command(poetry_dependencies: Dependency) -> str:
     """Get the update command."""
@@ -561,6 +561,7 @@ def get_update_command(poetry_dependencies: Dependency) -> str:
                     cmd += f"{plugin}@{expected_version} "
     return cmd, issues
 
+
 @deps.command()
 @click.pass_context
 def verify(
@@ -579,7 +580,6 @@ def verify(
     version_set_loader = VersionSetLoader()
 
     version_set_loader.load_config()
-
 
     for dependency in track(version_set_loader.autonomy_dependencies.upstream_dependency):
         click.echo(f"   Verifying:   {dependency.name}")
