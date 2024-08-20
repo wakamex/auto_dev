@@ -407,6 +407,7 @@ def handle_output(issues, changes) -> None:
         sys.exit(1)
     print("No changes required. 😎")
 
+
 def get_update_command(poetry_dependencies: Dependency) -> str:
     """Get the update command."""
     issues = []
@@ -430,6 +431,7 @@ def get_update_command(poetry_dependencies: Dependency) -> str:
                 for plugin in dependency.plugins:
                     cmd += f"{plugin}@=={expected_version} "
     return cmd, issues
+
 
 @deps.command()
 @click.pass_context

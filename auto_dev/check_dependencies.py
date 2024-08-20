@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ------------------------------------------------------------------------------
 #
@@ -26,21 +25,19 @@ In particular:
 It is assumed the script is run from the repository root.
 """
 
-import itertools
-import logging
 import re
 import sys
-from collections import OrderedDict
+import logging
+import itertools
+from typing import Any, Dict, List, Tuple, Iterator, Optional, OrderedDict as OrderedDictType, cast
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional
-from typing import OrderedDict as OrderedDictType
-from typing import Tuple, cast
+from collections import OrderedDict
 
-import click
 import toml
-from aea.configurations.data_types import Dependency
-from aea.package_manager.base import load_configuration
+import click
 from aea.package_manager.v1 import PackageManagerV1
+from aea.package_manager.base import load_configuration
+from aea.configurations.data_types import Dependency
 
 
 ANY_SPECIFIER = "*"
@@ -49,9 +46,7 @@ ANY_SPECIFIER = "*"
 class PathArgument(click.Path):
     """Path parameter for CLI."""
 
-    def convert(
-        self, value: Any, param: Optional[click.Parameter], ctx: Optional[click.Context]
-    ) -> Optional[Path]:
+    def convert(self, value: Any, param: Optional[click.Parameter], ctx: Optional[click.Context]) -> Optional[Path]:
         """Convert path string to `pathlib.Path`"""
         path_string = super().convert(value, param, ctx)
         return None if path_string is None else Path(path_string)
@@ -81,9 +76,7 @@ class Pipfile:
 
     def __iter__(self) -> Iterator[Dependency]:
         """Iterate dependencies as from aea.configurations.data_types.Dependency object."""
-        for name, dependency in itertools.chain(
-            self.packages.items(), self.dev_packages.items()
-        ):
+        for name, dependency in itertools.chain(self.packages.items(), self.dev_packages.items()):
             if name.startswith("comment_") or name in self.ignore:
                 continue
             yield dependency
@@ -108,8 +101,7 @@ class Pipfile:
             expected = self.packages[dependency.name]
             if expected != dependency:
                 return (
-                    f"in Pipfile {expected.get_pip_install_args()[0]}; "
-                    f"got {dependency.get_pip_install_args()[0]}"
+                    f"in Pipfile {expected.get_pip_install_args()[0]}; " f"got {dependency.get_pip_install_args()[0]}"
                 ), logging.WARNING
             return None, 0
 
@@ -119,16 +111,13 @@ class Pipfile:
         expected = self.dev_packages[dependency.name]
         if expected != dependency:
             return (
-                f"in Pipfile {expected.get_pip_install_args()[0]}; "
-                f"got {dependency.get_pip_install_args()[0]}"
+                f"in Pipfile {expected.get_pip_install_args()[0]}; " f"got {dependency.get_pip_install_args()[0]}"
             ), logging.WARNING
 
         return None, 0
 
     @classmethod
-    def parse(
-        cls, content: str
-    ) -> Tuple[List[str], OrderedDictType[str, OrderedDictType[str, Dependency]]]:
+    def parse(cls, content: str) -> Tuple[List[str], OrderedDictType[str, OrderedDictType[str, Dependency]]]:
         """Parse from string."""
         sources = []
         sections: OrderedDictType = OrderedDict()
@@ -196,7 +185,6 @@ class Pipfile:
     def dump(self) -> None:
         """Write to Pipfile."""
         self.file.write_text(self.compile(), encoding="utf-8")
-
 
 
 class PyProjectToml:
@@ -309,9 +297,7 @@ def load_packages_dependencies(packages_dir: Path) -> List[Dependency]:
             continue
         _dependencies = load_configuration(  # type: ignore
             package_type=package.package_type,
-            package_path=package_manager.package_path_from_package_id(
-                package_id=package
-            ),
+            package_path=package_manager.package_path_from_package_id(package_id=package),
         ).dependencies
         for key, value in _dependencies.items():
             if key not in dependencies:
@@ -343,16 +329,13 @@ def _update(
         for dependency in packages_dependencies:
             pipfile.update(dependency=dependency)
 
-
         pipfile.dump()
 
     if pyproject is not None:
         for dependency in packages_dependencies:
             pyproject.update(dependency=dependency)
 
-
         pyproject.dump()
-
 
 
 def _check(
@@ -371,7 +354,6 @@ def _check(
             if error is not None:
                 logging.log(level=level, msg=error)
                 fail_check = level or fail_check
-
 
     if pyproject is not None:
         print("Comparing dependencies from pyproject.toml and packages")
