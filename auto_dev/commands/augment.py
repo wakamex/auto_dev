@@ -337,9 +337,6 @@ def customs(ctx, component_type, auto_confirm):
     write_to_file(handler_path, handler_code, FileType.PYTHON)
     logger.info(f"Handler code written to {handler_path}")
 
-    # scaffolder.update_skill_yaml(Path("customs.yaml"))
-    # scaffolder.move_and_update_my_model()
-    # scaffolder.remove_behaviours()
     scaffolder.create_dialogues()
 
     logger.info("OpenAPI3 scaffolding completed successfully.")

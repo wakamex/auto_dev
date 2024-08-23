@@ -248,11 +248,6 @@ class HandlerScaffolder:
     def generate_handler(self) -> None:
         """Generate handler."""
 
-        # if not self.config.new_skill:
-        #     skill_path = Path("skills") / self.config.output
-        #     if not skill_path.exists():
-        #         self.logger.warning(f"Skill '{self.config.output}' not found in the 'skills' directory. Exiting.")
-
         openapi_spec = read_yaml_file(self.config.spec_file_path)
         handler_methods = []
 
@@ -368,9 +363,7 @@ class HandlerScaffolder:
             f.write(DIALOGUES_CODE)
 
     def fingerprint(self):
-        """
-        Fingerprint the skill
-        """
+        """Fingerprint the skill."""
         skill_id = PublicId(self.config.author, self.config.output, "0.1.0")
         cli_executor = CommandExecutor(f"aea fingerprint skill {skill_id}".split())
         result = cli_executor.execute(verbose=True)
@@ -385,9 +378,7 @@ class HandlerScaffolder:
             raise ValueError(f"Failed to execute {install_cmd}.")
 
     def add_protocol(self):
-        """
-        Add the protocol
-        """
+        """Add the protocol."""
         protocol_cmd = f"aea add protocol {HTTP_PROTOCOL}".split(" ")
         if not CommandExecutor(protocol_cmd).execute(verbose=self.config.verbose):
             raise ValueError(f"Failed to add {HTTP_PROTOCOL}.")
@@ -398,10 +389,10 @@ class HandlerScaffolder:
             self.logger.info(f"Auto confirming: {message}")
             return True
         response = input(f"{message} (y/n): ").lower().strip()
-        return response in ("y", "yes")
+        return response in {"y", "yes"}
 
     def present_actions(self):
-        """Present the scaffold summary"""
+        """Present the scaffold summary."""
         actions = [
             f"Generating handler based on OpenAPI spec: {self.config.spec_file_path}",
             f"Saving handler to: skills/{self.config.output}/handlers.py",
@@ -423,7 +414,7 @@ class HandlerScaffolder:
 
         if not self.config.auto_confirm:
             confirm = input("Do you want to proceed? (y/n): ").lower().strip()
-            if confirm not in ("y", "yes"):
+            if confirm not in {"y", "yes"}:
                 self.logger.info("Scaffolding cancelled.")
                 return False
 
@@ -431,7 +422,7 @@ class HandlerScaffolder:
 
 
 class HandlerScaffoldBuilder:
-    """Builder for HandlerScaffolder"""
+    """Builder for HandlerScaffolder."""
 
     def __init__(self):
         """Initialize HandlerScaffoldBuilder."""
