@@ -33,16 +33,16 @@ HANDLER_HEADER_TEMPLATE = """
 #
 # ------------------------------------------------------------------------------
 
-"This package contains a scaffold of a handler."
+\"\"\"This package contains a scaffold of a handler.\"\"\"
 
 from typing import Optional, cast
 
-from aea.protocols.base import Message
 from aea.skills.base import Handler
-
+from aea.protocols.base import Message
 from packages.eightballer.protocols.http.message import HttpMessage
-from packages.{author}.skills.{skill_name}.dialogues import HttpDialogue
 from packages.{author}.skills.{skill_name}.strategy import Strategy
+from packages.{author}.skills.{skill_name}.dialogues import HttpDialogue
+
 
 class HttpHandler(Handler):
     \"\"\"Implements the HTTP handler.\"\"\"
@@ -54,17 +54,16 @@ class HttpHandler(Handler):
         self.strategy = cast(Strategy, self.context.strategy)
 
     def handle_get(self, route, id=None):
-        \"\"\"handle get protocol\"\"\"
+        \"\"\"Handle get protocol.\"\"\"
         raise NotImplementedError
 
     def handle_post(self, route, id, body):
-        \"\"\"handle post protocol\"\"\"
+        \"\"\"Handle post protocol.\"\"\"
         raise NotImplementedError
 
     def teardown(self) -> None:
         \"\"\"Tear down the handler.\"\"\"
         pass
-
 """
 
 
@@ -75,8 +74,8 @@ PATH_FILTER_TEMPLATE = """
 
 UNEXPECTED_MESSAGE_HANDLER_TEMPLATE = """
     def handle_unexpected_message(self, message):
-        \"\"\"handler for unexpected messages\"\"\"
-        self.context.logger.info("received unexpected message: {}".format(message))
+        \"\"\"Handler for unexpected messages.\"\"\"
+        self.context.logger.info(f"Received unexpected message: {message}")
         raise NotImplementedError
 """
 
@@ -101,9 +100,7 @@ DIALOGUES_CODE = """
 #
 # ------------------------------------------------------------------------------
 
-# we do a backslash here like so:
-\"\"\"
-This module contains the classes required for dialogue management.
+\"\"\"This module contains the classes required for dialogue management.
 
 - DefaultDialogue: The dialogue class maintains state of a dialogue of type default and manages it.
 - DefaultDialogues: The dialogues class keeps track of all dialogues of type default.
@@ -115,14 +112,11 @@ This module contains the classes required for dialogue management.
 
 from typing import Any
 
+from aea.skills.base import Model
 from aea.protocols.base import Address, Message
 from aea.protocols.dialogue.base import Dialogue as BaseDialogue
-from aea.skills.base import Model
-
 from packages.eightballer.protocols.http.dialogues import (
     HttpDialogue as BaseHttpDialogue,
-)
-from packages.eightballer.protocols.http.dialogues import (
     HttpDialogues as BaseHttpDialogues,
 )
 
@@ -139,8 +133,7 @@ class HttpDialogues(Model, BaseHttpDialogues):
         def role_from_first_message(  # pylint: disable=unused-argument
             message: Message, receiver_address: Address
         ) -> BaseDialogue.Role:
-            \"\"\"
-            Infer the role of the agent from an incoming/outgoing first message.
+            \"\"\"Infer the role of the agent from an incoming/outgoing first message.
 
             :param message: an incoming/outgoing first message
             :param receiver_address: the address of the receiving agent
@@ -154,36 +147,33 @@ class HttpDialogues(Model, BaseHttpDialogues):
             self_address=str(self.skill_id),
             role_from_first_message=role_from_first_message,
         )
-
 """
 
 MAIN_HANDLER_TEMPLATE = """
     def handle(self, message: HttpMessage) -> None:
-        \"\"\"Handle incoming HTTP messages\"\"\"
+        \"\"\"Handle incoming HTTP messages.\"\"\"
         method = message.method
         url = message.url
         body = message.body
 
-        path_parts = url.split('/')
-        path = '/' + '/'.join(path_parts[1:])
+        path_parts = url.split("/")
+        path = "/" + "/".join(path_parts[1:])
 
-        if '{{' in path:
-            id_index = path_parts.index([part for part in path_parts if '{{' in part][0])
+        if "{{" in path:
+            id_index = path_parts.index([part for part in path_parts if "{{" in part][0])
             id = path_parts[id_index]
-            path = '/' + '/'.join(path_parts[1:id_index] + ['{{'+ path_parts[id_index][1:-1] + '}}'] + path_parts[id_index+1:])
+            path = "/" + "/".join(path_parts[1:id_index] + ["{{" + path_parts[id_index][1:-1] + "}}"] + path_parts[id_index + 1:])
 
         handler_method = getattr(self, f"handle_{{method.lower()}}_{{path.lstrip('/').replace('/', '_').replace('{{', '').replace('}}', '')}}", None)
 
         if handler_method:
-            kwargs = {{'body': body}} if method.lower() in ['post', 'put', 'patch', 'delete'] else {{}}
-            if '{{' in path:
-                kwargs['id'] = id
+            kwargs = {{"body": body}} if method.lower() in {{"post", "put", "patch", "delete"}} else {{}}
+            if "{{" in path:
+                kwargs["id"] = id
             return handler_method(**kwargs)
 
         return self.handle_unexpected_message(message)
-
 {all_methods}
-
 {unexpected_message_handler}
 """
 
@@ -210,9 +200,7 @@ class ScaffolderConfig:
 
 
 class HandlerScaffolder:
-    """
-    Handler Scaffolder
-    """
+    """Handler Scaffolder."""
 
     def __init__(
         self,
@@ -271,7 +259,7 @@ class HandlerScaffolder:
         for path, path_spec in openapi_spec.get("paths", {}).items():
             for method, operation in path_spec.items():  # noqa
                 method_name: str = (
-                    f"handle_{method.lower()}_{path.lstrip('/').replace('/', '_').replace('{', '').replace('}', '')}"
+                    f"handle_{method.lower()}_{path.lstrip('/').replace('/', '_').replace('{', '').replace('}', '').replace('-', '_')}"
                 )
                 params = []
 
@@ -280,30 +268,31 @@ class HandlerScaffolder:
                 ]
                 params.extend(path_params)
 
-                if method.lower() in ["post", "put", "patch", "delete"]:
+                if method.lower() in {"post", "put", "patch", "delete"}:
                     params.append("body")
 
                 param_str: str = ", ".join(["self", *params])
 
                 method_code: str = f"""
     def {method_name}({param_str}):
-        \"\"\"
-        Handle {method.upper()} request for {path}
-        \"\"\"
+        \"\"\"Handle {method.upper()} request for {path}.\"\"\"
         # TODO: Implement {method.upper()} logic for {path}
         raise NotImplementedError
-    """
+"""
                 handler_methods.append(method_code)
 
-        all_methods: str = "\n".join(handler_methods)
+        all_methods: str = "".join(handler_methods)
 
-        self.handler_code: str = HANDLER_HEADER_TEMPLATE.format(
+        handler_code: str = HANDLER_HEADER_TEMPLATE.format(
             author=self.config.author, skill_name=self.config.output
         )
         main_handler: str = MAIN_HANDLER_TEMPLATE.format(
             all_methods=all_methods, unexpected_message_handler=UNEXPECTED_MESSAGE_HANDLER_TEMPLATE
         )
-        return main_handler
+
+        handler_code += main_handler
+
+        return handler_code
 
     def save_handler(self, path) -> None:
         """Save handler to file."""

@@ -277,6 +277,7 @@ def connection(connections) -> None:
     connection_scaffolder.scaffold(connections)
     logger.info("Connections scaffolded.")
 
+
 @augment.command()
 @click.argument("component_type", type=click.Choice(["openapi3"]))
 @click.option("--auto-confirm", is_flag=True, default=False, help="Auto confirm the augmentation")
@@ -339,9 +340,10 @@ def customs(ctx, component_type, auto_confirm):
     # scaffolder.update_skill_yaml(Path("customs.yaml"))
     # scaffolder.move_and_update_my_model()
     # scaffolder.remove_behaviours()
-    # scaffolder.create_dialogues()
+    scaffolder.create_dialogues()
 
     logger.info("OpenAPI3 scaffolding completed successfully.")
+
 
 if __name__ == "__main__":
     cli()  # pylint: disable=no-value-for-parameter
