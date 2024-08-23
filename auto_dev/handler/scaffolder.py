@@ -260,10 +260,10 @@ class HandlerScaffolder:
     def generate_handler(self) -> None:
         """Generate handler."""
 
-        if not self.config.new_skill:
-            skill_path = Path("skills") / self.config.output
-            if not skill_path.exists():
-                self.logger.warning(f"Skill '{self.config.output}' not found in the 'skills' directory. Exiting.")
+        # if not self.config.new_skill:
+        #     skill_path = Path("skills") / self.config.output
+        #     if not skill_path.exists():
+        #         self.logger.warning(f"Skill '{self.config.output}' not found in the 'skills' directory. Exiting.")
 
         openapi_spec = read_yaml_file(self.config.spec_file_path)
         handler_methods = []
@@ -303,7 +303,7 @@ class HandlerScaffolder:
         main_handler: str = MAIN_HANDLER_TEMPLATE.format(
             all_methods=all_methods, unexpected_message_handler=UNEXPECTED_MESSAGE_HANDLER_TEMPLATE
         )
-        self.handler_code += main_handler
+        return main_handler
 
     def save_handler(self, path) -> None:
         """Save handler to file."""

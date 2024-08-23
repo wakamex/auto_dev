@@ -100,6 +100,7 @@ class FileType(Enum):
     TEXT = "text"
     YAML = "yaml"
     JSON = "json"
+    PYTHON = "python"
 
 
 class CheckResult(Enum):
