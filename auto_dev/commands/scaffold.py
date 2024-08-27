@@ -18,14 +18,19 @@ from aea.configurations.data_types import PublicId
 
 from auto_dev.base import build_cli
 from auto_dev.utils import change_dir, load_aea_ctx, remove_suffix, camel_to_snake
-from auto_dev.constants import BASE_FSM_SKILLS, DEFAULT_ENCODING, JINJA_TEMPLATE_FOLDER
+from auto_dev.constants import BASE_FSM_SKILLS, DEFAULT_ENCODING, JINJA_TEST_CUSTOM_FOLDER
 from auto_dev.cli_executor import CommandExecutor
 from auto_dev.handler.scaffolder import HandlerScaffolder, HandlerScaffoldBuilder
 from auto_dev.protocols.scaffolder import ProtocolScaffolder
 from auto_dev.connections.scaffolder import ConnectionScaffolder
 from auto_dev.contracts.block_explorer import BlockExplorer
 from auto_dev.contracts.contract_scafolder import ContractScaffolder
-
+import json
+from typing import Dict, Any
+from openapi_spec_validator import validate_spec
+from auto_dev.dao.generator import DAOGenerator
+from auto_dev.dao.dummy_data import generate_dummy_data
+from auto_dev.dao.scaffolder import DAOScaffolder
 
 cli = build_cli()
 
@@ -212,13 +217,28 @@ def tests(
     """
     logger = ctx.obj["LOGGER"]
     verbose = ctx.obj["VERBOSE"]
-    env = Environment(loader=FileSystemLoader(JINJA_TEMPLATE_FOLDER), autoescape=True)
+    env = Environment(loader=FileSystemLoader(JINJA_TEST_CUSTOM_FOLDER), autoescape=True)
     template = env.get_template("test_custom.jinja")
     output = template.render(
         name="test",
     )
     if verbose:
         logger.info(f"Generated tests: {output}")
+
+
+@scaffold.command()
+@click.argument("component_yaml", type=click.Path(exists=True), required=True)
+@click.pass_context
+def dao(ctx, component_yaml: str) -> None:
+    """Scaffold Data Access Objects (DAOs) and generate test script based on an OpenAPI 3 specification."""
+    logger = ctx.obj["LOGGER"]
+    verbose = ctx.obj["VERBOSE"]
+
+    try:
+        scaffolder = DAOScaffolder(component_yaml, logger, verbose)
+        scaffolder.scaffold()
+    except Exception as e:
+        logger.exception(f"Error during DAO scaffolding and test generation: {e}")
 
 
 if __name__ == "__main__":

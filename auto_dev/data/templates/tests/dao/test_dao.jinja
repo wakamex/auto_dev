@@ -1,0 +1,65 @@
+import sys
+import json
+import unittest
+from pathlib import Path
+
+
+sys.path.append(str(Path(__file__).parent / "dao"))
+
+{% for dao_class in dao_classes %}
+from {{ dao_class.lower() }} import {{ dao_class }}
+{% endfor %}
+
+
+class TestDAOs(unittest.TestCase):
+    """Test DAOs."""
+    def setUp(self):
+        """Setup DAOs."""
+        {% for dao_class in dao_classes %}
+        self.{{ dao_class.lower() }} = {{ dao_class }}()
+        {% endfor %}
+
+    {% for dao_class in dao_classes %}
+    def test_{{ dao_class.lower() }}(self):
+        """Test CRUD operations for {{ dao_class }}."""
+        dummy_data = {{ dummy_data.get(dao_class.replace("DAO", ""), {}) | tojson }}
+
+        try:
+            create_data = {k: v for k, v in dummy_data.items() if k != "id"}
+            self.{{ dao_class.lower() }}.create(**create_data)
+            print("Create operation successful for {{ dao_class }}")
+        except NotImplementedError:
+            print("Create operation not implemented for {{ dao_class }}")
+        except Exception as e:
+            print(f"Create operation failed for {{ dao_class }}: {e}")
+
+        try:
+            result = self.{{ dao_class.lower() }}.read(dummy_data.get("id", 1))
+            print("Read operation successful for {{ dao_class }}")
+            print(f"Read result: {result}")
+        except NotImplementedError:
+            print("Read operation not implemented for {{ dao_class }}")
+        except Exception as e:
+            print(f"Read operation failed for {{ dao_class }}: {e}")
+
+        try:
+            update_data = {k: v for k, v in dummy_data.items() if k != "id"}
+            self.{{ dao_class.lower() }}.update(dummy_data.get("id", 1), **update_data)
+            print("Update operation successful for {{ dao_class }}")
+        except NotImplementedError:
+            print("Update operation not implemented for {{ dao_class }}")
+        except Exception as e:
+            print(f"Update operation failed for {{ dao_class }}: {e}")
+
+        try:
+            self.{{ dao_class.lower() }}.delete(dummy_data.get("id", 1))
+            print("Delete operation successful for {{ dao_class }}")
+        except NotImplementedError:
+            print("Delete operation not implemented for {{ dao_class }}")
+        except Exception as e:
+            print(f"Delete operation failed for {{ dao_class }}: {e}")
+
+    {% endfor %}
+
+if __name__ == '__main__':
+    unittest.main()

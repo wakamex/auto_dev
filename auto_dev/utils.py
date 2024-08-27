@@ -269,7 +269,7 @@ def write_to_file(file_path: str, content: Any, file_type: FileType = FileType.T
     """Write content to a file."""
     try:
         with open(file_path, "w", encoding=DEFAULT_ENCODING) as f:
-            if file_type == FileType.TEXT:
+            if file_type in {FileType.TEXT, FileType.PYTHON}:
                 f.write(content)
             elif file_type == FileType.YAML:
                 if isinstance(content, list):
@@ -296,6 +296,8 @@ def read_from_file(file_path: str, file_type: FileType = FileType.TEXT) -> Any:
                 return yaml.safe_load(f)
             if file_type == FileType.JSON:
                 return json.load(f)
+            if file_type == FileType.PYTHON:
+                return f.read()
             msg = f"Invalid file_type, must be one of {list(FileType)}."
             raise ValueError(msg)
     except Exception as e:
