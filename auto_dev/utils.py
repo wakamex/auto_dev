@@ -22,10 +22,9 @@ from aea.cli.utils.config import get_registry_path_from_cli_config
 from aea.cli.utils.context import Context
 from aea.configurations.base import AgentConfig
 
-from auto_dev.enums import FileOperation
+from auto_dev.enums import FileType, FileOperation
+from auto_dev.constants import DEFAULT_ENCODING, AUTONOMY_PACKAGES_FILE
 from auto_dev.exceptions import NotFound, OperationError
-
-from .constants import DEFAULT_ENCODING, AUTONOMY_PACKAGES_FILE, FileType
 
 
 def get_logger(name: str = __name__, log_level: str = "INFO") -> logging.Logger:
@@ -265,11 +264,11 @@ def load_aea_ctx(func: Callable[[click.Context, Any, Any], Any]) -> Callable[[cl
     return wrapper
 
 
-def write_to_file(file_path: str, content: Any, file_type: FileType = FileType.TEXT) -> None:
+def write_to_file(file_path: str, content: Any, file_type: FileType = FileType.TEXT, **kwargs) -> None:
     """Write content to a file."""
     try:
         with open(file_path, "w", encoding=DEFAULT_ENCODING) as f:
-            if file_type in {FileType.TEXT, FileType.PYTHON}:
+            if file_type == FileType.TEXT:
                 f.write(content)
             elif file_type == FileType.YAML:
                 if isinstance(content, list):
@@ -277,7 +276,11 @@ def write_to_file(file_path: str, content: Any, file_type: FileType = FileType.T
                 else:
                     yaml.dump(content, f, default_flow_style=False, sort_keys=False)
             elif file_type == FileType.JSON:
-                json.dump(content, f, separators=(",", ":"))
+                json_kwargs = {"separators": (",", ":")}
+                json_kwargs.update(kwargs)
+                json.dump(content, f, **json_kwargs)
+            elif file_type == FileType.PYTHON:
+                f.write(content)
             else:
                 msg = f"Invalid file_type, must be one of {list(FileType)}."
                 raise ValueError(msg)

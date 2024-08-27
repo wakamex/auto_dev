@@ -16,7 +16,8 @@ AUTONOMY_PACKAGES_FILE = "packages/packages.json"
 AUTO_DEV_FOLDER = os.path.join(os.path.dirname(__file__))
 PLUGIN_FOLDER = os.path.join(AUTO_DEV_FOLDER, "commands")
 TEMPLATE_FOLDER = os.path.join(AUTO_DEV_FOLDER, "data", "repo", "templates")
-JINJA_TEMPLATE_FOLDER = os.path.join(AUTO_DEV_FOLDER, "data", "templates", "tests", "customs")
+JINJA_TEST_CUSTOM_FOLDER = os.path.join(AUTO_DEV_FOLDER, "data", "templates", "tests", "customs")
+JINJA_TEST_DAO_FOLDER = os.path.join(AUTO_DEV_FOLDER, "data", "templates", "tests", "dao")
 
 AEA_CONFIG = get_or_create_cli_config()
 
@@ -92,14 +93,6 @@ BASE_FSM_SKILLS = {
     "reset_pause_abci": "bafybeibqz7y3i4aepuprhijwdydkcsbqjtpeea6gdzpp5fgc6abrvjz25a",
     "termination_abci": "bafybeieb3gnvjxxsh73g67m7rivzknwb63xu4qeagpkv7f4mqz33ecikem",
 }
-
-
-class FileType(Enum):
-    """File type enum."""
-
-    TEXT = "text"
-    YAML = "yaml"
-    JSON = "json"
 
 
 class CheckResult(Enum):

@@ -10,6 +10,7 @@ import yaml
 import pytest
 import rich_click as click
 
+from auto_dev.enums import FileType
 from auto_dev.utils import (
     get_paths,
     get_logger,
@@ -21,7 +22,7 @@ from auto_dev.utils import (
     folder_swapper,
     has_package_code_changed,
 )
-from auto_dev.constants import DEFAULT_ENCODING, FileType
+from auto_dev.constants import DEFAULT_ENCODING
 
 
 TEST_PACKAGES_JSON = {

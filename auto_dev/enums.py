@@ -9,6 +9,7 @@ class FileType(Enum):
     YAML = "yaml"
     JSON = "json"
     TEXT = "txt"
+    PYTHON = "py"
 
 
 class FileOperation(Enum):
