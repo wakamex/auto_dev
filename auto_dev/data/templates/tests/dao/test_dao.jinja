@@ -25,22 +25,30 @@ class TestDAOs(unittest.TestCase):
         dummy_data = {{ dummy_data.get(dao_class.replace("DAO", ""), {}) | tojson }}
 
         try:
-            create_data = {k: v for k, v in dummy_data.items() if k != "id"}
-            self.{{ dao_class.lower() }}.create(**create_data)
-            print("Create operation successful for {{ dao_class }}")
+            self.{{ dao_class.lower() }}.insert(**dummy_data)
+            print("Insert operation successful for {{ dao_class }}")
         except NotImplementedError:
-            print("Create operation not implemented for {{ dao_class }}")
+            print("Insert operation not implemented for {{ dao_class }}")
         except Exception as e:
-            print(f"Create operation failed for {{ dao_class }}: {e}")
+            print(f"Insert operation failed for {{ dao_class }}: {e}")
 
         try:
-            result = self.{{ dao_class.lower() }}.read(dummy_data.get("id", 1))
-            print("Read operation successful for {{ dao_class }}")
-            print(f"Read result: {result}")
+            result = self.{{ dao_class.lower() }}.get_all()
+            print("Get all operation successful for {{ dao_class }}")
+            print(f"Get all result: {result}")
         except NotImplementedError:
-            print("Read operation not implemented for {{ dao_class }}")
+            print("Get all operation not implemented for {{ dao_class }}")
         except Exception as e:
-            print(f"Read operation failed for {{ dao_class }}: {e}")
+            print(f"Get all operation failed for {{ dao_class }}: {e}")
+
+        try:
+            result = self.{{ dao_class.lower() }}.get_by_id(dummy_data.get("id", 1))
+            print("Get by id operation successful for {{ dao_class }}")
+            print(f"Get by id result: {result}")
+        except NotImplementedError:
+            print("Get by id operation not implemented for {{ dao_class }}")
+        except Exception as e:
+            print(f"Get by id operation failed for {{ dao_class }}: {e}")
 
         try:
             update_data = {k: v for k, v in dummy_data.items() if k != "id"}

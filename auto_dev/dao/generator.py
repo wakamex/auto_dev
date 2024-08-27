@@ -16,42 +16,64 @@ class DAOGenerator:
 
     def _generate_dao_class(self, model_name: str, model_schema: Dict[str, Any]) -> str:
         properties = model_schema.get("properties", {})
-        class_code = f"class {model_name}DAO:\n"
+        class_code = f"from pathlib import Path\n\n\n"
+        class_code += f"class {model_name}DAO:\n"
         class_code += f"    def __init__(self):\n"
-        class_code += f"        self.table_name = '{model_name.lower()}'\n\n"
-        class_code += self._generate_crud_methods(model_name, properties)
+        class_code += f"        self.file_name = Path(__file__).parent / '{model_name.lower()}.json'\n"
+        class_code += f"        self.data = self._load_data()\n\n"
+        class_code += f"    def _load_data(self):\n"
+        class_code += f"        import json\n"
+        class_code += f"        try:\n"
+        class_code += f"            with open(self.file_name, 'r') as f:\n"
+        class_code += f"                return json.load(f)\n"
+        class_code += f"        except FileNotFoundError:\n"
+        class_code += f"            return []\n\n"
+        class_code += f"    def _save_data(self):\n"
+        class_code += f"        import json\n"
+        class_code += f"        with open(self.file_name, 'w') as f:\n"
+        class_code += f"            json.dump(self.data, f, indent=2)\n\n"
+        class_code += self._generate_crud_methods()
         return class_code
 
-    def _generate_crud_methods(self, model_name: str, properties: Dict[str, Any]) -> str:
+    def _generate_crud_methods(self) -> str:
         methods = ""
-        methods += self._generate_create_method(model_name, properties)
-        methods += self._generate_read_method(model_name)
-        methods += self._generate_update_method(model_name, properties)
-        methods += self._generate_delete_method(model_name)
+        methods += self._generate_insert_method()
+        methods += self._generate_read_methods()
+        methods += self._generate_update_method()
+        methods += self._generate_delete_method()
         return methods
 
-    def _generate_create_method(self, model_name: str, properties: Dict[str, Any]) -> str:
-        params = ", ".join(key for key in properties.keys() if key != "id")
-        method = f"    def create(self, {params}):\n"
-        method += f"        # TODO: Implement create method for {model_name}\n"
-        method += f"        pass\n\n"
+    def _generate_insert_method(self) -> str:
+        method = "    def insert(self, **kwargs):\n"
+        method += "        self.data.append(kwargs)\n"
+        method += "        self._save_data()\n\n"
         return method
 
-    def _generate_read_method(self, model_name: str) -> str:
-        method = f"    def read(self, id: int):\n"
-        method += f"        # TODO: Implement read method for {model_name}\n"
-        method += f"        pass\n\n"
+    def _generate_read_methods(self) -> str:
+        methods = "    def get_all(self):\n"
+        methods += "        return self._load_data()\n\n"
+
+        methods += "    def get_by_id(self, id: int):\n"
+        methods += "        data = self._load_data()\n"
+        methods += "        for item in data:\n"
+        methods += "            if item.get('id') == id:\n"
+        methods += "                return item\n"
+        methods += "        return None\n\n"
+        return methods
+
+    def _generate_update_method(self) -> str:
+        method = "    def update(self, id: int, **kwargs):\n"
+        method += "        data = self._load_data()\n"
+        method += "        for item in data:\n"
+        method += "            if item.get('id') == id:\n"
+        method += "                item.update(kwargs)\n"
+        method += "                return item\n"
+        method += "        return None\n\n"
         return method
 
-    def _generate_update_method(self, model_name: str, properties: Dict[str, Any]) -> str:
-        params = ", ".join(key for key in properties.keys() if key != "id")
-        method = f"    def update(self, id: int, {params}):\n"
-        method += f"        # TODO: Implement update method for {model_name}\n"
-        method += f"        pass\n\n"
-        return method
-
-    def _generate_delete_method(self, model_name: str) -> str:
-        method = f"    def delete(self, id: int):\n"
-        method += f"        # TODO: Implement delete method for {model_name}\n"
-        method += f"        pass\n\n"
+    def _generate_delete_method(self) -> str:
+        method = "    def delete(self, id: int):\n"
+        method += "        data = self._load_data()\n"
+        method += "        self.data = [item for item in data if item.get('id') != id]\n"
+        method += "        self._save_data()\n\n"
         return method

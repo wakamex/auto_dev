@@ -31,25 +31,20 @@ class DAOScaffolder:
         try:
             self.logger.info("Starting DAO scaffolding process")
             component_data = self._load_component_yaml()
-            self.logger.info("Component YAML loaded successfully")
-
             api_spec_path = self._get_api_spec_path(component_data)
-            self.logger.info(f"API spec path retrieved: {api_spec_path}")
-
             api_spec = self._load_and_validate_api_spec(api_spec_path)
-            self.logger.info("API spec loaded and validated successfully")
 
             models = api_spec.get("components", {}).get("schemas", {})
             paths = api_spec.get("paths", {})
 
+            json_dummy_data = self._generate_dummy_data(models)
+            test_dummy_data = self._generate_dummy_data(models)
+
             dao_classes = self._generate_dao_classes(models, paths)
-            dummy_data = self._generate_dummy_data(models)
 
-            self._output_results(dao_classes, dummy_data)
-            self._save_generated_files(dao_classes, dummy_data)
+            self._generate_and_save_test_script(dao_classes, test_dummy_data)
 
-            # Generate and save test script
-            self._generate_and_save_test_script(dao_classes, dummy_data)
+            self._save_dao_classes(dao_classes, json_dummy_data)
 
             self.logger.info("DAO scaffolding and test script generation completed successfully.")
         except Exception as e:
@@ -132,9 +127,8 @@ class DAOScaffolder:
             self.logger.info("\nGenerated dummy data for tests:")
             self.logger.info(json.dumps(dummy_data, indent=2))
 
-    def _save_generated_files(self, dao_classes: Dict[str, str], dummy_data: Dict[str, Any]) -> None:
+    def _save_dao_classes(self, dao_classes: Dict[str, str], json_dummy_data: Dict[str, Any]) -> None:
         try:
-            # Save DAO classes
             dao_dir = Path("generated/dao")
             dao_dir.mkdir(parents=True, exist_ok=True)
             for class_name, class_code in dao_classes.items():
@@ -142,25 +136,26 @@ class DAOScaffolder:
                 write_to_file(file_path, class_code, FileType.PYTHON)
                 self.logger.info(f"Saved DAO class: {file_path}")
 
-            # Save dummy data
-            dummy_data_path = Path("generated/dummy_data.json")
-            dummy_data_path.parent.mkdir(parents=True, exist_ok=True)
-            write_to_file(dummy_data_path, dummy_data, FileType.JSON, indent=2)
-            self.logger.info(f"Saved dummy data: {dummy_data_path}")
+                model_name = class_name.replace("DAO", "")
+                json_file_path = dao_dir / f"{model_name.lower()}.json"
+                if not json_file_path.exists(): 
+                    write_to_file(json_file_path, [json_dummy_data[model_name]], FileType.JSON, indent=2)
+                    self.logger.info(f"Saved initial dummy data JSON: {json_file_path}")
+
         except OSError as e:
             self.logger.exception(f"Error saving generated files: {e!s}")
             raise
 
-    def _generate_and_save_test_script(self, dao_classes: Dict[str, str], dummy_data: Dict[str, Any]) -> None:
+    def _generate_and_save_test_script(self, dao_classes: Dict[str, str], test_dummy_data: Dict[str, Any]) -> None:
         dao_class_names = list(dao_classes.keys())
-        test_script = self._generate_test_script(dao_class_names, dummy_data)
+        test_script = self._generate_test_script(dao_class_names, test_dummy_data)
         self._save_test_script(test_script)
 
-    def _generate_test_script(self, dao_classes: List[str], dummy_data: Dict[str, Any]) -> str:
+    def _generate_test_script(self, dao_classes: List[str], test_dummy_data: Dict[str, Any]) -> str:
         template = self.env.get_template("test_dao.jinja")
         return template.render(
             dao_classes=dao_classes,
-            dummy_data=dummy_data  # Pass the dictionary directly, not as JSON
+            dummy_data=test_dummy_data
         )
 
     def _save_test_script(self, test_script: str) -> None:
@@ -168,3 +163,4 @@ class DAOScaffolder:
         test_script_path.parent.mkdir(parents=True, exist_ok=True)
         write_to_file(test_script_path, test_script, FileType.PYTHON)
         self.logger.info(f"Test script saved to: {test_script_path}")
+
