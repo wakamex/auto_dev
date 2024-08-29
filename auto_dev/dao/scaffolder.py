@@ -88,6 +88,12 @@ class DAOScaffolder:
             self.logger.info("Successfully loaded API spec, validating...")
             validate_spec(api_spec)
             self.logger.info("API spec validation successful")
+
+            if "components" not in api_spec or "schemas" not in api_spec["components"]:
+                msg = "OpenAPI spec does not contain explicit models in 'components/schemas'."
+                self.logger.error(msg)
+                raise ValueError(msg)
+
             return api_spec
 
         except yaml.YAMLError as e:
