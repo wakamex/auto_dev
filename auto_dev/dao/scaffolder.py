@@ -8,7 +8,7 @@ from openapi_spec_validator import validate_spec
 
 from auto_dev.enums import FileType
 from auto_dev.utils import write_to_file, read_from_file
-from auto_dev.constants import JINJA_TEST_DAO_FOLDER
+from auto_dev.constants import JINJA_DAO_FOLDER
 from auto_dev.dao.generator import DAOGenerator
 from auto_dev.dao.dummy_data import generate_dummy_data
 
@@ -19,7 +19,7 @@ class DAOScaffolder:
         self.logger = logger
         self.verbose = verbose
         self.env = Environment(
-            loader=FileSystemLoader(JINJA_TEST_DAO_FOLDER),
+            loader=FileSystemLoader(JINJA_DAO_FOLDER),
             autoescape=True,
             lstrip_blocks=True,
             trim_blocks=True

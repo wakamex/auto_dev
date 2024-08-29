@@ -1,0 +1,61 @@
+import json
+from typing import Any
+from pathlib import Path
+from dataclasses import field, dataclass
+
+
+@dataclass
+class {{ model_name }}DAO:
+    """{{ model_name }}DAO is a class that provides methods to interact with the {{ model_name }} data."""
+    file_name: Path = field(default_factory=lambda: Path(__file__).parent / "{{ model_name.lower() }}.json")
+    _data: list[dict[str, Any]] = field(default_factory=list, init=False)
+
+    @property
+    def data(self) -> list[dict[str, Any]]:
+        """Get the data."""
+        if not self._data:
+            self.load_data()
+        return self._data
+
+    def load_data(self) -> None:
+        """Load data from the file."""
+        try:
+            with open(self.file_name, encoding="utf-8") as f:
+                self._data = json.load(f)
+        except FileNotFoundError:
+            self._data = []
+
+    def _save_data(self) -> None:
+        with open(self.file_name, "w") as f:
+            json.dump(self._data, f, indent=2)
+
+    def insert(self, **kwargs) -> None:
+        """Insert a new item into the data."""
+        self.data.append(kwargs)
+        self._save_data()
+
+    def get_all(self) -> list[dict[str, Any]]:
+        """Get all items from the data."""
+        return self.data
+
+    def get_by_id(self, id: int) -> dict[str, Any] | None:
+        """Get an item by id."""
+        return next((item for item in self.data if item.get("id") == id), None)
+
+    def filter_items(self, **kwargs) -> list[dict[str, Any]]:
+        """Filter items by the given criteria."""
+        return [item for item in self.data if all(item.get(k) == v for k, v in kwargs.items())]
+
+    def update(self, id: int, **kwargs) -> dict[str, Any] | None:
+        """Update an item by id."""
+        item = next((item for item in self.data if item.get("id") == id), None)
+        if item:
+            item.update(kwargs)
+            self._save_data()
+        return item
+
+    def delete(self, id: int) -> None:
+        """Delete an item by id."""
+        self._data = [item for item in self.data if item.get("id") != id]
+        self._save_data()
+

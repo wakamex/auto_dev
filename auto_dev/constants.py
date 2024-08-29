@@ -17,7 +17,7 @@ AUTO_DEV_FOLDER = os.path.join(os.path.dirname(__file__))
 PLUGIN_FOLDER = os.path.join(AUTO_DEV_FOLDER, "commands")
 TEMPLATE_FOLDER = os.path.join(AUTO_DEV_FOLDER, "data", "repo", "templates")
 JINJA_TEST_CUSTOM_FOLDER = os.path.join(AUTO_DEV_FOLDER, "data", "templates", "tests", "customs")
-JINJA_TEST_DAO_FOLDER = os.path.join(AUTO_DEV_FOLDER, "data", "templates", "tests", "dao")
+JINJA_DAO_FOLDER = os.path.join(AUTO_DEV_FOLDER, "data", "templates", "dao")
 
 AEA_CONFIG = get_or_create_cli_config()
 
