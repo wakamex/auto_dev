@@ -29,9 +29,12 @@ class {{ model_name }}DAO:
         with open(self.file_name, "w") as f:
             json.dump(self._data, f, indent=2)
 
-    def insert(self, **kwargs) -> None:
-        """Insert a new item into the data."""
-        self.data.append(kwargs)
+    def insert(self, data: dict[str, Any] | list[dict[str, Any]]) -> None:
+        """Insert a new item or items into the data."""
+        if isinstance(data, list):
+            self.data.extend(data)
+        else:
+            self.data.append(data)
         self._save_data()
 
     def get_all(self) -> list[dict[str, Any]]:

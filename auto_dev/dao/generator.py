@@ -1,5 +1,4 @@
 from typing import Any
-from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
 
@@ -12,7 +11,7 @@ class DAOGenerator:
         self.models = models
         self.paths = paths
         self.env = Environment(loader=FileSystemLoader(JINJA_DAO_FOLDER))
-        self.template = self.env.get_template('dao_template.jinja')
+        self.template = self.env.get_template("dao_template.jinja")
 
     def generate_dao_classes(self) -> dict[str, str]:
         """Generate DAO classes."""

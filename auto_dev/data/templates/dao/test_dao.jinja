@@ -25,7 +25,7 @@ class TestDAOs(unittest.TestCase):
         dummy_data = {{ dummy_data.get(dao_class.replace("DAO", ""), {}) | tojson }}
 
         try:
-            self.{{ dao_class.lower() }}.insert(**dummy_data)
+            self.{{ dao_class.lower() }}.insert(dummy_data)
             print("Insert operation successful for {{ dao_class }}")
         except NotImplementedError:
             print("Insert operation not implemented for {{ dao_class }}")
@@ -36,8 +36,6 @@ class TestDAOs(unittest.TestCase):
             result = self.{{ dao_class.lower() }}.get_all()
             print("Get all operation successful for {{ dao_class }}")
             print(f"Get all result: {result}")
-        except NotImplementedError:
-            print("Get all operation not implemented for {{ dao_class }}")
         except Exception as e:
             print(f"Get all operation failed for {{ dao_class }}: {e}")
 

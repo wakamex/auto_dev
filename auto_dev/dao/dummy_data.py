@@ -1,16 +1,16 @@
 import random
-from typing import Any, Dict
+from typing import Any
 
 
-def generate_dummy_data(models: Dict[str, Any]) -> Dict[str, Any]:
+def generate_dummy_data(models: dict[str, Any], num_instances: int = 5) -> dict[str, list[dict[str, Any]]]:
     """Generate dummy data for the given models."""
     dummy_data = {}
     for model_name, model_schema in models.items():
-        dummy_data[model_name] = _generate_model_dummy_data(model_schema)
+        dummy_data[model_name] = [_generate_model_dummy_data(model_schema) for _ in range(num_instances)]
     return dummy_data
 
 
-def _generate_model_dummy_data(model_schema: Dict[str, Any]) -> Dict[str, Any]:
+def _generate_model_dummy_data(model_schema: dict[str, Any]) -> dict[str, Any]:
     properties = model_schema.get("properties", {})
     dummy_instance = {}
     for prop_name, prop_schema in properties.items():
@@ -31,3 +31,8 @@ def _generate_property_dummy_data(prop_schema: dict[str, Any]) -> Any:
     }
 
     return type_generators.get(prop_type, lambda: None)()
+
+
+def generate_single_dummy_data(model_schema: dict[str, Any]) -> dict[str, Any]:
+    """Generate a single instance of dummy data for the given model schema."""
+    return _generate_model_dummy_data(model_schema)
