@@ -15,8 +15,7 @@ from auto_dev.dao.dummy_data import generate_dummy_data
 
 class DAOScaffolder:
     """DAOScaffolder class is responsible for scaffolding DAO classes and test scripts."""
-    def __init__(self, component_yaml: str, logger: Any, verbose: bool):
-        self.component_yaml = component_yaml
+    def __init__(self, logger: Any, verbose: bool):
         self.logger = logger
         self.verbose = verbose
         self.env = Environment(
@@ -25,6 +24,7 @@ class DAOScaffolder:
             lstrip_blocks=True,
             trim_blocks=True
         )
+        self.component_yaml = Path.cwd() / "component.yaml"
 
     def scaffold(self) -> None:
         """Scaffold DAO classes and test scripts."""
@@ -53,6 +53,9 @@ class DAOScaffolder:
 
     def _load_component_yaml(self) -> Dict[str, Any]:
         try:
+            if not self.component_yaml.exists():
+                msg = f"component.yaml not found in the current directory: {self.component_yaml}"
+                raise FileNotFoundError(msg)
             return read_from_file(self.component_yaml, FileType.YAML)
         except yaml.YAMLError as e:
             self.logger.exception(f"Error parsing component YAML: {e!s}")

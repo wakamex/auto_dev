@@ -227,15 +227,14 @@ def tests(
 
 
 @scaffold.command()
-@click.argument("component_yaml", type=click.Path(exists=True), required=True)
 @click.pass_context
-def dao(ctx, component_yaml: str) -> None:
+def dao(ctx) -> None:
     """Scaffold Data Access Objects (DAOs) and generate test script based on an OpenAPI 3 specification."""
     logger = ctx.obj["LOGGER"]
     verbose = ctx.obj["VERBOSE"]
 
     try:
-        scaffolder = DAOScaffolder(component_yaml, logger, verbose)
+        scaffolder = DAOScaffolder(logger, verbose)
         scaffolder.scaffold()
     except Exception as e:
         logger.exception(f"Error during DAO scaffolding and test generation: {e}")
