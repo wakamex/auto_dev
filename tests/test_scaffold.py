@@ -325,4 +325,4 @@ class TestDAOGenerator:
 
         assert "TestModelDAO" in dao_classes
         assert "class TestModelDAO:" in dao_classes["TestModelDAO"]
-        assert "def __init__(self, id: int, name: str):" in dao_classes["TestModelDAO"]
+        assert "def insert(self, data: dict[str, Any]" in dao_classes["TestModelDAO"]
