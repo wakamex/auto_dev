@@ -6,6 +6,7 @@ set -euo pipefail
 PROTOC_VERSION="27.2"
 PROTOLINT_VERSION="0.50.0"
 
+
 # Function to get the appropriate download URL based on OS and architecture
 get_download_url() {
     local tool=$1
@@ -60,6 +61,7 @@ get_download_url() {
 install_tool() {
     local tool=$1
     local url
+    local venv_dir=$(echo $(poetry run which python) | sed 's|\(.*\)/python|\1|')
     url=$(get_download_url "$tool") || return 1
 
     echo "Installing $tool"
@@ -94,13 +96,13 @@ install_tool() {
 
     if [ "$tool" = "protoc" ]; then
         if ! command -v protoc &> /dev/null; then
-            sudo mv bin/protoc /usr/local/bin/protoc
+            sudo mv bin/protoc $venv_dir/protoc
         else
             echo "protoc is already installed, skipping..."
         fi
     elif [ "$tool" = "protolint" ]; then
         if ! command -v protolint &> /dev/null; then
-            sudo mv protolint /usr/local/bin/protolint
+            sudo mv protolint $venv_dir/protolint
         else
             echo "protolint is already installed, skipping..."
         fi
@@ -162,6 +164,8 @@ function setup_autonomy() {
 }
 
 main() {
+    install_poetry_deps
+
     install_tool "protoc" || exit 1
     install_tool "protolint" || exit 1
 
@@ -170,7 +174,6 @@ main() {
     verify "protolint"
     verify "docker"
 
-    install_poetry_deps
 
     echo "Installation completed successfully!"
     setup_autonomy
