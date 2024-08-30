@@ -10,7 +10,7 @@ from auto_dev.enums import FileType
 from auto_dev.utils import write_to_file, read_from_file
 from auto_dev.constants import JINJA_DAO_FOLDER
 from auto_dev.dao.generator import DAOGenerator
-from auto_dev.dao.dummy_data import generate_dummy_data, generate_single_dummy_data
+from auto_dev.dao.dummy_data import generate_dummy_data, generate_single_dummy_data, generate_aggregated_dummy_data
 
 
 class DAOScaffolder:
@@ -37,14 +37,15 @@ class DAOScaffolder:
             models = api_spec.get("components", {}).get("schemas", {})
             paths = api_spec.get("paths", {})
 
-            json_dummy_data = self._generate_dummy_data(models)
+            aggregated_dummy_data = self._generate_aggregated_dummy_data(models)
             test_dummy_data = self._generate_single_dummy_data(models)
 
             dao_classes = self._generate_dao_classes(models, paths)
 
             self._generate_and_save_test_script(dao_classes, test_dummy_data)
 
-            self._save_dao_classes(dao_classes, json_dummy_data)
+            self._save_aggregated_dummy_data(aggregated_dummy_data)
+            self._save_dao_classes(dao_classes)
 
             self.logger.info("DAO scaffolding and test script generation completed successfully.")
         except Exception as e:
@@ -120,6 +121,13 @@ class DAOScaffolder:
             self.logger.exception(f"Error generating DAO classes: {e!s}")
             raise
 
+    def _generate_aggregated_dummy_data(self, models: dict[str, Any]) -> dict[str, Any]:
+        try:
+            return generate_aggregated_dummy_data(models)
+        except Exception as e:
+            self.logger.exception(f"Error generating aggregated dummy data: {e!s}")
+            raise
+
     def _generate_dummy_data(self, models: dict[str, Any]) -> dict[str, Any]:
         try:
             return generate_dummy_data(models)
@@ -144,7 +152,18 @@ class DAOScaffolder:
             self.logger.info("\nGenerated dummy data for tests:")
             self.logger.info(json.dumps(dummy_data, indent=2))
 
-    def _save_dao_classes(self, dao_classes: dict[str, str], json_dummy_data: dict[str, Any]) -> None:
+    def _save_aggregated_dummy_data(self, aggregated_dummy_data: dict[str, Any]) -> None:
+        try:
+            dao_dir = Path("generated/dao")
+            dao_dir.mkdir(parents=True, exist_ok=True)
+            json_file_path = dao_dir / "aggregated_data.json"
+            write_to_file(json_file_path, aggregated_dummy_data, FileType.JSON, indent=2)
+            self.logger.info(f"Saved aggregated dummy data JSON: {json_file_path}")
+        except OSError as e:
+            self.logger.exception(f"Error saving aggregated dummy data: {e!s}")
+            raise
+
+    def _save_dao_classes(self, dao_classes: dict[str, str]) -> None:
         try:
             dao_dir = Path("generated/dao")
             dao_dir.mkdir(parents=True, exist_ok=True)
@@ -152,13 +171,6 @@ class DAOScaffolder:
                 file_path = dao_dir / f"{class_name.lower()}.py"
                 write_to_file(file_path, class_code, FileType.PYTHON)
                 self.logger.info(f"Saved DAO class: {file_path}")
-
-                model_name = class_name.replace("DAO", "")
-                json_file_path = dao_dir / f"{model_name.lower()}.json"
-                if not json_file_path.exists(): 
-                    write_to_file(json_file_path, json_dummy_data[model_name], FileType.JSON, indent=2)
-                    self.logger.info(f"Saved initial dummy data JSON: {json_file_path}")
-
         except OSError as e:
             self.logger.exception(f"Error saving generated files: {e!s}")
             raise
