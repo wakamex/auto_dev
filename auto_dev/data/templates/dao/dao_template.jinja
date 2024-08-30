@@ -28,17 +28,15 @@ class {{ model_name }}DAO:
     def _save_data(self) -> None:
         """Save the updated model data to the file."""
         try:
-            with open(self.file_name, "r", encoding="utf-8") as f:
+            with open(self.file_name, encoding="utf-8") as f:
                 all_data = json.load(f)
         except FileNotFoundError:
             all_data = {}
 
-        # Ensure all models are preserved
-        for model in {{ other_model_names }}:
+        for model in {{ other_model_names | tojson }}:
             if model not in all_data:
                 all_data[model] = {}
 
-        # Update only the relevant section
         all_data["{{ model_name }}"] = self._data["{{ model_name }}"]
 
         with open(self.file_name, "w", encoding="utf-8") as f:
@@ -60,7 +58,7 @@ class {{ model_name }}DAO:
         else:
             new_id = str(max(existing_keys, default=0) + 1)
             self._data["{{ model_name }}"][new_id] = data
-        
+
         self._save_data()
 
     def get_all(self) -> list[dict[str, Any]]:

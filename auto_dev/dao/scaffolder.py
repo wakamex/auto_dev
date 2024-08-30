@@ -1,3 +1,5 @@
+"""DAOScaffolder class is responsible for scaffolding DAO classes and test scripts."""
+
 import json
 from typing import Any
 from pathlib import Path
@@ -14,14 +16,12 @@ from auto_dev.dao.dummy_data import generate_dummy_data, generate_single_dummy_d
 
 class DAOScaffolder:
     """DAOScaffolder class is responsible for scaffolding DAO classes and test scripts."""
+
     def __init__(self, logger: Any, verbose: bool):
         self.logger = logger
         self.verbose = verbose
         self.env = Environment(
-            loader=FileSystemLoader(JINJA_DAO_FOLDER),
-            autoescape=True,
-            lstrip_blocks=True,
-            trim_blocks=True
+            loader=FileSystemLoader(JINJA_DAO_FOLDER), autoescape=True, lstrip_blocks=True, trim_blocks=True
         )
         self.component_yaml = Path.cwd() / "component.yaml"
 
@@ -134,8 +134,7 @@ class DAOScaffolder:
 
     def _generate_single_dummy_data(self, models: dict[str, Any]) -> dict[str, Any]:
         try:
-            return {model_name: generate_single_dummy_data(model_schema) 
-                    for model_name, model_schema in models.items()}
+            return {model_name: generate_single_dummy_data(model_schema) for model_name, model_schema in models.items()}
         except Exception as e:
             self.logger.exception(f"Error generating single dummy data: {e!s}")
             raise
@@ -179,10 +178,7 @@ class DAOScaffolder:
 
     def _generate_test_script(self, dao_classes: list[str], test_dummy_data: dict[str, Any]) -> str:
         template = self.env.get_template("test_dao.jinja")
-        return template.render(
-            dao_classes=dao_classes,
-            dummy_data=test_dummy_data
-        )
+        return template.render(dao_classes=dao_classes, dummy_data=test_dummy_data)
 
     def _save_test_script(self, test_script: str) -> None:
         test_script_path = Path("generated/test_dao.py")

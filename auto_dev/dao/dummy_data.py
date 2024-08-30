@@ -1,3 +1,5 @@
+"""Generate dummy data for the given models."""
+
 import random
 from typing import Any
 
@@ -58,12 +60,10 @@ def generate_aggregated_dummy_data(models: dict[str, Any], num_items: int = 5) -
             max_items = model_schema.get("maxItems")
             num_items_to_generate = min(num_items, max_items) if max_items is not None else num_items
             aggregated_data[model_name] = [
-                generate_single_dummy_data(model_schema["items"])
-                for _ in range(num_items_to_generate)
+                generate_single_dummy_data(model_schema["items"]) for _ in range(num_items_to_generate)
             ]
         else:
             aggregated_data[model_name] = {
-                str(i): generate_single_dummy_data(model_schema)
-                for i in range(1, num_items + 1)
+                str(i): generate_single_dummy_data(model_schema) for i in range(1, num_items + 1)
             }
     return aggregated_data
