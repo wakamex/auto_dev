@@ -21,4 +21,11 @@ class DAOGenerator:
         return dao_classes
 
     def _generate_dao_class(self, model_name: str, model_schema: dict[str, Any]) -> str:
-        return self.template.render(model_name=model_name)
+        other_model_names = [name for name in self.models.keys() if name != model_name]
+        properties = model_schema.get("properties", {})
+        return self.template.render(
+            model_name=model_name,
+            model_schema=model_schema,
+            other_model_names=other_model_names,
+            properties=properties
+        )
