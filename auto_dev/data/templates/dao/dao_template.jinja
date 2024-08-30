@@ -47,10 +47,10 @@ class {{ model_name }}DAO:
     def insert(self, data: dict[str, Any] | list[dict[str, Any]]) -> None:
         """Insert a new item or items into the data."""
         self.load_data()  # Ensure we have the latest data
-        
+
         if "{{ model_name }}" not in self._data:
             self._data["{{ model_name }}"] = {}
-        
+
         existing_keys = set(map(int, self._data["{{ model_name }}"].keys()))
         if isinstance(data, list):
             for item in data:
@@ -65,7 +65,7 @@ class {{ model_name }}DAO:
 
     def get_all(self) -> list[dict[str, Any]]:
         """Get all items from the data."""
-        return list(self._data.["{{ model_name }}"].values())
+        return list(self._data["{{ model_name }}"].values())
 
     def get_by_id(self, hashmap_key: str) -> dict[str, Any] | None:
         """Get an item by id."""
