@@ -10,6 +10,10 @@ from docker import DockerClient
 from docker.models.containers import Container
 
 
+SLEEP_TIME = 1
+PULL_TIMEOUT = 60
+
+
 @dataclass
 class DockerFork:
     """Use a docker container to test contract calls."""
@@ -84,8 +88,8 @@ class DockerFork:
 
         wait = 0
         while not self.is_ready():
-            time.sleep(1)
-            wait += 1
-            if wait > 8:
+            time.sleep(SLEEP_TIME)
+            wait += SLEEP_TIME
+            if wait > PULL_TIMEOUT:
                 msg = "Docker fork did not start in time."
                 raise TimeoutError(msg)
