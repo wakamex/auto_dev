@@ -17,7 +17,7 @@ from aea.configurations.constants import DEFAULT_AEA_CONFIG_FILE, PROTOCOL_LANGU
 from aea.configurations.data_types import PublicId
 
 from auto_dev.base import build_cli
-from auto_dev.utils import change_dir, load_aea_ctx, remove_suffix, camel_to_snake
+from auto_dev.utils import load_aea_ctx, remove_suffix, camel_to_snake
 from auto_dev.constants import BASE_FSM_SKILLS, DEFAULT_ENCODING, JINJA_TEST_CUSTOM_FOLDER
 from auto_dev.cli_executor import CommandExecutor
 from auto_dev.handler.scaffolder import HandlerScaffolder, HandlerScaffoldBuilder
@@ -25,11 +25,6 @@ from auto_dev.protocols.scaffolder import ProtocolScaffolder
 from auto_dev.connections.scaffolder import ConnectionScaffolder
 from auto_dev.contracts.block_explorer import BlockExplorer
 from auto_dev.contracts.contract_scafolder import ContractScaffolder
-import json
-from typing import Dict, Any
-from openapi_spec_validator import validate_spec
-from auto_dev.dao.generator import DAOGenerator
-from auto_dev.dao.dummy_data import generate_dummy_data
 from auto_dev.dao.scaffolder import DAOScaffolder
 
 cli = build_cli()

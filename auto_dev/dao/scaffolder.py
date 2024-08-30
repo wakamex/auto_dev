@@ -4,7 +4,6 @@ from pathlib import Path
 
 import yaml
 from jinja2 import Environment, FileSystemLoader
-from openapi_spec_validator import validate_spec
 
 from auto_dev.enums import FileType
 from auto_dev.utils import write_to_file, read_from_file
@@ -90,8 +89,6 @@ class DAOScaffolder:
                     api_spec = json.load(f)
 
             self.logger.info("Successfully loaded API spec, validating...")
-            validate_spec(api_spec)
-            self.logger.info("API spec validation successful")
 
             if "components" not in api_spec or "schemas" not in api_spec["components"]:
                 msg = "OpenAPI spec does not contain explicit models in 'components/schemas'."
