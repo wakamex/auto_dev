@@ -14,7 +14,7 @@ import yaml
 from aea.protocols.generator.base import ProtocolGenerator
 
 from auto_dev.fmt import Formatter
-from auto_dev.utils import get_logger, remove_prefix, camel_to_snake
+from auto_dev.utils import currenttz, get_logger, remove_prefix, camel_to_snake
 from auto_dev.constants import DEFAULT_TZ, DEFAULT_ENCODING
 from auto_dev.data.connections.template import HEADER
 
@@ -285,6 +285,8 @@ class ProtocolScaffolder:
 
         EnumModifier(protocol_path, self.logger).augment_enums()
 
+        self.cleanup_protocol(protocol_path, protocol_author, protocol_definition, protocol_name)
+
         command = f"aea fingerprint protocol {protocol_author}/{protocol_name}:{protocol_version}"
         result = subprocess.run(command, shell=True, capture_output=True, check=False)
         if result.returncode != 0:
@@ -292,6 +294,7 @@ class ProtocolScaffolder:
             raise ValueError(msg)
 
         protocol_path = Path.cwd() / "protocols" / protocol_name
+
         self.logger.info(f"New protocol scaffolded at {protocol_path}")
 
     def cleanup_protocol(self, protocol_path, protocol_author, protocol_definition, protocol_name) -> None:
@@ -304,9 +307,8 @@ class ProtocolScaffolder:
         test_init.write_text(
             HEADER.format(
                 author=protocol_author,
-                year=datetime.datetime.now(tz=DEFAULT_TZ).year,
-            )
-            + "'''Module for testing the protocol.'''",
+                year=datetime.datetime.now(tz=currenttz()).year,
+            ),
             encoding=DEFAULT_ENCODING,
         )
         # We make a protocol_spec.yaml file
