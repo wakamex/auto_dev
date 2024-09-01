@@ -2,6 +2,7 @@
 
 import os
 import json
+import time
 import shutil
 import logging
 import operator
@@ -10,6 +11,7 @@ import subprocess
 from glob import glob
 from typing import Any
 from pathlib import Path
+from datetime import timezone, timedelta
 from functools import reduce
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -259,7 +261,7 @@ def load_aea_ctx(func: Callable[[click.Context, Any, Any], Any]) -> Callable[[cl
         registry_path = get_registry_path_from_cli_config()
         ctx.aea_ctx = Context(cwd=".", verbosity="INFO", registry_path=registry_path)
 
-        agent_config_yaml = yaml.safe_load(aea_config.read_text(encoding=DEFAULT_ENCODING))
+        agent_config_yaml = list(yaml.safe_load_all(aea_config.read_text(encoding=DEFAULT_ENCODING)))[0]
         agent_config_json = json.loads(json.dumps(agent_config_yaml))
         ctx.aea_ctx.agent_config = AgentConfig.from_json(agent_config_json)
 
@@ -268,6 +270,14 @@ def load_aea_ctx(func: Callable[[click.Context, Any, Any], Any]) -> Callable[[cl
     wrapper.__name__ = func.__name__
 
     return wrapper
+
+
+def currenttz():
+    """Return the current timezone."""
+    if time.daylight:
+        return timezone(timedelta(seconds=-time.altzone), time.tzname[1])
+    else:
+        return timezone(timedelta(seconds=-time.timezone), time.tzname[0])
 
 
 def write_to_file(file_path: str, content: Any, file_type: FileType = FileType.TEXT) -> None:
