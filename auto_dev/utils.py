@@ -249,20 +249,30 @@ def remove_suffix(text: str, suffix: str) -> str:
     return text[: -len(suffix)] if suffix and text.endswith(suffix) else text
 
 
+def load_aea_config():
+    """Load the aea-config.yaml file."""
+    aea_config = Path("aea-config.yaml")
+    if not aea_config.exists():
+        msg = f"Could not find {aea_config}"
+        raise FileNotFoundError(msg)
+
+    # Notes, we have a bit of an issue here.
+    # The loader for the agent config only loads the first document in the yaml file.
+    # We have to load all the documents in the yaml file, however, later on, we run into issues
+    # with the agent config loader not being able to load the yaml file.
+    # I propose we we raise an issue to address ALL instances of agent loading
+    agent_config_yaml = list(yaml.safe_load_all(aea_config.read_text(encoding=DEFAULT_ENCODING)))[0]
+    agent_config_json = json.loads(json.dumps(agent_config_yaml))
+    return agent_config_json
+
+
 def load_aea_ctx(func: Callable[[click.Context, Any, Any], Any]) -> Callable[[click.Context, Any, Any], Any]:
     """Load aea Context and AgentConfig if aea-config.yaml exists."""
 
     def wrapper(ctx: click.Context, *args, **kwargs):
-        aea_config = Path("aea-config.yaml")
-        if not aea_config.exists():
-            msg = f"Could not find {aea_config}"
-            raise FileNotFoundError(msg)
-
+        agent_config_json = load_aea_config()
         registry_path = get_registry_path_from_cli_config()
         ctx.aea_ctx = Context(cwd=".", verbosity="INFO", registry_path=registry_path)
-
-        agent_config_yaml = list(yaml.safe_load_all(aea_config.read_text(encoding=DEFAULT_ENCODING)))[0]
-        agent_config_json = json.loads(json.dumps(agent_config_yaml))
         ctx.aea_ctx.agent_config = AgentConfig.from_json(agent_config_json)
 
         return func(ctx, *args, **kwargs)
