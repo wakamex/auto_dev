@@ -2,7 +2,9 @@
 
 import re
 import ast
+import datetime
 import tempfile
+import textwrap
 import subprocess
 from pathlib import Path
 from itertools import starmap
@@ -13,7 +15,8 @@ from aea.protocols.generator.base import ProtocolGenerator
 
 from auto_dev.fmt import Formatter
 from auto_dev.utils import get_logger, remove_prefix, camel_to_snake
-from auto_dev.constants import DEFAULT_ENCODING
+from auto_dev.constants import DEFAULT_TZ, DEFAULT_ENCODING
+from auto_dev.data.connections.template import HEADER
 
 
 ProtocolSpecification = namedtuple("ProtocolSpecification", ["metadata", "custom_types", "speech_acts"])
@@ -129,7 +132,7 @@ class EnumModifier:
 
     def _format_and_write_to_file(self, file_path: Path, content: str) -> None:
         file_path.write_text(content)
-        Formatter.run_sort(file_path)
+        Formatter(verbose=False, remote=False).format(file_path)
 
     def _process_enum(self, node: ast.ClassDef, enums) -> None:
         camel_to_snake(node.name)
@@ -197,6 +200,54 @@ class EnumModifier:
         )
 
 
+class CommentSplitter(ast.NodeVisitor):
+    """CommentSplitter for parsing AST."""
+
+    def __init__(self, max_line_length=120):
+        self.max_line_length = max_line_length
+        self.result = []
+
+    def split_docstring(self, docstring):
+        """Split docstring."""
+        split_lines = []
+        for line in docstring.splitlines():
+            if len(line) > self.max_line_length:
+                indentation = len(line) - len(line.lstrip())
+                wrapped_lines = textwrap.wrap(line, width=self.max_line_length, subsequent_indent=" " * indentation)
+                split_lines.extend(wrapped_lines)
+            else:
+                split_lines.append(line)
+        return "\n".join(split_lines)
+
+    def visit_FunctionDef(self, node):  # noqa
+        """process the function's docstring"""
+        if ast.get_docstring(node):
+            original_docstring = ast.get_docstring(node, clean=False)
+            split_docstring = self.split_docstring(original_docstring)
+            node.body[0].value = ast.Str(s=split_docstring)
+
+        # Continue visiting the rest of the function
+        self.generic_visit(node)
+
+    def visit_Module(self, node):  # noqa
+        """Process the module-level docstring"""
+        if ast.get_docstring(node):
+            original_docstring = ast.get_docstring(node, clean=False)
+            split_docstring = self.split_docstring(original_docstring)
+            node.body[0].value = ast.Str(s=split_docstring)
+
+        # Continue visiting the rest of the module
+        self.generic_visit(node)
+
+
+def split_long_comment_lines(code: str, max_line_length: int = 120) -> str:
+    """Split long comment lines given a code string."""
+    tree = ast.parse(code)
+    splitter = CommentSplitter(max_line_length=max_line_length)
+    splitter.visit(tree)
+    return ast.unparse(tree)
+
+
 class ProtocolScaffolder:
     """ProtocolScaffolder."""
 
@@ -242,3 +293,43 @@ class ProtocolScaffolder:
 
         protocol_path = Path.cwd() / "protocols" / protocol_name
         self.logger.info(f"New protocol scaffolded at {protocol_path}")
+
+    def cleanup_protocol(self, protocol_path, protocol_author, protocol_definition, protocol_name) -> None:
+        """Cleanup protocol."""
+        # We add in some files. that are necessary for the protocol to pass linting...
+        test_init = protocol_path / "tests" / "__init__.py"
+        test_init.touch()
+
+        # We template in the necessary copywrite information
+        test_init.write_text(
+            HEADER.format(
+                author=protocol_author,
+                year=datetime.datetime.now(tz=DEFAULT_TZ).year,
+            )
+            + "'''Module for testing the protocol.'''",
+            encoding=DEFAULT_ENCODING,
+        )
+        # We make a protocol_spec.yaml file
+        protocol_spec = protocol_path / "protocol_spec.yaml"
+        protocol_spec.write_text(protocol_definition, encoding=DEFAULT_ENCODING)
+
+        # We remove from the following lines from the *_pb2.py file
+        regexs = [
+            "_runtime_version",
+        ]
+        pb2_file = protocol_path / f"{protocol_name}_pb2.py"
+        content = pb2_file.read_text(encoding=DEFAULT_ENCODING)
+        new_content = ""
+        for line in content.splitlines():
+            for regex in regexs:
+                if regex in line:
+                    break
+            else:
+                new_content += line + "\n"
+        pb2_file.write_text(new_content, encoding=DEFAULT_ENCODING)
+
+        # We split long lines in the protocol_spec.yaml file
+        custom_types = protocol_path / "custom_types.py"
+        content = custom_types.read_text(encoding=DEFAULT_ENCODING)
+        updated_content = split_long_comment_lines(content)
+        custom_types.write_text(updated_content, encoding=DEFAULT_ENCODING)
