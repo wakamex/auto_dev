@@ -58,19 +58,24 @@ def get_logger(name: str = __name__, log_level: str = "INFO") -> logging.Logger:
     return log
 
 
-def get_packages():
+def get_packages(
+    autonomy_packages_file: str = AUTONOMY_PACKAGES_FILE, type="dev", check=True, hashmap=False
+) -> list[Path]:
     """Get the packages file."""
-    with open(AUTONOMY_PACKAGES_FILE, encoding=DEFAULT_ENCODING) as file:
+    with open(autonomy_packages_file, encoding=DEFAULT_ENCODING) as file:
         packages = json.load(file)
-    dev_packages = packages["dev"]
-    results = []
+    dev_packages = packages[type]
+    results = {} if hashmap else []
     for package in dev_packages:
         component_type, author, component_name, _ = package.split("/")
         package_path = Path(f"packages/{author}/{component_type}s/{component_name}")
-        if not package_path.exists():
+        if not package_path.exists() and check:
             msg = f"Package {package} not found at: {package_path} does not exist"
             raise FileNotFoundError(msg)
-        results.append(package_path)
+        if hashmap:
+            results[package_path] = dev_packages[package]
+        else:
+            results.append(package_path)
     return results
 
 
