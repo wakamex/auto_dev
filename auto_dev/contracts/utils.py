@@ -54,4 +54,6 @@ PARAM_TO_STR_MAPPING = {
     ParamType.INT16: "int",
     ParamType.UNINT32: "int",
     ParamType.UINT8_ARRAY: "List[int]",
+    ParamType.BYTES32_ARRAY_ARRAY: "List[List[str]]",
+    ParamType.BYTES_ARRAY: "List[str]",
 }
