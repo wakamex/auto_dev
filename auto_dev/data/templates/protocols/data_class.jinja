@@ -65,6 +65,10 @@ class BaseCustomEncoder(BaseModel):
         """Check if two instances of this class are equal."""
         return self.dict() == other.dict()
 
+    def __hash__(self):
+        """Return the hash value of this instance."""
+        return hash(self.dict())
+
 {% if enums %}
 CUSTOM_ENUM_MAP = {
         {% for enum in enums %}
