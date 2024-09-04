@@ -415,7 +415,9 @@ class ProtocolScaffolder:
                 continue
             class_data = {
                 "name": custom_type.split(":")[1],
-                "fields": [parse_protobuf_type(field) for field in definition.split(";\n") if field],
+                "fields": [
+                    parse_protobuf_type(field, required_type_imports) for field in definition.split(";\n") if field
+                ],
                 "type": "data",
             }
             raw_classes.append(class_data)
