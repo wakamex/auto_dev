@@ -438,7 +438,7 @@ class ProtocolScaffolder:
         dummy_data_path = protocol_path / "tests" / "dummy_data.yaml"
         dummy_data_path.write_text(yaml.dump(all_dummy_data), encoding=DEFAULT_ENCODING)
 
-        self.ouput_pydantic_models(pydantic_output, protocol_path, required_type_imports)
+        self.output_pydantic_models(pydantic_output, protocol_path, required_type_imports)
 
     def output_pydantic_models(self, pydantic_output, protocol_path, required_type_imports):
         """
