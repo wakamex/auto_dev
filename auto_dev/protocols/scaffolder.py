@@ -15,8 +15,9 @@ from aea.protocols.generator.base import ProtocolGenerator
 
 from auto_dev.fmt import Formatter
 from auto_dev.utils import currenttz, get_logger, remove_prefix, camel_to_snake
-from auto_dev.constants import DEFAULT_TZ, DEFAULT_ENCODING
+from auto_dev.constants import DEFAULT_TZ, DEFAULT_ENCODING, JINJA_TEMPLATE_FOLDER
 from auto_dev.data.connections.template import HEADER
+from jinja2 import Environment, FileSystemLoader
 
 
 ProtocolSpecification = namedtuple("ProtocolSpecification", ["metadata", "custom_types", "speech_acts"])
@@ -286,6 +287,7 @@ class ProtocolScaffolder:
         EnumModifier(protocol_path, self.logger).augment_enums()
 
         self.cleanup_protocol(protocol_path, protocol_author, protocol_definition, protocol_name)
+        self.generate_pydantic_models(protocol_path, protocol_author, protocol_name, protocol_version, protocol)
 
         command = f"aea fingerprint protocol {protocol_author}/{protocol_name}:{protocol_version}"
         result = subprocess.run(command, shell=True, capture_output=True, check=False)
@@ -335,3 +337,126 @@ class ProtocolScaffolder:
         content = custom_types.read_text(encoding=DEFAULT_ENCODING)
         updated_content = split_long_comment_lines(content)
         custom_types.write_text(updated_content, encoding=DEFAULT_ENCODING)
+
+
+    def generate_pydantic_models(self, protocol_path, protocol_author, protocol_name, protocol_version, protocol):
+        """Generate data classes."""
+        # We check if there are any custom types
+        custom_types = protocol.custom_types
+        # We assume the enums are handled correctly,
+        # and we only need to generate the data classes
+        env = Environment(loader=FileSystemLoader(Path(JINJA_TEMPLATE_FOLDER) / 'protocols'), autoescape=True)
+
+        required_type_imports = []
+        def parse_protobuf_type(protobuf_type):
+            protobuf_to_python = {
+                "string": "str",
+                "int32": "int",
+                "int64": "int",
+                "float": "float",
+                "bool": "bool",
+
+            }
+
+            output = {}
+
+            if protobuf_type.startswith('repeated'):
+                repeated_type = protobuf_type.split()[1]
+                attr_name = protobuf_type.split()[2]
+                output['name'] = attr_name
+                if repeated_type in protobuf_to_python:
+                    output['type'] = f"List[{protobuf_to_python[repeated_type]}]"
+                else:
+                    output['type'] = f"List[{repeated_type}]"
+                required_type_imports.append("List")
+            elif protobuf_type.startswith('map'):
+                attr_name = protobuf_type.split()[2]
+                key_val_part = protobuf_type.split(">")[0]
+                key_type_raw, val_type = key_val_part.split(', ')
+                key_type = key_type_raw.split('<')[1]
+                output['name'] = attr_name
+                output['type'] = f"Dict[{protobuf_to_python[key_type]}, {protobuf_to_python[val_type]}]"
+                required_type_imports.append("Dict")
+            else:
+                type = protobuf_type.split()[0]
+                attr_name = protobuf_type.split()[1]
+                output['name'] = attr_name
+                if type in protobuf_to_python:
+                    output['type'] = protobuf_to_python[type]
+                else:
+                    output['type'] = type
+            return output
+
+        raw_classes = []
+        for custom_type, definition in custom_types.items():
+            if definition.startswith("enum "):
+                continue
+            raw_classes.append(
+                { "name": custom_type.split(':')[1], "fields": [parse_protobuf_type(field) for field in definition.split(';\n') if field] }
+            )
+        
+            # We need to generate the data class
+        template = env.get_template("data_class.jinja")
+        ouput = template.render(
+            classes=raw_classes,
+        )
+
+        # We now parse the ast of the output, 
+        # We want to a couple of things:
+        # 1. get the imports
+        # 2. get the class definitions
+
+        # We will then read in the existing custom_types.py file
+        # and;
+        # 1. update the imports to include the new imports
+        # 2. update the class definitions such that any new classes are added and any existing classes are updated.
+
+        # We will then write the updated content to the custom_types.py file.
+
+        # We will then format the custom_types.py file.
+        new_ast = ast.parse(ouput)
+        imports = []
+        classes = []
+
+        for node in new_ast.body:
+            if isinstance(node, ast.Import):
+                imports.append(node)
+            elif isinstance(node, ast.ClassDef):
+                classes.append(node)
+        
+        # We now read in the custom_types.py file
+        custom_types_path = protocol_path / "custom_types.py"
+        content = custom_types_path.read_text()
+        root = ast.parse(content)
+
+        
+        # We now update the classes
+        base_model_class = classes.pop(0)
+        for node in classes:
+            for i, existing_node in enumerate(root.body):
+                if isinstance(existing_node, ast.ClassDef) and existing_node.name == node.name:
+                    root.body[i] = node
+                    break
+            else:
+                root.body.append(node)
+
+
+
+        # We now write the updated content to the custom_types.py file
+        updated_content = ast.unparse(root)
+        # We add in the imports
+        typing_import_line = textwrap.dedent(
+        f"""
+        from typing import {', '.join(set(required_type_imports))}
+        from pydantic import BaseModel
+        """,)
+
+        updated_content_lines = updated_content.split("\n")
+        updated_content_lines.insert(2, typing_import_line)
+
+        base_model_code = ast.unparse(base_model_class)
+        base_model_code_lines = base_model_code.split("\n")
+        updated_content_lines = updated_content_lines[:4] + base_model_code_lines + updated_content_lines[4:]
+        updated_content = "\n".join(updated_content_lines)
+        custom_types_path.write_text(updated_content)
+        Formatter(verbose=False, remote=False).format(custom_types_path)
