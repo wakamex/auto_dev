@@ -344,7 +344,7 @@ class ProtocolScaffolder:
         EnumModifier(protocol_path, self.logger).augment_enums()
 
         self.cleanup_protocol(protocol_path, protocol_author, protocol_definition, protocol_name)
-        self.generate_pydantic_models(protocol_path, protocol_author, protocol_name, protocol_version, protocol)
+        self.generate_pydantic_models(protocol_path, protocol_name, protocol)
         self.clean_tests(protocol_path, protocol, protocol_author, protocol_name, protocol_version)
 
         command = f"aea fingerprint protocol {protocol_author}/{protocol_name}:{protocol_version}"
