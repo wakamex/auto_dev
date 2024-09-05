@@ -400,21 +400,12 @@ class ProtocolScaffolder:
         updated_content = split_long_comment_lines(content)
         custom_types.write_text(updated_content, encoding=DEFAULT_ENCODING)
 
-    def generate_pydantic_models(self, protocol_path, protocol_name, protocol):
-        """Generate data classes."""
-        # We check if there are any custom types
-        custom_types = protocol.custom_types
-        # We assume the enums are handled correctly,
-        # and we only need to generate the data classes
-        env = Environment(loader=FileSystemLoader(Path(JINJA_TEMPLATE_FOLDER) / "protocols"), autoescape=True)
-
-        required_type_imports = ["Any"]
-
+    def _get_definition_of_custom_types(self, protocol, required_type_imports=["Any"]):
+        """Get the definition of data types."""
         raw_classes = []
         all_dummy_data = {}
         enums = parse_enums(protocol)
-
-        for custom_type, definition in custom_types.items():
+        for custom_type, definition in protocol.custom_types.items():
             if definition.startswith("enum "):
                 continue
             class_data = {
@@ -429,8 +420,20 @@ class ProtocolScaffolder:
             dummy_data = {field["name"]: get_dummy_data(field) for field in class_data["fields"]}
 
             all_dummy_data[class_data["name"]] = dummy_data
+        return raw_classes, all_dummy_data, enums
 
-            # We need to generate the data class
+    def generate_pydantic_models(self, protocol_path, protocol_name, protocol):
+        """Generate data classes."""
+        # We check if there are any custom types
+        # We assume the enums are handled correctly,
+        # and we only need to generate the data classes
+        env = Environment(loader=FileSystemLoader(Path(JINJA_TEMPLATE_FOLDER) / "protocols"), autoescape=True)
+
+        required_type_imports = ["Any"]
+
+        raw_classes, all_dummy_data, enums = self._get_definition_of_data_types(protocol, required_type_imports)
+
+        # We need to generate the data class
         template = env.get_template("data_class.jinja")
         pydantic_output = template.render(
             classes=raw_classes,
