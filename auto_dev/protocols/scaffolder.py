@@ -267,7 +267,7 @@ def split_long_comment_lines(code: str, max_line_length: int = 120) -> str:
     return ast.unparse(tree)
 
 
-def parse_protobuf_type(protobuf_type, required_type_imports):
+def parse_protobuf_type(protobuf_type, required_type_imports=[]):
     """Parse protobuf type into python type."""
     protobuf_to_python = {
         "string": "str",
