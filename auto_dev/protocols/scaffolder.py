@@ -475,7 +475,7 @@ class ProtocolScaffolder:
         updated_content = ast.unparse(root)
         # We add in the imports
         typing_import_line = textwrap.dedent(
-            f"""
+        f"""
         from typing import {', '.join(set(required_type_imports))}
         from pydantic import BaseModel
         """,
