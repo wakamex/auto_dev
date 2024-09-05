@@ -43,6 +43,9 @@ README_TEMPLATE = """
 class BehaviourScaffolder(ProtocolScaffolder):
     """ProtocolScaffolder."""
 
+    component_class: str = "behaviours"
+    type: str = None
+
     def __init__(
         self, protocol_specification_path: str, behaviour_type, logger, verbose: bool = True, auto_confirm: bool = False
     ):
@@ -57,7 +60,7 @@ class BehaviourScaffolder(ProtocolScaffolder):
 
     def scaffold(self) -> None:
         """Scaffold the protocol."""
-        template = self.env.get_template("test_custom.jinja")
+        template = self.env.get_template(Path(self.component_class) / f"{self.behaviour_type}.jinja")
         output = template.render(
             name="test",
         )
