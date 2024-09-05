@@ -78,6 +78,7 @@ class BehaviourScaffolder(ProtocolScaffolder):
             speech_acts=speech_acts,
             target_connection=DEFAULT_TARGET_CONNECTION,
         )
+        print(speech_acts)
         if self.verbose:
             self.logger.info(f"Generated output: {output}")
 
