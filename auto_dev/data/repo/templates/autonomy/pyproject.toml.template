@@ -26,7 +26,7 @@ open-aea = "==1.55.0"
 open-aea-cli-ipfs = "==1.55.0"
 open-aea-test-autonomy = "==0.15.2"
 open-autonomy = "==0.15.2"
-autonomy-dev = {{extras = ["all"], version = ">=0.2.64,<=0.2.73"}}
+autonomy-dev = {{extras = ["all"], version = ">=0.2.64,<=0.2.74"}}
 
 
 [tool.poetry.dev-dependencies]
