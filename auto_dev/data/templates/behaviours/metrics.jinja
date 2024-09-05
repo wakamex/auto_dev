@@ -33,12 +33,10 @@ class {{class_name}}MetricsGenerator(BaseMetric):
         """Implement the setup."""
         self.context.logger.info("Setting up {{protocol_name}}MetricsGenerator behaviour.")
 
-    def generate_metrics(self):
-        """Generate metrics for the {{protocol_name}} protocol."""
-        metrics = []
-        {% for class in speech_acts %}metrics.append(self.generate_{{class}}(**self.kwargs))
-        {% endfor %}
-        return metrics
+    def act(self) -> None:
+        """Implement the act."""
+        self.context.logger.info("Acting in {{protocol_name}}MetricsGenerator behaviour.")
+
 
     {% for method in speech_acts%}
     def generate_{{method}}(self,{% for arg, arg_type in speech_acts[method].items()%}
