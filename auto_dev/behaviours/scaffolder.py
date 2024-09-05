@@ -61,7 +61,7 @@ class BehaviourScaffolder(ProtocolScaffolder):
     def scaffold(self) -> None:
         """Scaffold the protocol."""
         template = self.env.get_template(str(Path(self.component_class) / f"{self.behaviour_type.value}.jinja"))
-        protocol_specification = read_protocol()
+        protocol_specification = read_protocol(self.protocol_specification_path)
         output = template.render(
             name="test",
             year=datetime.datetime.now(currenttz()).year,
