@@ -73,6 +73,7 @@ class BehaviourScaffolder(ProtocolScaffolder):
             raw_classes=raw_classes,
             all_dummy_data=all_dummy_data,
             enums=enums,
+            class_name=snake_to_camel(protocol_specification.metadata["name"]),
             speech_acts=[snake_to_camel(f) for f in speech_acts],
         )
         if self.verbose:
