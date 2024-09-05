@@ -267,24 +267,25 @@ def split_long_comment_lines(code: str, max_line_length: int = 120) -> str:
     return ast.unparse(tree)
 
 
+PROTOBUF_TO_PYTHON = {
+    "string": "str",
+    "int32": "int",
+    "int64": "int",
+    "float": "float",
+    "bool": "bool",
+}
+
+
 def parse_protobuf_type(protobuf_type, required_type_imports=[]):
     """Parse protobuf type into python type."""
-    protobuf_to_python = {
-        "string": "str",
-        "int32": "int",
-        "int64": "int",
-        "float": "float",
-        "bool": "bool",
-    }
-
     output = {}
 
     if protobuf_type.startswith("repeated"):
         repeated_type = protobuf_type.split()[1]
         attr_name = protobuf_type.split()[2]
         output["name"] = attr_name
-        if repeated_type in protobuf_to_python:
-            output["type"] = f"List[{protobuf_to_python[repeated_type]}] = []"
+        if repeated_type in PROTOBUF_TO_PYTHON:
+            output["type"] = f"List[{PROTOBUF_TO_PYTHON[repeated_type]}] = []"
         else:
             output["type"] = f"List[{repeated_type}] = []"
         required_type_imports.append("List")
@@ -294,14 +295,14 @@ def parse_protobuf_type(protobuf_type, required_type_imports=[]):
         key_type_raw, val_type = key_val_part.split(", ")
         key_type = key_type_raw.split("<")[1]
         output["name"] = attr_name
-        output["type"] = f"Dict[{protobuf_to_python[key_type]}, {protobuf_to_python[val_type]}] = {{}}"
+        output["type"] = f"Dict[{PROTOBUF_TO_PYTHON[key_type]}, {PROTOBUF_TO_PYTHON[val_type]}] = {{}}"
         required_type_imports.append("Dict")
     else:
         _type = protobuf_type.split()[0]
         attr_name = protobuf_type.split()[1]
         output["name"] = attr_name
-        if _type in protobuf_to_python:
-            output["type"] = protobuf_to_python[_type]
+        if _type in PROTOBUF_TO_PYTHON:
+            output["type"] = PROTOBUF_TO_PYTHON[_type]
         else:
             output["type"] = _type
     return output

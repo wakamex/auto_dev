@@ -18,7 +18,7 @@ from aea.protocols.generator.base import ProtocolGenerator
 from auto_dev.fmt import Formatter
 from auto_dev.utils import currenttz, get_logger, remove_prefix, camel_to_snake, snake_to_camel
 from auto_dev.constants import DEFAULT_TZ, DEFAULT_ENCODING, JINJA_TEMPLATE_FOLDER
-from auto_dev.protocols.scaffolder import ProtocolScaffolder, read_protocol, parse_protobuf_type
+from auto_dev.protocols.scaffolder import PROTOBUF_TO_PYTHON, ProtocolScaffolder, read_protocol, parse_protobuf_type
 from auto_dev.data.connections.template import HEADER
 
 
@@ -68,6 +68,35 @@ class BehaviourScaffolder(ProtocolScaffolder):
 
         speech_acts = protocol_specification.metadata["speech_acts"]
 
+        type_mapp = {}
+        for type in protocol_specification.custom_types:
+            self.logger.info(f"Type: {type}")
+            type_mapp[type] = type[3:]
+        # We then collect the speech acts
+        # print(raw_classes)
+        parsed_speech_acts = {}
+        for speech_act, data in speech_acts.items():
+            default_kwargs = {}
+
+            for arg, arg_type in data.items():
+                py_type = (
+                    arg_type.replace("pt:str", "str")
+                    .replace("pt:int", "int")
+                    .replace("pt:float", "float")
+                    .replace("pt:bool", "bool")
+                )
+                py_type = (
+                    py_type.replace("pt:dict", "Dict")
+                    .replace("pt:list", "List")
+                    .replace("pt:optional", "Optional")
+                    .replace("pt:tuple", "Tuple")
+                )
+                for ct, pt in type_mapp.items():
+                    py_type = py_type.replace(ct, pt)
+                default_kwargs[arg] = py_type
+            parsed_speech_acts[speech_act] = default_kwargs
+
+        print(parsed_speech_acts)
         output = template.render(
             protocol_name=protocol_specification.metadata["name"],
             author=protocol_specification.metadata["author"],
@@ -76,16 +105,10 @@ class BehaviourScaffolder(ProtocolScaffolder):
             all_dummy_data=all_dummy_data,
             enums=enums,
             class_name=snake_to_camel(protocol_specification.metadata["name"]),
-            speech_acts=speech_acts,
+            speech_acts=parsed_speech_acts,
             target_connection=DEFAULT_TARGET_CONNECTION,
         )
-        print(raw_classes)
-        for speech_act, data in speech_acts.items():
-            print(speech_act)
-            for arg, arg_type in data.items():
-                print(f"    {arg}: {parse_protobuf_type(arg_type)}") 
-
-        [parse_protobuf_type(i) for i in raw_classes]
+        # We first collect the custom types
         if self.verbose:
             self.logger.info(f"Generated output: {output}")
 
