@@ -33,6 +33,7 @@ class {{class_name}}MetricsGenerator(BaseMetric):
         """Implement the setup."""
         self.context.logger.info("Setting up {{protocol_name}}MetricsGenerator behaviour.")
         prom_dialogues = cast(PrometheusDialogues, self.context.prometheus_dialogues)
+
         for metric in prom_dialogues.metrics:
             metric_name = metric["name"]
             self.context.logger.info(f"Adding Prometheus metric: {metric_name}")
