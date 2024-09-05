@@ -46,5 +46,7 @@ class UserInput(Enum):
     INFO = "info"
 
 
-class BehaviourTypes:
+class BehaviourTypes(Enum):
+    """Behaviour types enum."""
+
     metrics = "metrics"
