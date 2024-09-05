@@ -85,6 +85,7 @@ all = [
   "pytest-cov",
   "tbump",
   "ruff",
+  "isort",
   "pydantic",
   "open-autonomy",
   "open-aea",
