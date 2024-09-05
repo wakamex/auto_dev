@@ -38,3 +38,12 @@ class {{enum}}(BaseMetric):
 #         {% for enum in enums %}
 #         "<class '{{protocol_name}}_pb2.{{enum}}'>": {{enum}},{% endfor %}
 #     }
+
+
+{% for class in raw_classes %}
+class {{class.name}}(BaseMetric):
+    """This class represents an instance of {{class.name}}."""
+    {% for field in class.fields %}
+    {{field.name}}: {{field.type}}
+    {% endfor %}
+{% endfor %}
