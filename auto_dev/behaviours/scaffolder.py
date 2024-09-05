@@ -83,7 +83,7 @@ class BehaviourScaffolder(ProtocolScaffolder):
         for speech_act, data in speech_acts.items():
             print(speech_act)
             for arg, arg_type in data.items():
-                print(f"    {arg}: {arg_type}") 
+                print(f"    {arg}: {parse_protobuf_type(arg_type)}") 
 
         [parse_protobuf_type(i) for i in raw_classes]
         if self.verbose:
