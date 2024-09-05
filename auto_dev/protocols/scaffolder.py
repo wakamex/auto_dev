@@ -546,7 +546,7 @@ class ProtocolScaffolder:
         )
         function_defs = test_data_loader.split("\n")
         new_content.extend(original_content[:start_line])
-        new_content.extend(import_defs)
+        new_content.extend([import_defs])
         new_content.extend(function_defs)
         new_content.extend(original_content[start_line:])
         content = "\n".join(new_content)
