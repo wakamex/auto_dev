@@ -48,6 +48,6 @@ class {{class_name}}MetricsGenerator:
         message, dialogue = dialogues.create{{method}}(
             counterparty=self.counterparty,
             {% for arg in speech_acts[method]%}
-            {{arg}}={{arg}},{% endfor %}
+            {{arg}}='{{arg}}',{% endfor %}
         )
     {% endfor %}
