@@ -16,7 +16,7 @@ from jinja2 import Environment, FileSystemLoader
 from aea.protocols.generator.base import ProtocolGenerator
 
 from auto_dev.fmt import Formatter
-from auto_dev.utils import currenttz, get_logger, remove_prefix, camel_to_snake
+from auto_dev.utils import currenttz, get_logger, remove_prefix, camel_to_snake, snake_to_camel
 from auto_dev.constants import DEFAULT_TZ, DEFAULT_ENCODING, JINJA_TEMPLATE_FOLDER
 from auto_dev.protocols.scaffolder import ProtocolScaffolder, read_protocol
 from auto_dev.data.connections.template import HEADER
@@ -63,6 +63,9 @@ class BehaviourScaffolder(ProtocolScaffolder):
         template = self.env.get_template(str(Path(self.component_class) / f"{self.behaviour_type.value}.jinja"))
         protocol_specification = read_protocol(self.protocol_specification_path)
         raw_classes, all_dummy_data, enums = self._get_definition_of_custom_types(protocol=protocol_specification)
+
+        speech_acts = protocol_specification.metadata["speech_acts"]
+
         output = template.render(
             protocol_name=protocol_specification.metadata["name"],
             author=protocol_specification.metadata["author"],
@@ -70,6 +73,7 @@ class BehaviourScaffolder(ProtocolScaffolder):
             raw_classes=raw_classes,
             all_dummy_data=all_dummy_data,
             enums=enums,
+            speech_acts=[snake_to_camel(f) for f in speech_acts],
         )
         if self.verbose:
             self.logger.info(f"Generated output: {output}")

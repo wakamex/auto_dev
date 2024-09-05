@@ -23,10 +23,7 @@
 from packages.eightballer.skills.prometheus.behaviours import PrometheusBehaviour as BaseMetric
 
 
-{% for class in raw_classes %}
-class {{class.name}}(BaseMetric):
-    """This class represents an instance of {{class.name}}."""
-    {% for field in class.fields %}
-    {{field.name}}: {{field.type}}
-    {% endfor %}
+{% for class in speech_acts%}
+class {{class}}(BaseMetric):
+    """This class represents an instance of {{class}}."""
 {% endfor %}
