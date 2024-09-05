@@ -52,9 +52,14 @@ class BehaviourScaffolder:
         self.protocol_specification_path = protocol_specification_path
         self.logger.info(f"Read protocol specification: {protocol_specification_path}")
         self.auto_confirm = auto_confirm
+        self.env = Environment(loader=FileSystemLoader(JINJA_TEMPLATE_FOLDER), autoescape=True)
 
     def scaffold(self) -> None:
         """Scaffold the protocol."""
-        protocol_specification = self._load_protocol_specification()
-        self._generate_protocol(protocol_specification)
-
+        self.protocol_specification = self._load_protocol_specification()
+        template = self.env.get_template("test_custom.jinja")
+        output = template.render(
+            name="test",
+        )
+        if self.verbose:
+            self.logger.info(f"Generated output: {output}")
