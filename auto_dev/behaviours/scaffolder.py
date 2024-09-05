@@ -80,7 +80,7 @@ class BehaviourScaffolder(ProtocolScaffolder):
             target_connection=DEFAULT_TARGET_CONNECTION,
         )
         print(speech_acts)
-        print(enums)
+        print(raw_classes)
         if self.verbose:
             self.logger.info(f"Generated output: {output}")
 
