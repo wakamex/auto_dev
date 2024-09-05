@@ -35,7 +35,6 @@ target-version = ["py37", "py38", "py39"]
 include = "\\.pyi?$"
 exclude = "/(\n    \\.eggs\n  | \\.git\n  | \\.hg\n  | \\.mypy_cache\n  | \\.tox\n  | \\.venv\n  | _build\n  | buck-out\n  | build\n  | dist\n)/\n"
 
-[tool.isort]
 [tool.poetry.dependencies]
 python = ">=3.9,<3.12"
 open-autonomy = "==0.15.2"
@@ -67,6 +66,7 @@ tbump = "^6.11.0"
 requests = "2.28.1"
 pytest-xdist = "^3.6.1"
 ruff = "^0.5.7"
+pydantic = "^2.8.2"
 
 [tool.poetry.dev-dependencies]
 responses = "^0.23.1"
@@ -81,9 +81,10 @@ mkdocs-autorefs = "^1.0.1"
 [tool.poetry.extras]
 all = [
   "pytest",
+  "pytest-cov",
   "tbump",
   "ruff",
-  "pytest-cov",
+  "pydantic",
   "open-autonomy",
   "open-aea",
   "open-aea-ledger-ethereum",

@@ -100,7 +100,9 @@ class RepoScaffolder:
         new_repo_dir = Path.cwd()
         template_folder = TEMPLATES[self.type_of_repo]
         for file in track(
-            self.template_files, description=f"Scaffolding {self.type_of_repo} repo", total=len(self.template_files)
+            self.template_files,
+            description=f"Scaffolding {self.type_of_repo} repo",
+            total=len(self.template_files),
         ):
             self.logger.debug(f"Scaffolding `{file!s}`")
             if file.is_dir():
@@ -120,7 +122,7 @@ class RepoScaffolder:
                 target_file_path = new_repo_dir / rel_path.with_suffix("")
             else:
                 target_file_path = new_repo_dir / rel_path
-            self.logger.info(f"Scaffolding `{target_file_path!s}`")
+            self.logger.debug(f"Scaffolding `{target_file_path!s}`")
             if write_files:
                 target_file_path.parent.mkdir(parents=True, exist_ok=True)
                 target_file_path.write_text(content)
@@ -192,8 +194,9 @@ def repo() -> None:
 )
 @click.option("-f", "--force", is_flag=True, help="Force overwrite of existing repo", default=False)
 @click.option("--auto-approve", is_flag=True, help="Automatically approve all prompts", default=False)
+@click.option("--install/--no-install", is_flag=True, help="Do not install dependencies", default=True)
 @click.pass_context
-def scaffold(ctx, name, type_of_repo, force, auto_approve) -> None:
+def scaffold(ctx, name, type_of_repo, force, auto_approve, install) -> None:
     """Create a new repo and scaffold necessary files."""
     logger = ctx.obj["LOGGER"]
     verbose = ctx.obj["VERBOSE"]
@@ -222,11 +225,8 @@ def scaffold(ctx, name, type_of_repo, force, auto_approve) -> None:
         scaffolder.scaffold()
         if type_of_repo == "autonomy":
             logger.info("Installing host deps. This may take a while!")
-            execute_commands(
-                "bash ./install.sh",
-                verbose=verbose,
-                logger=logger,
-            )
+            if install:
+                execute_commands("bash ./install.sh", verbose=verbose, logger=logger)
             logger.info("Initialising autonomy packages.")
         elif type_of_repo == "python":
             src_dir = Path(name)
