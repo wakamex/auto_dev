@@ -28,6 +28,24 @@ class {{class_name}}MetricsGenerator(BaseMetric):
     """This class generates metrics for the {{protocol_name}} protocol."""
     counterparty: str = '{{target_connection}}'
 
+
+    def setup(self) -> None:
+        """Implement the setup."""
+        self.context.logger.info("setting up AdvancedDataRequestBehaviour")
+
+        prom_dialogues = cast(PrometheusDialogues, self.context.prometheus_dialogues)
+
+        if prom_dialogues.enabled:
+            for metric in prom_dialogues.metrics:
+                metric_name = metric["name"]
+                self.context.logger.info(f"Adding Prometheus metric: {metric_name}")
+                self.add_prometheus_metric(
+                    metric_name,
+                    metric["type"],
+                    metric["description"],
+                    dict(metric["labels"]),
+                )
+
     def generate_metrics(self):
         """Generate metrics for the {{protocol_name}} protocol."""
         metrics = []
