@@ -66,3 +66,5 @@ class BehaviourScaffolder(ProtocolScaffolder):
         )
         if self.verbose:
             self.logger.info(f"Generated output: {output}")
+        
+        print(output)
