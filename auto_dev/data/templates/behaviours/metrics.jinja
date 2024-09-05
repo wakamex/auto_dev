@@ -24,7 +24,7 @@ from packages.eightballer.skills.prometheus.behaviours import PrometheusBehaviou
 
 
 
-class {{class_name}}MetricsGenerator:
+class {{class_name}}MetricsGenerator(BaseMetric):
     """This class generates metrics for the {{protocol_name}} protocol."""
 
     def __init__(self, **kwargs):
