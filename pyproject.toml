@@ -82,9 +82,10 @@ mkdocs-autorefs = "^1.0.1"
 [tool.poetry.extras]
 all = [
   "pytest",
+  "pytest-cov",
   "tbump",
   "ruff",
-  "pytest-cov",
+  "pydantic",
   "open-autonomy",
   "open-aea",
   "open-aea-ledger-ethereum",
