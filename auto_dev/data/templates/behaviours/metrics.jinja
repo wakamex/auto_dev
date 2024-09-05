@@ -40,7 +40,7 @@ class {{class_name}}MetricsGenerator(BaseMetric):
         {{arg}}:{{arg_type}},{% endfor %}
     ):
         """This method generates a {{method}} dialogue."""
-        message, dialogue = self.context.{{protocol_name}}dialogues.create(
+        message, dialogue = self.context.{{protocol_name}}_dialogues.create(
             counterparty=self.counterparty,
             {% for arg_name, arg_type in speech_acts[method].items() %}
             {{arg_name}} = ... # {{arg_type}},{% endfor %}
