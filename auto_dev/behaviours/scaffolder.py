@@ -18,7 +18,7 @@ from aea.protocols.generator.base import ProtocolGenerator
 from auto_dev.fmt import Formatter
 from auto_dev.utils import currenttz, get_logger, remove_prefix, camel_to_snake, snake_to_camel
 from auto_dev.constants import DEFAULT_TZ, DEFAULT_ENCODING, JINJA_TEMPLATE_FOLDER
-from auto_dev.protocols.scaffolder import ProtocolScaffolder, read_protocol
+from auto_dev.protocols.scaffolder import ProtocolScaffolder, read_protocol, parse_protobuf_type
 from auto_dev.data.connections.template import HEADER
 
 
@@ -80,6 +80,11 @@ class BehaviourScaffolder(ProtocolScaffolder):
             target_connection=DEFAULT_TARGET_CONNECTION,
         )
         print(raw_classes)
+        for speech_act, data in speech_acts.items():
+            print(speech_act)
+            print(data)
+
+        [parse_protobuf_type(i) for i in raw_classes]
         if self.verbose:
             self.logger.info(f"Generated output: {output}")
 
