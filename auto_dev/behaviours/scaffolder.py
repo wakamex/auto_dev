@@ -52,3 +52,9 @@ class BehaviourScaffolder:
         self.protocol_specification_path = protocol_specification_path
         self.logger.info(f"Read protocol specification: {protocol_specification_path}")
         self.auto_confirm = auto_confirm
+
+    def scaffold(self) -> None:
+        """Scaffold the protocol."""
+        protocol_specification = self._load_protocol_specification()
+        self._generate_protocol(protocol_specification)
+
