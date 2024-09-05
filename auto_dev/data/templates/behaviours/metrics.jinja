@@ -40,8 +40,7 @@ class {{class_name}}MetricGenerator:
         return metrics
 
     {% for method in speech_acts%}
-    def generate_{{method}}(self,
-                            {% for arg in speech_acts[method]%}
+    def generate_{{method}}(self,{% for arg in speech_acts[method]%}
                             {{arg}},{% endfor %}
     ):
         """This method generates a {{method}} metric."""
