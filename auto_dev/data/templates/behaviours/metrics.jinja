@@ -23,6 +23,22 @@
 from packages.eightballer.skills.prometheus.behaviours import PrometheusBehaviour as BaseMetric
 
 
+
+class {{class_name}}MetricGenerator:
+    """This class generates metrics for the {{protocol_name}} protocol."""
+
+    def __init__(self, **kwargs):
+        """Initialize the metric generator."""
+        self.kwargs = kwargs
+
+    def generate_metrics(self):
+        """Generate metrics for the {{protocol_name}} protocol."""
+        metrics = []
+        {% for class in speech_acts %}
+        metrics.append({{class}}(**self.kwargs))
+        {% endfor %}
+        return metrics
+
 {% for class in speech_acts%}
 class {{class}}(BaseMetric):
     """This class represents an instance of {{class}}."""
