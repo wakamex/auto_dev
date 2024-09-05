@@ -39,6 +39,7 @@ README_TEMPLATE = """
 ```
 """
 
+DEFAULT_TARGET_CONNECTION = "eightballer/docker_engine:0.1.0"
 
 class BehaviourScaffolder(ProtocolScaffolder):
     """ProtocolScaffolder."""
@@ -75,6 +76,7 @@ class BehaviourScaffolder(ProtocolScaffolder):
             enums=enums,
             class_name=snake_to_camel(protocol_specification.metadata["name"]),
             speech_acts=speech_acts,
+            target_connection=DEFAULT_TARGET_CONNECTION,
         )
         if self.verbose:
             self.logger.info(f"Generated output: {output}")
