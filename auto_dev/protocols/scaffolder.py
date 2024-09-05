@@ -528,7 +528,7 @@ class ProtocolScaffolder:
             search_line = f"{ct_name}()"
             content = content.replace(search_line, replace_line)
 
-        # We need to inser this at the top of the file just above the first class definition
+        # We need to insert this at the top of the file just above the first class definition
         original_content = content.split("\n")
         new_content = []
         start_line = 0
