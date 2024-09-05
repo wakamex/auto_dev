@@ -24,7 +24,7 @@ from packages.eightballer.skills.prometheus.behaviours import PrometheusBehaviou
 
 
 
-class {{class_name}}MetricGenerator:
+class {{class_name}}MetricsGenerator:
     """This class generates metrics for the {{protocol_name}} protocol."""
 
     def __init__(self, **kwargs):
@@ -43,4 +43,8 @@ class {{class_name}}MetricGenerator:
                             {{arg}},{% endfor %}
     ):
         """This method generates a {{method}} dialogue."""
+        dialogues = self.context.{{protocol_name}}_dialogues
+        message, dialogue = dialogues.create{{method}}(
+            cou
+        )
     {% endfor %}
