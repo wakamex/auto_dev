@@ -24,14 +24,9 @@ from typing import Dict, cast
 import psutil
 from aea.skills.behaviours import TickerBehaviour
 
-from packages.eightballer.skills.prometheus.dialogues import PrometheusDialogues
-from packages.eightballer.protocols.prometheus.message import PrometheusMessage
-from packages.eightballer.connections.prometheus.connection import (
-    PUBLIC_ID as PROM_CONNECTION_ID,
-)
+from packages.eightballer.skills.prometheus.skills import PrometheusBehaviour
 
-
-class Base(TickerBehaviour):
+class Base(PrometheusBehaviour):
     """This class scaffolds a behaviour."""
 
     def setup(self) -> None:
