@@ -444,19 +444,6 @@ class ProtocolScaffolder:
         """
         Ouput the pydantic models to the custom_types.py file.
         """
-        # We now parse the ast of the output,
-        # We want to a couple of things:
-        # 1. get the imports
-        # 2. get the class definitions
-
-        # We will then read in the existing custom_types.py file
-        # and;
-        # 1. update the imports to include the new imports
-        # 2. update the class definitions such that any new classes are added and any existing classes are updated.
-
-        # We will then write the updated content to the custom_types.py file.
-
-        # We will then format the custom_types.py file.
         new_ast = ast.parse(pydantic_output)
         imports = []
         classes = []
