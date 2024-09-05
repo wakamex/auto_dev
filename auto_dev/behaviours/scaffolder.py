@@ -65,6 +65,7 @@ class BehaviourScaffolder(ProtocolScaffolder):
         raw_classes, all_dummy_data, enums = self._get_definition_of_custom_types(protocol=protocol_specification)
 
         speech_acts = protocol_specification.metadata["speech_acts"]
+        print(speech_acts)
 
         output = template.render(
             protocol_name=protocol_specification.metadata["name"],
