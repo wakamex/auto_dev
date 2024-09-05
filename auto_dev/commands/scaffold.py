@@ -206,6 +206,7 @@ def handler(ctx, spec_file, public_id, new_skill, auto_confirm) -> int:
 
 @scaffold.command()
 @click.argument("spec_file", type=click.Path(exists=True), required=True)
+@click.option("-tsa", "--target-speech-acts", default=None, help="Comma separated list of speech acts to scaffold.")
 @click.option("--auto-confirm", is_flag=True, default=False, help="Auto confirm all actions")
 @click.option(
     "--behaviour-type",
@@ -215,7 +216,7 @@ def handler(ctx, spec_file, public_id, new_skill, auto_confirm) -> int:
     default=BehaviourTypes.metrics,
 )
 @click.pass_context
-def behaviour(ctx, spec_file, behaviour_type, auto_confirm) -> int:
+def behaviour(ctx, spec_file, behaviour_type, auto_confirm, target_speech_acts) -> None:
     """
     Generate an AEA handler from an OpenAPI 3 specification.
 
@@ -228,9 +229,12 @@ def behaviour(ctx, spec_file, behaviour_type, auto_confirm) -> int:
     logger = ctx.obj["LOGGER"]
     verbose = ctx.obj["VERBOSE"]
 
-    scaffolder = BehaviourScaffolder(spec_file, behaviour_type, logger, verbose, auto_confirm=auto_confirm)
-    scaffolder.scaffold()
-
+    scaffolder = BehaviourScaffolder(
+        spec_file, behaviour_type=behaviour_type, logger=logger, verbose=verbose, auto_confirm=auto_confirm
+    )
+    scaffolder.scaffold(
+        target_speech_acts=target_speech_acts,
+    )
 
 
 @scaffold.command()

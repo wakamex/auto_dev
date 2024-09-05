@@ -18,6 +18,7 @@ from aea.protocols.generator.base import ProtocolGenerator
 from auto_dev.fmt import Formatter
 from auto_dev.utils import currenttz, get_logger, remove_prefix, camel_to_snake, snake_to_camel
 from auto_dev.constants import DEFAULT_TZ, DEFAULT_ENCODING, JINJA_TEMPLATE_FOLDER
+from auto_dev.exceptions import UserInputError
 from auto_dev.protocols.scaffolder import PROTOBUF_TO_PYTHON, ProtocolScaffolder, read_protocol, parse_protobuf_type
 from auto_dev.data.connections.template import HEADER
 
@@ -42,6 +43,68 @@ README_TEMPLATE = """
 DEFAULT_TARGET_CONNECTION = "eightballer/docker_engine:0.1.0"
 
 
+DEFAULT_TYPE_MAP = {
+    "str": "'string-type'",
+    "int": 8,
+    "float": 8.8,
+    "bool": False,
+    "Dict": {},
+    "List": [],
+    "Optional": None,
+    "Tuple": (),
+}
+
+
+PYTHHON_KEYWORDS = [
+    "None",
+    "False",
+    "True",
+    "and",
+    "as",
+    "assert",
+    "async",
+    "also",
+    "all",
+    "await",
+    "break",
+    "class",
+    "continue",
+    "def",
+    "del",
+    "elif",
+    "else",
+    "except",
+    "finally",
+    "for",
+    "from",
+    "global",
+    "if",
+    "import",
+    "in",
+    "is",
+    "lambda",
+    "nonlocal",
+    "not",
+    "or",
+    "pass",
+    "raise",
+    "return",
+    "try",
+    "while",
+    "with",
+    "yield",
+    "print",
+    "abs",
+    "delattr",
+    "hash",
+    "memoryview",
+    "set",
+    "all",
+    "dict",
+    "max",
+]
+
+
 class BehaviourScaffolder(ProtocolScaffolder):
     """ProtocolScaffolder."""
 
@@ -58,9 +121,9 @@ class BehaviourScaffolder(ProtocolScaffolder):
         self.protocol_specification_path = protocol_specification_path
         self.logger.info(f"Read protocol specification: {protocol_specification_path}")
         self.auto_confirm = auto_confirm
-        self.env = Environment(loader=FileSystemLoader(JINJA_TEMPLATE_FOLDER), autoescape=True)
+        self.env = Environment(loader=FileSystemLoader(JINJA_TEMPLATE_FOLDER), autoescape=False)
 
-    def scaffold(self) -> None:
+    def scaffold(self, target_speech_acts=None) -> None:
         """Scaffold the protocol."""
         template = self.env.get_template(str(Path(self.component_class) / f"{self.behaviour_type.value}.jinja"))
         protocol_specification = read_protocol(self.protocol_specification_path)
@@ -74,11 +137,33 @@ class BehaviourScaffolder(ProtocolScaffolder):
             type_mapp[type] = type[3:]
         # We then collect the speech acts
         # print(raw_classes)
+
+        if not target_speech_acts:
+            target_speech_acts = speech_acts.keys()
+        else:
+            target_speech_acts = target_speech_acts.split(",")
+            failures = []
+            for target in target_speech_acts:
+                if target not in speech_acts:
+                    failures.append(target)
+            if failures:
+                raise UserInputError(
+                    textwrap.dedent(f"""
+                    Speech act {target} not found in the protocol specification. 
+                    Available: {list(speech_acts.keys())}
+                    """)
+                )
         parsed_speech_acts = {}
         for speech_act, data in speech_acts.items():
+            if speech_act not in target_speech_acts:
+                continue
             default_kwargs = {}
-
             for arg, arg_type in data.items():
+                if arg in PYTHHON_KEYWORDS:
+                    self.logger.info(f"Arg: {arg} is a python keyword")
+                    py_arg = f"{arg}_"
+                else:
+                    py_arg = arg
                 py_type = (
                     arg_type.replace("pt:str", "str")
                     .replace("pt:int", "int")
@@ -93,7 +178,13 @@ class BehaviourScaffolder(ProtocolScaffolder):
                 )
                 for ct, pt in type_mapp.items():
                     py_type = py_type.replace(ct, pt)
-                default_kwargs[arg] = py_type
+                if py_type not in DEFAULT_TYPE_MAP:
+                    if py_type.startswith("Optional"):
+                        DEFAULT_TYPE_MAP[py_type] = None
+                    else:
+                        raise ValueError(f"Type {py_type} not found in the default type map.")
+
+                default_kwargs[arg] = (py_type, DEFAULT_TYPE_MAP[py_type], py_arg)
             parsed_speech_acts[speech_act] = default_kwargs
 
         print(parsed_speech_acts)
