@@ -6,6 +6,7 @@ import datetime
 import tempfile
 import textwrap
 import subprocess
+from typing import Any
 from pathlib import Path
 from itertools import starmap
 from collections import namedtuple
@@ -404,7 +405,7 @@ class ProtocolScaffolder:
         # and we only need to generate the data classes
         env = Environment(loader=FileSystemLoader(Path(JINJA_TEMPLATE_FOLDER) / "protocols"), autoescape=True)
 
-        required_type_imports = []
+        required_type_imports = ["Any"]
 
         raw_classes = []
         all_dummy_data = {}
@@ -497,8 +498,6 @@ class ProtocolScaffolder:
         self,
         protocol_path,
         protocol,
-        protocol_author,
-        protocol_name,
     ) -> None:
         """Clean tests."""
         # We need to remove the test files
@@ -541,7 +540,7 @@ class ProtocolScaffolder:
 
         import_defs = textwrap.dedent(
             f"""
-            from packages.{protocol_author}.protocols.{protocol_name}.custom_types import CUSTOM_ENUM_MAP
+            from typing import Any
             """
         )
         function_defs = test_data_loader.split("\n")
