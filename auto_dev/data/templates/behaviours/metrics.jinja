@@ -31,7 +31,7 @@ class {{class_name}}MetricsGenerator(BaseMetric):
 
     def setup(self) -> None:
         """Implement the setup."""
-        self.context.logger.info("setting up AdvancedDataRequestBehaviour")
+        self.context.logger.info("Setting up {{protocol_name}}MetricsGenerator behaviour.")
         prom_dialogues = cast(PrometheusDialogues, self.context.prometheus_dialogues)
         if prom_dialogues.enabled:
             for metric in prom_dialogues.metrics:
