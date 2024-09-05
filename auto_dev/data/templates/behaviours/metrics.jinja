@@ -42,5 +42,5 @@ class {{class_name}}MetricGenerator:
     def generate_{{method}}(self,{% for arg in speech_acts[method]%}
                             {{arg}},{% endfor %}
     ):
-        """This method generates a {{method}} metric."""
+        """This method generates a {{method}} dialogue."""
     {% endfor %}
