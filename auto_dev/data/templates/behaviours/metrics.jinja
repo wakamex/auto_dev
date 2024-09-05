@@ -36,6 +36,7 @@ class {{class_name}}MetricsGenerator(BaseMetric):
     def act(self) -> None:
         """Implement the act."""
         self.context.logger.info("Acting in {{protocol_name}}MetricsGenerator behaviour.")
+        msg = 
 
 
     {% for method in speech_acts%}
@@ -48,4 +49,5 @@ class {{class_name}}MetricsGenerator(BaseMetric):
             {% for arg_name, arg_type in speech_acts[method].items() %}
             {{arg_name}} = ... # {{arg_type}},{% endfor %}
         )
+        self.context.outbox.put_message(message)
     {% endfor %}
