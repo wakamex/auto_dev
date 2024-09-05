@@ -39,7 +39,7 @@ class {{class_name}}MetricGenerator:
         {% endfor %}
         return metrics
 
-{% for class in speech_acts%}
-class {{class}}(BaseMetric):
-    """This class represents an instance of {{class}}."""
-{% endfor %}
+    {% for class in speech_acts%}
+    def {{class}}(BaseMetric):
+        """This class represents an instance of {{class}}."""
+    {% endfor %}
