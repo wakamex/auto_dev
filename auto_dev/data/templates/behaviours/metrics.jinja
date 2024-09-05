@@ -22,23 +22,6 @@
 
 from packages.eightballer.skills.prometheus.behaviours import PrometheusBehaviour as BaseMetric
 
-{% if enums %}
-
-{% for enum in enums %}
-class {{enum}}(BaseMetric):
-    """This class represents an instance of {{enum}}."""
-    {% for field in enum.fields %}
-    {{field.name}}: {{field.type}}
-    {% endfor %}
-{% endfor %}
-{% endif %}
-
-
-# CUSTOM_ENUM_MAP = {
-#         {% for enum in enums %}
-#         "<class '{{protocol_name}}_pb2.{{enum}}'>": {{enum}},{% endfor %}
-#     }
-
 
 {% for class in raw_classes %}
 class {{class.name}}(BaseMetric):
