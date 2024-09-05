@@ -17,11 +17,13 @@ from aea.configurations.constants import DEFAULT_AEA_CONFIG_FILE, PROTOCOL_LANGU
 from aea.configurations.data_types import PublicId
 
 from auto_dev.base import build_cli
-from auto_dev.utils import change_dir, load_aea_ctx, remove_suffix, camel_to_snake
+from auto_dev.enums import BehaviourTypes
+from auto_dev.utils import load_aea_ctx, remove_suffix, camel_to_snake
 from auto_dev.constants import BASE_FSM_SKILLS, DEFAULT_ENCODING, JINJA_TEMPLATE_FOLDER
 from auto_dev.cli_executor import CommandExecutor
-from auto_dev.handler.scaffolder import HandlerScaffolder, HandlerScaffoldBuilder
+from auto_dev.handler.scaffolder import HandlerScaffoldBuilder
 from auto_dev.protocols.scaffolder import ProtocolScaffolder
+from auto_dev.behaviours.scaffolder import BehaviourScaffolder
 from auto_dev.connections.scaffolder import ConnectionScaffolder
 from auto_dev.contracts.block_explorer import BlockExplorer
 from auto_dev.contracts.contract_scafolder import ContractScaffolder
@@ -200,6 +202,33 @@ def handler(ctx, spec_file, public_id, new_skill, auto_confirm) -> int:
     scaffolder.scaffold()
 
     return 0
+
+
+@scaffold.command()
+@click.argument("spec_file", type=click.Path(exists=True), required=True)
+@click.option("--auto-confirm", is_flag=True, default=False, help="Auto confirm all actions")
+@click.option(
+    "--behaviour-type",
+    type=click.Choice([BehaviourTypes.metrics]),
+    required=True,
+    help="The type of behaviour to generate.",
+    default=BehaviourTypes.metrics,
+)
+@click.pass_context
+def behaviour(ctx, spec_file, behaviour_type, auto_confirm) -> int:
+    """
+    Generate an AEA handler from an OpenAPI 3 specification.
+
+    Example:
+    ```
+    adev scaffold behaviour openapi.yaml --behaviour-type metrics
+    ```
+
+    """
+    logger = ctx.obj["LOGGER"]
+    verbose = ctx.obj["VERBOSE"]
+
+    BehaviourScaffolder(spec_file, behaviour_type, logger, verbose, auto_confirm=auto_confirm)
 
 
 @scaffold.command()

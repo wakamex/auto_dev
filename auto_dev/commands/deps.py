@@ -475,7 +475,7 @@ def verify(
 
     click.echo("Verifying poetry dependencies... 📝")
     cmd, poetry_issues = get_update_command(poetry_dependencies)
-    issues.extend(poetry_issues)
+    issues += [poetry_issues]
 
     if issues:
         click.echo(f"Please run the following command to update the poetry dependencies.")

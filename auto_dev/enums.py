@@ -44,3 +44,7 @@ class UserInput(Enum):
     START = "start"
     HELP = "help"
     INFO = "info"
+
+
+class BehaviourTypes:
+    metrics = "metrics"
