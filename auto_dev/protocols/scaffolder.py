@@ -346,7 +346,10 @@ class ProtocolScaffolder:
 
         self.cleanup_protocol(protocol_path, protocol_author, protocol_definition, protocol_name)
         self.generate_pydantic_models(protocol_path, protocol_name, protocol)
-        self.clean_tests(protocol_path, protocol, )
+        self.clean_tests(
+            protocol_path,
+            protocol,
+        )
 
         command = f"aea fingerprint protocol {protocol_author}/{protocol_name}:{protocol_version}"
         result = subprocess.run(command, shell=True, capture_output=True, check=False)
