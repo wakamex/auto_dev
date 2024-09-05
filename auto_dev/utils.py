@@ -129,6 +129,7 @@ def get_paths(path: str | None = None, changed_only: bool = False):
         regexs = [
             "M  ",
             "MM ",
+            "A  ",
         ]
         for regex in regexs:
             if regex in file_path:
