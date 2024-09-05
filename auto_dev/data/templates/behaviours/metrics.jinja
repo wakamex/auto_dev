@@ -34,7 +34,7 @@ class {{class_name}}MetricGenerator:
     def generate_metrics(self):
         """Generate metrics for the {{protocol_name}} protocol."""
         metrics = []
-        {% for class in speech_acts %}metrics.append(self.generate{{class}}(**self.kwargs))
+        {% for class in speech_acts %}metrics.append(self.generate_{{class}}(**self.kwargs))
         {% endfor %}
         return metrics
 
