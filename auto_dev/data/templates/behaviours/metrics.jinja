@@ -33,18 +33,8 @@ class {{enum}}(BaseMetric):
 {% endfor %}
 {% endif %}
 
-{% for class in classes %}
-
-class {{class.name}}(BaseMetric):
-    """This class represents an instance of {{class.name}}."""
-    {% for field in class.fields %}
-    {{field.name}}: {{field.type}}
-    {% endfor %}
-{% endfor %}
-
 
 # CUSTOM_ENUM_MAP = {
 #         {% for enum in enums %}
 #         "<class '{{protocol_name}}_pb2.{{enum}}'>": {{enum}},{% endfor %}
 #     }
-# {% endif %}
