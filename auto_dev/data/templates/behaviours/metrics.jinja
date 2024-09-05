@@ -30,7 +30,7 @@ class {{class_name}}MetricsGenerator:
     def __init__(self, **kwargs):
         """Initialize the metric generator."""
         self.kwargs = kwargs
-        self.counterparty = {{target_connection}}
+        self.counterparty = '{{target_connection}}'
 
     def generate_metrics(self):
         """Generate metrics for the {{protocol_name}} protocol."""
