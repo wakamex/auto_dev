@@ -63,7 +63,8 @@ class BehaviourScaffolder(ProtocolScaffolder):
         template = self.env.get_template(str(Path(self.component_class) / f"{self.behaviour_type.value}.jinja"))
         protocol_specification = read_protocol(self.protocol_specification_path)
         output = template.render(
-            protocol_name=protocol_specification.metadata['name'],
+            protocol_name=protocol_specification.metadata["name"],
+            author=protocol_specification.metadata["author"],
             year=datetime.datetime.now(currenttz()).year,
         )
         if self.verbose:
