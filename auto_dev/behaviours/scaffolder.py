@@ -65,7 +65,6 @@ class BehaviourScaffolder(ProtocolScaffolder):
         raw_classes, all_dummy_data, enums = self._get_definition_of_custom_types(protocol=protocol_specification)
 
         speech_acts = protocol_specification.metadata["speech_acts"]
-        print(speech_acts)
 
         output = template.render(
             protocol_name=protocol_specification.metadata["name"],
@@ -75,7 +74,7 @@ class BehaviourScaffolder(ProtocolScaffolder):
             all_dummy_data=all_dummy_data,
             enums=enums,
             class_name=snake_to_camel(protocol_specification.metadata["name"]),
-            speech_acts=[f for f in speech_acts],
+            speech_acts=speech_acts,
         )
         if self.verbose:
             self.logger.info(f"Generated output: {output}")
