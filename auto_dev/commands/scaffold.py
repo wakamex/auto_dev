@@ -228,7 +228,9 @@ def behaviour(ctx, spec_file, behaviour_type, auto_confirm) -> int:
     logger = ctx.obj["LOGGER"]
     verbose = ctx.obj["VERBOSE"]
 
-    BehaviourScaffolder(spec_file, behaviour_type, logger, verbose, auto_confirm=auto_confirm)
+    scaffolder = BehaviourScaffolder(spec_file, behaviour_type, logger, verbose, auto_confirm=auto_confirm)
+    scaffolder.scaffold()
+
 
 
 @scaffold.command()
