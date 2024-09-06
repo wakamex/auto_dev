@@ -17,7 +17,12 @@ AUTONOMY_PACKAGES_FILE = "packages/packages.json"
 AUTO_DEV_FOLDER = os.path.join(os.path.dirname(__file__))
 PLUGIN_FOLDER = os.path.join(AUTO_DEV_FOLDER, "commands")
 TEMPLATE_FOLDER = os.path.join(AUTO_DEV_FOLDER, "data", "repo", "templates")
-JINJA_TEMPLATE_FOLDER = os.path.join(AUTO_DEV_FOLDER, "data", "templates",)
+JINJA_TEMPLATE_FOLDER = os.path.join(
+    AUTO_DEV_FOLDER,
+    "data",
+    "templates",
+)
+JINJA_CUSTOMS_FOLDER = os.path.join(AUTO_DEV_FOLDER, "data", "templates", "customs")
 
 AEA_CONFIG = get_or_create_cli_config()
 
