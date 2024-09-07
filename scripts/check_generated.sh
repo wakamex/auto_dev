@@ -5,7 +5,7 @@ set -euo pipefail
 echo 'Generating lock files for template repos'
 echo 'doing autonomy'
 REPO_NAME="test_repo"
-poetry run adev repo scaffold $REPO_NAME -t autonomy
+poetry run adev repo scaffold $REPO_NAME -t autonomy --force --auto-approve --no-install
 cd $REPO_NAME
 poetry lock --no-cache && poetry install
 cp poetry.lock ../auto_dev/data/repo/templates/autonomy/
