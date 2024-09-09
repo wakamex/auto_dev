@@ -556,6 +556,16 @@ class ProtocolScaffolder:
         new_content.extend(function_defs)
         new_content.extend(original_content[start_line:])
         content = "\n".join(new_content)
+        # We also make a dummy init file in the tests folder
+        tests_init = protocol_path / "tests" / "__init__.py"
+        tests_init.touch()
+        tests_init.write_text(
+            HEADER.format(
+                author=protocol.metadata["author"],
+                year=datetime.datetime.now(tz=currenttz()).year,
+            ),
+            encoding=DEFAULT_ENCODING,
+        )
 
         tests_path.write_text(content, encoding=DEFAULT_ENCODING)
         Formatter(verbose=False, remote=False).format(tests_path)
