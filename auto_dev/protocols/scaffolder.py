@@ -432,7 +432,7 @@ class ProtocolScaffolder:
 
         required_type_imports = ["Any"]
 
-        raw_classes, all_dummy_data, enums = self._get_definition_of_data_types(protocol, required_type_imports)
+        raw_classes, all_dummy_data, enums = self._get_definition_of_custom_types(protocol, required_type_imports)
 
         # We need to generate the data class
         template = env.get_template("data_class.jinja")

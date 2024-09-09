@@ -54,6 +54,12 @@ DEFAULT_TYPE_MAP = {
     "Tuple": (),
 }
 
+# We now genertae the List[TYPE] and Dict[TYPE, TYPE] types
+for _type in DEFAULT_TYPE_MAP.copy():
+    if _type != "Optional":
+        DEFAULT_TYPE_MAP[f"List[{_type}]"] = []
+        DEFAULT_TYPE_MAP[f"Dict[{_type}, {_type}]"] = {}
+
 
 PYTHHON_KEYWORDS = [
     "None",
@@ -121,23 +127,14 @@ class BehaviourScaffolder(ProtocolScaffolder):
         self.protocol_specification_path = protocol_specification_path
         self.logger.info(f"Read protocol specification: {protocol_specification_path}")
         self.auto_confirm = auto_confirm
-        self.env = Environment(loader=FileSystemLoader(JINJA_TEMPLATE_FOLDER), autoescape=False)
+        self.env = Environment(loader=FileSystemLoader(JINJA_TEMPLATE_FOLDER), autoescape=False)  # noqa
 
-    def scaffold(self, target_speech_acts=None) -> None:
-        """Scaffold the protocol."""
-        template = self.env.get_template(str(Path(self.component_class) / f"{self.behaviour_type.value}.jinja"))
-        protocol_specification = read_protocol(self.protocol_specification_path)
-        raw_classes, all_dummy_data, enums = self._get_definition_of_custom_types(protocol=protocol_specification)
+    @property
+    def template(self) -> Any:
+        """Get the template."""
+        return self.env.get_template(str(Path(self.component_class) / f"{self.behaviour_type.value}.jinja"))
 
-        speech_acts = protocol_specification.metadata["speech_acts"]
-
-        type_mapp = {}
-        for type in protocol_specification.custom_types:
-            self.logger.info(f"Type: {type}")
-            type_mapp[type] = type[3:]
-        # We then collect the speech acts
-        # print(raw_classes)
-
+    def _validate_selection(self, target_speech_acts, speech_acts):
         if not target_speech_acts:
             target_speech_acts = speech_acts.keys()
         else:
@@ -153,42 +150,56 @@ class BehaviourScaffolder(ProtocolScaffolder):
                     Available: {list(speech_acts.keys())}
                     """)
                 )
+        return target_speech_acts
+
+    def scaffold(self, target_speech_acts=None) -> None:
+        """Scaffold the protocol."""
+        protocol_specification = read_protocol(self.protocol_specification_path)
+        raw_classes, all_dummy_data, enums = self._get_definition_of_custom_types(protocol=protocol_specification)
+
+        speech_acts = protocol_specification.metadata["speech_acts"]
+
+        type_map = {}
+        for _type in protocol_specification.custom_types:
+            type_map[_type] = _type[3:]
+            DEFAULT_TYPE_MAP[_type[3:]] = _type[3:]
+
+        target_speech_acts = self._validate_selection(target_speech_acts, speech_acts)
+
         parsed_speech_acts = {}
+        type_imports = set()
+
+        def recursively_extract_all_imports(
+            py_type,
+        ):
+            if py_type in ["str", "int", "float", "bool"]:
+                return
+            if py_type.startswith("List"):
+                type_imports.add("List")
+                recursively_extract_all_imports(py_type[5:-1])
+            elif py_type.startswith("Dict"):
+                # We split the dict into two parts
+                type_imports.add("Dict")
+                key, value = py_type[5:-1].split(", ")
+                recursively_extract_all_imports(key)
+                recursively_extract_all_imports(value)
+            elif py_type.startswith("Optional"):
+                type_imports.add("Optional")
+                recursively_extract_all_imports(py_type[9:-1])
+
         for speech_act, data in speech_acts.items():
             if speech_act not in target_speech_acts:
                 continue
             default_kwargs = {}
             for arg, arg_type in data.items():
-                if arg in PYTHHON_KEYWORDS:
-                    self.logger.info(f"Arg: {arg} is a python keyword")
-                    py_arg = f"{arg}_"
-                else:
-                    py_arg = arg
-                py_type = (
-                    arg_type.replace("pt:str", "str")
-                    .replace("pt:int", "int")
-                    .replace("pt:float", "float")
-                    .replace("pt:bool", "bool")
-                )
-                py_type = (
-                    py_type.replace("pt:dict", "Dict")
-                    .replace("pt:list", "List")
-                    .replace("pt:optional", "Optional")
-                    .replace("pt:tuple", "Tuple")
-                )
-                for ct, pt in type_mapp.items():
-                    py_type = py_type.replace(ct, pt)
-                if py_type not in DEFAULT_TYPE_MAP:
-                    if py_type.startswith("Optional"):
-                        DEFAULT_TYPE_MAP[py_type] = None
-                    else:
-                        raise ValueError(f"Type {py_type} not found in the default type map.")
+                py_arg, py_type = get_py_type_and_args(arg, arg_type, type_map)
+
+                recursively_extract_all_imports(py_type)
 
                 default_kwargs[arg] = (py_type, DEFAULT_TYPE_MAP[py_type], py_arg)
             parsed_speech_acts[speech_act] = default_kwargs
 
-        print(parsed_speech_acts)
-        output = template.render(
+        output = self.template.render(
             protocol_name=protocol_specification.metadata["name"],
             author=protocol_specification.metadata["author"],
             year=datetime.datetime.now(currenttz()).year,
@@ -198,8 +209,9 @@ class BehaviourScaffolder(ProtocolScaffolder):
             class_name=snake_to_camel(protocol_specification.metadata["name"]),
             speech_acts=parsed_speech_acts,
             target_connection=DEFAULT_TARGET_CONNECTION,
+            type_imports=type_imports,
+            roles=protocol_specification.speech_acts["roles"],
         )
-        # We first collect the custom types
         if self.verbose:
             self.logger.info(f"Generated output: {output}")
 
@@ -209,3 +221,34 @@ class BehaviourScaffolder(ProtocolScaffolder):
         """Get the data types."""
         data_types = protocol_specification.custom_types
         return data_types
+
+
+def get_py_type_and_args(arg, arg_type, type_map):
+    """
+    Get the python type and arguments from a protobuf type.
+    """
+    if arg in PYTHHON_KEYWORDS:
+        py_arg = f"{arg}_"
+    else:
+        py_arg = arg
+    py_type = (
+        arg_type.replace("pt:str", "str")
+        .replace("pt:int", "int")
+        .replace("pt:float", "float")
+        .replace("pt:bool", "bool")
+    )
+    py_type = (
+        py_type.replace("pt:dict", "Dict")
+        .replace("pt:list", "List")
+        .replace("pt:optional", "Optional")
+        .replace("pt:tuple", "Tuple")
+    )
+    for ct, pt in type_map.items():
+        py_type = py_type.replace(ct, pt)
+    if py_type not in DEFAULT_TYPE_MAP:
+        if py_type.startswith("Optional"):
+            DEFAULT_TYPE_MAP[py_type] = None
+        else:
+            raise ValueError(f"Type {py_type} not found in the default type map.")
+
+    return py_arg, py_type
