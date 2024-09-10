@@ -8,7 +8,7 @@ from jinja2 import Environment, FileSystemLoader
 from aea.configurations.base import PublicId
 
 from auto_dev.utils import change_dir, get_logger, validate_openapi_spec
-from auto_dev.constants import DEFAULT_ENCODING, JINJA_CUSTOMS_FOLDER
+from auto_dev.constants import DEFAULT_ENCODING, JINJA_TEMPLATE_FOLDER
 from auto_dev.cli_executor import CommandExecutor
 from auto_dev.commands.metadata import read_yaml_file
 
@@ -51,7 +51,7 @@ class HandlerScaffolder:
         self.logger = logger or get_logger()
         self.handler_code = ""
         self.jinja_env = Environment(
-            loader=FileSystemLoader(JINJA_CUSTOMS_FOLDER),
+            loader=FileSystemLoader(JINJA_TEMPLATE_FOLDER / "customs"),
             autoescape=False,  # noqa: S701
         )
 
