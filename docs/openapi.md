@@ -33,3 +33,59 @@ The skill will be created in the skills directory.  The user will be prompted wh
 ```bash
 aea run
 ```
+
+## Augmenting with an OpenAPI Handler
+
+The tools within the `openapi` subcommand are used to augment a customs component with a new handler based on an OpenAPI 3 specification. This process automates the creation of endpoints methods. 
+
+## Prerequisites
+
+1. An OpenAPI 3 specification file with paths defined.
+2. A `component.yaml` file in the current directory that references the OpenAPI specification using the `api_spec` field.
+
+## Steps to Augment a Handler
+
+1. Ensure you have the OpenAPI 3 specification file. You can view its contents using:
+
+```bash
+cat auto_dev/data/openapi/openapi_specification.yaml
+```
+
+2. Create or update the `component.yaml` file to reference the OpenAPI specification using the `api_spec` field.
+
+```yaml
+api_spec: <path_to_openapi_specification.yaml>
+```
+
+3. Run the Handler augmenting command:
+
+```bash
+adev augment customs openapi3
+```
+
+The augmenting process creates the following: 
+
+1. Handler methods: For each path defined in the OpenAPI specification, a corresponding handler method is generated, along with a general handler and resolver method.
+2. Dialogues.py: A boilerplate dialogues file is generated.
+
+## How It Works
+
+The augmentation process involves several steps:
+
+1. Loading and validating the OpenAPI specification
+2. Generating Handler methods for each path
+
+For more details on the implementation, refer to:
+`auto_dev/handler/scaffolder.py`
+
+## Customization
+
+The generated Handler methods use Jinja2 templates for customization. If you need to modify the structure of the generated classes, you can update the templates located in the `JINJA_TEMPLATE_FOLDER`.
+
+## Next Steps
+
+After augmenting your handler:
+
+- Review the generated handler methods in the `handlers.py` file.
+
+Remember to regenerate the Handlers if you make changes to your OpenAPI specification to keep them in sync.
