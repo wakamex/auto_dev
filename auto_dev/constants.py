@@ -22,7 +22,6 @@ JINJA_TEMPLATE_FOLDER = os.path.join(
     "data",
     "templates",
 )
-JINJA_CUSTOMS_FOLDER = os.path.join(AUTO_DEV_FOLDER, "data", "templates", "customs")
 
 AEA_CONFIG = get_or_create_cli_config()
 

@@ -267,24 +267,25 @@ def split_long_comment_lines(code: str, max_line_length: int = 120) -> str:
     return ast.unparse(tree)
 
 
-def parse_protobuf_type(protobuf_type, required_type_imports):
-    """Parse protobuf type into python type."""
-    protobuf_to_python = {
-        "string": "str",
-        "int32": "int",
-        "int64": "int",
-        "float": "float",
-        "bool": "bool",
-    }
+PROTOBUF_TO_PYTHON = {
+    "string": "str",
+    "int32": "int",
+    "int64": "int",
+    "float": "float",
+    "bool": "bool",
+}
 
+
+def parse_protobuf_type(protobuf_type, required_type_imports=[]):
+    """Parse protobuf type into python type."""
     output = {}
 
     if protobuf_type.startswith("repeated"):
         repeated_type = protobuf_type.split()[1]
         attr_name = protobuf_type.split()[2]
         output["name"] = attr_name
-        if repeated_type in protobuf_to_python:
-            output["type"] = f"List[{protobuf_to_python[repeated_type]}] = []"
+        if repeated_type in PROTOBUF_TO_PYTHON:
+            output["type"] = f"List[{PROTOBUF_TO_PYTHON[repeated_type]}] = []"
         else:
             output["type"] = f"List[{repeated_type}] = []"
         required_type_imports.append("List")
@@ -294,14 +295,14 @@ def parse_protobuf_type(protobuf_type, required_type_imports):
         key_type_raw, val_type = key_val_part.split(", ")
         key_type = key_type_raw.split("<")[1]
         output["name"] = attr_name
-        output["type"] = f"Dict[{protobuf_to_python[key_type]}, {protobuf_to_python[val_type]}] = {{}}"
+        output["type"] = f"Dict[{PROTOBUF_TO_PYTHON[key_type]}, {PROTOBUF_TO_PYTHON[val_type]}] = {{}}"
         required_type_imports.append("Dict")
     else:
         _type = protobuf_type.split()[0]
         attr_name = protobuf_type.split()[1]
         output["name"] = attr_name
-        if _type in protobuf_to_python:
-            output["type"] = protobuf_to_python[_type]
+        if _type in PROTOBUF_TO_PYTHON:
+            output["type"] = PROTOBUF_TO_PYTHON[_type]
         else:
             output["type"] = _type
     return output
@@ -346,7 +347,10 @@ class ProtocolScaffolder:
 
         self.cleanup_protocol(protocol_path, protocol_author, protocol_definition, protocol_name)
         self.generate_pydantic_models(protocol_path, protocol_name, protocol)
-        self.clean_tests(protocol_path, protocol, )
+        self.clean_tests(
+            protocol_path,
+            protocol,
+        )
 
         command = f"aea fingerprint protocol {protocol_author}/{protocol_name}:{protocol_version}"
         result = subprocess.run(command, shell=True, capture_output=True, check=False)
@@ -397,21 +401,12 @@ class ProtocolScaffolder:
         updated_content = split_long_comment_lines(content)
         custom_types.write_text(updated_content, encoding=DEFAULT_ENCODING)
 
-    def generate_pydantic_models(self, protocol_path, protocol_name, protocol):
-        """Generate data classes."""
-        # We check if there are any custom types
-        custom_types = protocol.custom_types
-        # We assume the enums are handled correctly,
-        # and we only need to generate the data classes
-        env = Environment(loader=FileSystemLoader(Path(JINJA_TEMPLATE_FOLDER) / "protocols"), autoescape=True)
-
-        required_type_imports = ["Any"]
-
+    def _get_definition_of_custom_types(self, protocol, required_type_imports=["Any"]):
+        """Get the definition of data types."""
         raw_classes = []
         all_dummy_data = {}
         enums = parse_enums(protocol)
-
-        for custom_type, definition in custom_types.items():
+        for custom_type, definition in protocol.custom_types.items():
             if definition.startswith("enum "):
                 continue
             class_data = {
@@ -426,8 +421,20 @@ class ProtocolScaffolder:
             dummy_data = {field["name"]: get_dummy_data(field) for field in class_data["fields"]}
 
             all_dummy_data[class_data["name"]] = dummy_data
+        return raw_classes, all_dummy_data, enums
 
-            # We need to generate the data class
+    def generate_pydantic_models(self, protocol_path, protocol_name, protocol):
+        """Generate data classes."""
+        # We check if there are any custom types
+        # We assume the enums are handled correctly,
+        # and we only need to generate the data classes
+        env = Environment(loader=FileSystemLoader(Path(JINJA_TEMPLATE_FOLDER) / "protocols"), autoescape=True)
+
+        required_type_imports = ["Any"]
+
+        raw_classes, all_dummy_data, enums = self._get_definition_of_custom_types(protocol, required_type_imports)
+
+        # We need to generate the data class
         template = env.get_template("data_class.jinja")
         pydantic_output = template.render(
             classes=raw_classes,

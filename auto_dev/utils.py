@@ -130,8 +130,9 @@ def get_paths(path: str | None = None, changed_only: bool = False):
     def filter_git_interferace_files(file_path: str):
         regexs = [
             "M  ",
-            "MM ",
             "A  ",
+            "MM ",
+            "AM ",
         ]
         for regex in regexs:
             if regex in file_path:
