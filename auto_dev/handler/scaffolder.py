@@ -7,7 +7,7 @@ import yaml
 from jinja2 import Environment, FileSystemLoader
 from aea.configurations.base import PublicId
 
-from auto_dev.utils import change_dir, get_logger
+from auto_dev.utils import change_dir, get_logger, validate_openapi_spec
 from auto_dev.constants import DEFAULT_ENCODING, JINJA_CUSTOMS_FOLDER
 from auto_dev.cli_executor import CommandExecutor
 from auto_dev.commands.metadata import read_yaml_file
@@ -90,6 +90,9 @@ class HandlerScaffolder:
     def generate_handler(self) -> None:
         """Generate handler."""
         openapi_spec = read_yaml_file(self.config.spec_file_path)
+        if not validate_openapi_spec(openapi_spec, self.logger):
+            raise SystemExit(1)
+
         handler_methods = []
 
         for path, path_spec in openapi_spec.get("paths", {}).items():
