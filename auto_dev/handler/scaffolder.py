@@ -51,7 +51,7 @@ class HandlerScaffolder:
         self.logger = logger or get_logger()
         self.handler_code = ""
         self.jinja_env = Environment(
-            loader=FileSystemLoader(JINJA_TEMPLATE_FOLDER / "customs"),
+            loader=FileSystemLoader(Path(JINJA_TEMPLATE_FOLDER) / "customs"),
             autoescape=False,  # noqa: S701
         )
 
