@@ -9,8 +9,8 @@ from contextlib import contextmanager
 
 sys.path.append(str(Path(__file__).parent / "dao"))
 
-{% for dao_class in dao_classes %}
-from {{ dao_class.lower() }} import {{ dao_class }}
+{% for i in range(dao_classes|length) %}
+from {{ dao_file_names[i] }} import {{ dao_classes[i] }}
 {% endfor %}
 
 

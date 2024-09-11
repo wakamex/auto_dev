@@ -8,7 +8,7 @@ import yaml
 from jinja2 import Environment, FileSystemLoader
 
 from auto_dev.enums import FileType
-from auto_dev.utils import write_to_file, read_from_file
+from auto_dev.utils import write_to_file, camel_to_snake, read_from_file
 from auto_dev.constants import JINJA_DAO_FOLDER
 from auto_dev.dao.generator import DAOGenerator
 from auto_dev.dao.dummy_data import generate_dummy_data, generate_single_dummy_data, generate_aggregated_dummy_data
@@ -164,7 +164,8 @@ class DAOScaffolder:
             dao_dir = Path("generated/dao")
             dao_dir.mkdir(parents=True, exist_ok=True)
             for class_name, class_code in dao_classes.items():
-                file_path = dao_dir / f"{class_name.lower()}.py"
+                snake_case_name = camel_to_snake(class_name[:-3]) + "_dao"
+                file_path = dao_dir / f"{snake_case_name}.py"
                 write_to_file(file_path, class_code, FileType.PYTHON)
                 self.logger.info(f"Saved DAO class: {file_path}")
         except OSError as e:
@@ -173,12 +174,17 @@ class DAOScaffolder:
 
     def _generate_and_save_test_script(self, dao_classes: dict[str, str], test_dummy_data: dict[str, Any]) -> None:
         dao_class_names = list(dao_classes.keys())
-        test_script = self._generate_test_script(dao_class_names, test_dummy_data)
+        dao_file_names = [camel_to_snake(class_name[:-3]) + "_dao" for class_name in dao_class_names]
+        test_script = self._generate_test_script(dao_class_names, dao_file_names, test_dummy_data)
         self._save_test_script(test_script)
 
-    def _generate_test_script(self, dao_classes: list[str], test_dummy_data: dict[str, Any]) -> str:
+    def _generate_test_script(self,
+        dao_classes: list[str],
+        dao_file_names: list[str],
+        test_dummy_data: dict[str, Any]
+        ) -> str:
         template = self.env.get_template("test_dao.jinja")
-        return template.render(dao_classes=dao_classes, dummy_data=test_dummy_data)
+        return template.render(dao_classes=dao_classes, dao_file_names=dao_file_names, dummy_data=test_dummy_data)
 
     def _save_test_script(self, test_script: str) -> None:
         test_script_path = Path("generated/test_dao.py")
