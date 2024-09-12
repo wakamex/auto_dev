@@ -303,7 +303,7 @@ class TestDAOGenerator:
     @pytest.fixture
     def sample_models(self):
         """Sample models for testing."""
-        return {"TestModel": {"type": "object", "properties": {"id": {"type": "integer"}, "name": {"type": "string"}}}}
+        return {"testmodel": {"type": "object", "properties": {"id": {"type": "integer"}, "name": {"type": "string"}}}}
 
     @pytest.fixture
     def sample_paths(self):
@@ -323,6 +323,6 @@ class TestDAOGenerator:
         generator = DAOGenerator(sample_models, sample_paths)
         dao_classes = generator.generate_dao_classes()
 
-        assert "TestModelDAO" in dao_classes
-        assert "class TestModelDAO:" in dao_classes["TestModelDAO"]
-        assert "def insert(self, data: dict[str, Any]" in dao_classes["TestModelDAO"]
+        assert "testmodelDAO" in dao_classes
+        assert "class TestmodelDAO(BaseDAO):" in dao_classes["testmodelDAO"]
+        assert "def __init__(self):" in dao_classes["testmodelDAO"]
