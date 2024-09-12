@@ -27,7 +27,7 @@ class DAOGenerator:
         other_model_names = [name for name in self.models if name != model_name]
         properties = model_schema.get("properties", {})
         return self.template.render(
-            model_name=model_name,
+            model_name=model_name.lower(),
             model_schema=model_schema,
             other_model_names=other_model_names,
             properties=properties,

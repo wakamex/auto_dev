@@ -188,18 +188,18 @@ class DAOScaffolder:
             raise
 
     def _generate_and_save_test_script(self, dao_classes: dict[str, str], test_dummy_data: dict[str, Any]) -> None:
-        dao_class_names = list(dao_classes.keys())
-        dao_file_names = [camel_to_snake(class_name[:-3]) + "_dao" for class_name in dao_class_names]
-        test_script = self._generate_test_script(dao_class_names, dao_file_names, test_dummy_data)
+        model_names = [class_name[:-3] for class_name in dao_classes.keys()]
+        dao_file_names = [camel_to_snake(model_name) + "_dao" for model_name in model_names]
+        test_script = self._generate_test_script(model_names, dao_file_names, test_dummy_data)
         self._save_test_script(test_script)
 
     def _generate_test_script(self,
-        dao_classes: list[str],
+        model_names: list[str],
         dao_file_names: list[str],
         test_dummy_data: dict[str, Any]
         ) -> str:
         template = self.env.get_template("test_dao.jinja")
-        return template.render(dao_classes=dao_classes, dao_file_names=dao_file_names, dummy_data=test_dummy_data)
+        return template.render(model_names=model_names, dao_file_names=dao_file_names, dummy_data=test_dummy_data)
 
     def _save_test_script(self, test_script: str) -> None:
         test_script_path = Path("generated/test_dao.py")
