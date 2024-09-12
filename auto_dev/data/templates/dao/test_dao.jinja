@@ -16,13 +16,13 @@ from {{ dao_file_names[i] }} import {{ dao_classes[i] }}
 
 class TestDAOs(unittest.TestCase):
     """Test DAOs."""
-    
+
     @classmethod
     def setUpClass(cls):
         """Setup class-level fixtures."""
         cls.data_file = Path(__file__).parent / "dao" / "aggregated_data.json"
         cls.backup_file = cls.data_file.with_suffix('.json.bak')
-        
+
         # Create a backup of the original file
         cls.data_file.rename(cls.backup_file)
 
@@ -132,5 +132,5 @@ class TestDAOs(unittest.TestCase):
 
     {% endfor %}
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

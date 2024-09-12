@@ -46,6 +46,10 @@ class DAOScaffolder:
             self._save_aggregated_dummy_data(aggregated_dummy_data)
             self._save_dao_classes(dao_classes)
 
+            base_dao_template = self.env.get_template("base_dao.jinja")
+            base_dao_content = base_dao_template.render()
+            self._save_base_dao(base_dao_content)
+
             self.logger.info("DAO scaffolding and test script generation completed successfully.")
         except Exception as e:
             self.logger.exception(f"DAO scaffolding failed: {e!s}")
@@ -170,6 +174,17 @@ class DAOScaffolder:
                 self.logger.info(f"Saved DAO class: {file_path}")
         except OSError as e:
             self.logger.exception(f"Error saving generated files: {e!s}")
+            raise
+
+    def _save_base_dao(self, content: str) -> None:
+        try:
+            dao_dir = Path("generated/dao")
+            dao_dir.mkdir(parents=True, exist_ok=True)
+            file_path = dao_dir / "base_dao.py"
+            write_to_file(file_path, content, FileType.PYTHON)
+            self.logger.info(f"Saved BaseDAO class: {file_path}")
+        except OSError as e:
+            self.logger.exception(f"Error saving BaseDAO class: {e!s}")
             raise
 
     def _generate_and_save_test_script(self, dao_classes: dict[str, str], test_dummy_data: dict[str, Any]) -> None:
