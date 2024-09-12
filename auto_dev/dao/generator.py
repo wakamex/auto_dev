@@ -32,5 +32,5 @@ class DAOGenerator:
             model_schema=model_schema,
             other_model_names=other_model_names,
             properties=properties,
-            base_dao_import="from base_dao import BaseDAO"
+            base_dao_import="from base_dao import BaseDAO",
         )

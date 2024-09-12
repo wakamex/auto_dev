@@ -21,7 +21,10 @@ class DAOScaffolder:
         self.logger = logger
         self.verbose = verbose
         self.env = Environment(
-            loader=FileSystemLoader(Path(JINJA_TEMPLATE_FOLDER, "dao")), autoescape=True, lstrip_blocks=True, trim_blocks=True
+            loader=FileSystemLoader(Path(JINJA_TEMPLATE_FOLDER, "dao")),
+            autoescape=True,
+            lstrip_blocks=True,
+            trim_blocks=True,
         )
         self.component_yaml = Path.cwd() / "component.yaml"
 
@@ -193,11 +196,9 @@ class DAOScaffolder:
         test_script = self._generate_test_script(model_names, dao_file_names, test_dummy_data)
         self._save_test_script(test_script)
 
-    def _generate_test_script(self,
-        model_names: list[str],
-        dao_file_names: list[str],
-        test_dummy_data: dict[str, Any]
-        ) -> str:
+    def _generate_test_script(
+        self, model_names: list[str], dao_file_names: list[str], test_dummy_data: dict[str, Any]
+    ) -> str:
         template = self.env.get_template("test_dao.jinja")
         return template.render(model_names=model_names, dao_file_names=dao_file_names, dummy_data=test_dummy_data)
 
