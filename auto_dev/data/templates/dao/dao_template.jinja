@@ -3,6 +3,7 @@ from typing import Any
 from pathlib import Path
 from dataclasses import field, dataclass
 
+ENCODING = "utf-8"
 
 @dataclass
 class {{ model_name }}DAO:
@@ -20,7 +21,7 @@ class {{ model_name }}DAO:
     def load_data(self) -> None:
         """Load data from the file."""
         try:
-            with open(self.file_name, encoding="utf-8") as f:
+            with open(self.file_name, encoding=ENCODING) as f:
                 self._data = json.load(f)
         except FileNotFoundError:
             self._data = {}
@@ -28,7 +29,7 @@ class {{ model_name }}DAO:
     def _save_data(self) -> None:
         """Save the updated model data to the file."""
         try:
-            with open(self.file_name, encoding="utf-8") as f:
+            with open(self.file_name, encoding=ENCODING) as f:
                 all_data = json.load(f)
         except FileNotFoundError:
             all_data = {}
@@ -39,7 +40,7 @@ class {{ model_name }}DAO:
 
         all_data["{{ model_name }}"] = self._data["{{ model_name }}"]
 
-        with open(self.file_name, "w", encoding="utf-8") as f:
+        with open(self.file_name, "w", encoding=ENCODING) as f:
             json.dump(all_data, f, indent=2)
 
     def insert(self, data: dict[str, Any] | list[dict[str, Any]]) -> None:
