@@ -15,3 +15,7 @@ class NetworkTimeoutError(Exception):
 
 class AuthenticationError(Exception):
     """Authentication error."""
+
+
+class UserInputError(Exception):
+    """User input error."""

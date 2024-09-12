@@ -374,7 +374,7 @@ open_aea_repo = GitDependency(
 
 auto_dev_repo = GitDependency(
     name="autonomy-dev",
-    version="0.2.73",
+    version="0.2.75",
     location=DependencyLocation.REMOTE,
     url="https://api.github.com/repos/8ball030/auto_dev",
     extras=["all"],
@@ -476,7 +476,7 @@ def verify(
 
     click.echo("Verifying poetry dependencies... 📝")
     cmd, poetry_issues = get_update_command(poetry_dependencies)
-    issues.extend(poetry_issues)
+    issues += [poetry_issues]
 
     if issues:
         click.echo(f"Please run the following command to update the poetry dependencies.")

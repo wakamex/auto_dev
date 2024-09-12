@@ -17,15 +17,20 @@ from aea.configurations.constants import DEFAULT_AEA_CONFIG_FILE, PROTOCOL_LANGU
 from aea.configurations.data_types import PublicId
 
 from auto_dev.base import build_cli
+from auto_dev.enums import BehaviourTypes
 from auto_dev.utils import load_aea_ctx, remove_suffix, camel_to_snake
-from auto_dev.constants import BASE_FSM_SKILLS, DEFAULT_ENCODING, JINJA_TEST_CUSTOM_FOLDER
+from auto_dev.constants import BASE_FSM_SKILLS, DEFAULT_ENCODING, JINJA_TEMPLATE_FOLDER
 from auto_dev.cli_executor import CommandExecutor
-from auto_dev.handler.scaffolder import HandlerScaffolder, HandlerScaffoldBuilder
+from auto_dev.handlers.base import HandlerTypes, HandlerScaffolder
+from auto_dev.dao.scaffolder import DAOScaffolder
+from auto_dev.handler.scaffolder import HandlerScaffoldBuilder
+from auto_dev.dialogues.scaffolder import DialogueTypes, DialogueScaffolder
 from auto_dev.protocols.scaffolder import ProtocolScaffolder
+from auto_dev.behaviours.scaffolder import BehaviourScaffolder
 from auto_dev.connections.scaffolder import ConnectionScaffolder
 from auto_dev.contracts.block_explorer import BlockExplorer
 from auto_dev.contracts.contract_scafolder import ContractScaffolder
-from auto_dev.dao.scaffolder import DAOScaffolder
+
 
 cli = build_cli()
 
@@ -203,6 +208,105 @@ def handler(ctx, spec_file, public_id, new_skill, auto_confirm) -> int:
 
 
 @scaffold.command()
+@click.argument("spec_file", type=click.Path(exists=True), required=True)
+@click.option("-tsa", "--target-speech-acts", default=None, help="Comma separated list of speech acts to scaffold.")
+@click.option("--auto-confirm", is_flag=True, default=False, help="Auto confirm all actions")
+@click.option(
+    "--behaviour-type",
+    type=click.Choice([BehaviourTypes.metrics]),
+    required=True,
+    help="The type of behaviour to generate.",
+    default=BehaviourTypes.metrics,
+)
+@click.pass_context
+def behaviour(ctx, spec_file, behaviour_type, auto_confirm, target_speech_acts) -> None:
+    """
+    Generate an AEA handler from an OpenAPI 3 specification.
+
+    Example:
+    ```
+    adev scaffold behaviour openapi.yaml --behaviour-type metrics
+    ```
+
+    """
+    logger = ctx.obj["LOGGER"]
+    verbose = ctx.obj["VERBOSE"]
+
+    scaffolder = BehaviourScaffolder(
+        spec_file, behaviour_type=behaviour_type, logger=logger, verbose=verbose, auto_confirm=auto_confirm
+    )
+    scaffolder.scaffold(
+        target_speech_acts=target_speech_acts,
+    )
+
+
+@scaffold.command()
+@click.argument("spec_file", type=click.Path(exists=True), required=True)
+@click.option("-tsa", "--target-speech-acts", default=None, help="Comma separated list of speech acts to scaffold.")
+@click.option("--auto-confirm", is_flag=True, default=False, help="Auto confirm all actions")
+@click.option(
+    "--handler_type",
+    type=click.Choice([HandlerTypes.simple]),
+    required=True,
+    help="The type of behaviour to generate.",
+    default=HandlerTypes.simple,
+)
+@click.pass_context
+def handlers(ctx, spec_file, handler_type, auto_confirm, target_speech_acts) -> None:
+    """
+    Generate an AEA handler from an OpenAPI 3 specification.
+
+    Example:
+    ```
+    adev scaffold behaviour openapi.yaml --behaviour-type metrics
+    ```
+
+    """
+    logger = ctx.obj["LOGGER"]
+    verbose = ctx.obj["VERBOSE"]
+
+    scaffolder = HandlerScaffolder(
+        spec_file, handler_type=handler_type, logger=logger, verbose=verbose, auto_confirm=auto_confirm
+    )
+    scaffolder.scaffold(
+        target_speech_acts=target_speech_acts,
+    )
+
+
+@scaffold.command()
+@click.argument("spec_file", type=click.Path(exists=True), required=True)
+@click.option("-tsa", "--target-speech-acts", default=None, help="Comma separated list of speech acts to scaffold.")
+@click.option("--auto-confirm", is_flag=True, default=False, help="Auto confirm all actions")
+@click.option(
+    "--dialogue-type",
+    type=click.Choice([DialogueTypes.simple]),
+    required=True,
+    help="The type of behaviour to generate.",
+    default=DialogueTypes.simple,
+)
+@click.pass_context
+def dialogues(ctx, spec_file, dialogue_type, auto_confirm, target_speech_acts) -> None:
+    """
+    Generate an AEA handler from an OpenAPI 3 specification.
+
+    Example:
+    ```
+    adev scaffold behaviour openapi.yaml --behaviour-type metrics
+    ```
+
+    """
+    logger = ctx.obj["LOGGER"]
+    verbose = ctx.obj["VERBOSE"]
+
+    scaffolder = DialogueScaffolder(
+        spec_file, dialogue_type=dialogue_type, logger=logger, verbose=verbose, auto_confirm=auto_confirm
+    )
+    scaffolder.scaffold(
+        target_speech_acts=target_speech_acts,
+    )
+
+
+@scaffold.command()
 @click.pass_context
 def tests(
     ctx,
@@ -212,7 +316,7 @@ def tests(
     """
     logger = ctx.obj["LOGGER"]
     verbose = ctx.obj["VERBOSE"]
-    env = Environment(loader=FileSystemLoader(JINJA_TEST_CUSTOM_FOLDER), autoescape=True)
+    env = Environment(loader=FileSystemLoader(Path(JINJA_TEMPLATE_FOLDER, "tests", "customs")), autoescape=True)
     template = env.get_template("test_custom.jinja")
     output = template.render(
         name="test",

@@ -62,7 +62,7 @@ class Formatter:
 
     @staticmethod
     def run_sort(path, verbose=False):
-        """Run isort on the path."""
+        """Run sort on the path."""
         command = CommandExecutor(
             [
                 "poetry",

@@ -17,7 +17,7 @@ from auto_dev.utils import get_logger, write_to_file, folder_swapper
 from auto_dev.constants import AEA_CONFIG, DEFAULT_ENCODING
 from auto_dev.cli_executor import CommandExecutor
 from auto_dev.protocols.scaffolder import ProtocolSpecification, read_protocol
-from auto_dev.data.connections.template import CONNECTION_TEMPLATE
+from auto_dev.data.connections.template import HEADER, CONNECTION_TEMPLATE
 from auto_dev.data.connections.test_template import TEST_CONNECTION_TEMPLATE
 
 
@@ -131,6 +131,7 @@ class ConnectionFolderTemplate:  # pylint: disable=R0902  # Too many instance at
         self.yaml = yaml.safe_load_all(self.path / "connection.yaml")
         self.tests = self.path / "tests"
         self.test_connection = self.tests / "test_connection.py"
+        self.test_connection_init = self.tests / "__init__.py"
 
     @property
     def kwargs(self) -> dict:
@@ -162,13 +163,16 @@ class ConnectionFolderTemplate:  # pylint: disable=R0902  # Too many instance at
     def augment(self) -> None:
         """(Over)write the connection files."""
         self.tests.mkdir()
-        (self.tests / "__init__.py").touch()
 
         doc = "".join(part.format(**self.kwargs) + "\n" for part in CONNECTION_TEMPLATE)
         self.connection.write_text(doc)
 
         doc = "".join(part.format(**self.kwargs) + "\n" for part in TEST_CONNECTION_TEMPLATE)
         self.test_connection.write_text(doc)
+
+        doc = "".join(part.format(**self.kwargs) + "\n" for part in HEADER)
+        self.test_connection_init = self.tests / "__init__.py"
+        self.test_connection_init.write_text(doc)
 
 
 class ConnectionScaffolder:
@@ -179,8 +183,14 @@ class ConnectionScaffolder:
         # `aea add protocol`, currently works only with `adev scaffold protocol crud_protocol.yaml`
         protocol_specification_path = Path("protocols") / protocol_id.name / "README.md"
         if not protocol_specification_path.exists():
-            msg = f"{protocol_specification_path} not found."
-            raise click.ClickException(msg)
+            msg = f"{protocol_specification_path} not found. Checking vendor..."
+            click.secho(msg, fg="yellow")
+            protocol_specification_path = (
+                Path("vendor") / protocol_id.author / "protocols" / protocol_id.name / "README.md"
+            )
+            if not protocol_specification_path.exists():
+                msg = f"{protocol_specification_path} not found."
+                raise click.ClickException(msg)
 
         self.ctx = ctx
         self.name = name
