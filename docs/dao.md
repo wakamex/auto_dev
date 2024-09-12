@@ -63,7 +63,7 @@ For more details on the implementation, refer to:
 
 ## Customization
 
-The generated DAO classes use Jinja2 templates for customization. If you need to modify the structure of the generated classes, you can update the templates located in the `JINJA_DAO_FOLDER`.
+The generated DAO classes use Jinja2 templates for customization. If you need to modify the structure of the generated classes, you can update the templates located in the `auto_dev/data/templates/dao` directory.
 
 ## Error Handling
 

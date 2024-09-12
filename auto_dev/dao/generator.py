@@ -4,7 +4,8 @@ from typing import Any
 
 from jinja2 import Environment, FileSystemLoader
 
-from auto_dev.constants import JINJA_DAO_FOLDER
+from auto_dev.utils import Path
+from auto_dev.constants import JINJA_TEMPLATE_FOLDER
 
 
 class DAOGenerator:
@@ -13,7 +14,7 @@ class DAOGenerator:
     def __init__(self, models: dict[str, Any], paths: dict[str, Any]):
         self.models = models
         self.paths = paths
-        self.env = Environment(loader=FileSystemLoader(JINJA_DAO_FOLDER), autoescape=True)
+        self.env = Environment(loader=FileSystemLoader(Path(JINJA_TEMPLATE_FOLDER, "dao")), autoescape=True)
         self.template = self.env.get_template("dao_template.jinja")
 
     def generate_dao_classes(self) -> dict[str, str]:

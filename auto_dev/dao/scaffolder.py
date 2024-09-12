@@ -9,7 +9,7 @@ from jinja2 import Environment, FileSystemLoader
 
 from auto_dev.enums import FileType
 from auto_dev.utils import write_to_file, camel_to_snake, read_from_file
-from auto_dev.constants import JINJA_DAO_FOLDER
+from auto_dev.constants import JINJA_TEMPLATE_FOLDER
 from auto_dev.dao.generator import DAOGenerator
 from auto_dev.dao.dummy_data import generate_dummy_data, generate_single_dummy_data, generate_aggregated_dummy_data
 
@@ -21,7 +21,7 @@ class DAOScaffolder:
         self.logger = logger
         self.verbose = verbose
         self.env = Environment(
-            loader=FileSystemLoader(JINJA_DAO_FOLDER), autoescape=True, lstrip_blocks=True, trim_blocks=True
+            loader=FileSystemLoader(Path(JINJA_TEMPLATE_FOLDER, "dao")), autoescape=True, lstrip_blocks=True, trim_blocks=True
         )
         self.component_yaml = Path.cwd() / "component.yaml"
 
