@@ -263,8 +263,12 @@ class TestDAOScaffolder:
     @patch("auto_dev.dao.scaffolder.Path")
     @patch("auto_dev.dao.scaffolder.read_from_file")
     @patch("auto_dev.dao.scaffolder.write_to_file")
-    def test_dao_scaffolder_scaffold(self, mock_write, mock_read, mock_path, mock_logger):
+    @patch("auto_dev.dao.scaffolder.Environment")
+    def test_dao_scaffolder_scaffold(self, mock_env, mock_write, mock_read, mock_path, mock_logger):
         """Test DAOScaffolder scaffold method."""
+        mock_env_instance = MagicMock()
+        mock_env.return_value = mock_env_instance
+        # ... rest of the test setup ...
 
         mock_component_yaml = MagicMock()
         mock_component_yaml.exists.return_value = True

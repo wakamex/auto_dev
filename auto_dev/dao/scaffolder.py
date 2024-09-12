@@ -43,7 +43,6 @@ class DAOScaffolder:
             test_dummy_data = self._generate_single_dummy_data(models)
 
             dao_classes = self._generate_dao_classes(models, paths)
-
             self._generate_and_save_test_script(dao_classes, test_dummy_data)
 
             self._save_aggregated_dummy_data(aggregated_dummy_data)
