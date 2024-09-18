@@ -72,9 +72,14 @@ class BaseDAO:
 
     def get_by_id(self, hashmap_key: str) -> dict[str, Any] | None:
         """Get an item by id."""
-        if hashmap_key in self._data[self.model_name]:
-            return self._data[self.model_name][hashmap_key]
-        return None
+        item = self._data[self.model_name].get(hashmap_key)
+
+        if item is None:
+            for value in self._data[self.model_name].values():
+                if str(value.get("id")) == hashmap_key:
+                    return value
+
+        return item
 
     def filter_items(self, **kwargs) -> list[dict[str, Any]]:
         """Filter items by the given criteria."""
