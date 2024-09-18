@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # ------------------------------------------------------------------------------
 #
 #   Copyright 2024 {{ author }}
@@ -19,26 +18,25 @@
 
 """This package contains a scaffold of a handler."""
 
+import re
 from typing import Optional, cast
 
 from aea.skills.base import Handler
 from aea.protocols.base import Message
-from packages.eightballer.protocols.http.message import HttpMessage
+from packages.eightballer.protocols.http.message import HttpMessage as ApiHttpMessage
 from packages.{{ author }}.skills.{{ skill_name }}.strategy import Strategy
 from packages.{{ author }}.skills.{{ skill_name }}.dialogues import HttpDialogue
 
 
-class HttpHandler(Handler):
-    """Implements the HTTP handler."""
+class ApiHttpHandler(Handler):
+    """Implements the API HTTP handler."""
 
-    SUPPORTED_PROTOCOL = HttpMessage.protocol_id  # type: Optional[str]
+    SUPPORTED_PROTOCOL = ApiHttpMessage.protocol_id  # type: Optional[str]
 
     def setup(self) -> None:
         """Set up the handler."""
-        self.strategy = cast(Strategy, self.context.strategy)
 
     def teardown(self) -> None:
         """Tear down the handler."""
-        pass
 
 

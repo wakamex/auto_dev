@@ -1,24 +1,24 @@
-    def handle(self, message: HttpMessage) -> None:
-        """Handle incoming HTTP messages."""
+    def handle(self, message: ApiHttpMessage) -> None:
+        """Handle incoming API HTTP messages."""
         method = message.method.lower()
         url = message.url
         body = message.body
 
-        path_parts = url.split("/")
-        path = "/" + "/".join(path_parts[1:])
+        path = "/" + "/".join(url.split("/")[3:])
 
-        if "{{ '{{' }}" in path:
-            id_index = path_parts.index([part for part in path_parts if "{{ '{{' }}" in part][0])
-            id = path_parts[id_index]
-            path = "/" + "/".join(path_parts[1:id_index] + ["{{ '{{' }}" + path_parts[id_index][1:-1] + "{{ '}}' }}"] + path_parts[id_index + 1:])
+        normalized_path = path.rstrip("/")
+        normalized_path = re.sub(r"/(\d+)(?=/|$)", "/userid", normalized_path)
 
-        handler_method = getattr(self, f"handle_{method.lower()}_{path.lstrip('/').replace('/', '_').replace('{{ '{{' }}', '').replace('{{ '}}' }}', '')}", None)
+        handler_name = f"handle_{method}_{normalized_path.lstrip('/').replace('/', '_')}"
+        handler_method = getattr(self, handler_name, None)
 
         if handler_method:
-            kwargs = {"body": body} if method.lower() in {"post", "put", "patch", "delete"} else {}
-            if "{{ '{{' }}" in path:
-                kwargs["id"] = id
-            return handler_method(**kwargs)
+            kwargs = {"body": body} if method in {"post", "put", "patch", "delete"} else {}
+            id_match = re.search(r"/(\d+)(?=/|$)", path)
+            if id_match:
+                kwargs["user_id"] = id_match.group(1)
+
+            return handler_method(message, **kwargs)
 
         return self.handle_unexpected_message(message)
 
