@@ -93,6 +93,10 @@ class HandlerScaffolder:
         if not validate_openapi_spec(openapi_spec, self.logger):
             raise SystemExit(1)
 
+        if not all(path.startswith("/api") for path in openapi_spec.get("paths", {})):
+            self.logger.error("All paths in the OpenAPI spec must start with '/api'")
+            raise SystemExit(1)
+
         handler_methods = []
 
         for path, path_spec in openapi_spec.get("paths", {}).items():
