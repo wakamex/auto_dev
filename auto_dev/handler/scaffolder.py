@@ -130,8 +130,14 @@ class HandlerScaffolder:
         main_handler_template = self.jinja_env.get_template("main_handler.jinja")
         unexpected_message_handler_template = self.jinja_env.get_template("unexpected_message_handler.jinja")
 
+        path_params = set()
+        for path in openapi_spec.get("paths", {}):
+            path_params.update(re.findall(r"\{(\w+)\}", path))
+
         main_handler = main_handler_template.render(
-            all_methods=all_methods, unexpected_message_handler=unexpected_message_handler_template.render()
+            all_methods=all_methods,
+            unexpected_message_handler=unexpected_message_handler_template.render(),
+            path_params=path_params
         )
 
         handler_code += main_handler

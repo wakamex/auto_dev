@@ -7,17 +7,19 @@
         path = "/" + "/".join(url.split("/")[3:])
 
         normalized_path = path.rstrip("/")
-        normalized_path = re.sub(r"/(\d+)(?=/|$)", "/userid", normalized_path)
-
+{% for param in path_params %}
+        normalized_path = re.sub(r"/(\d+)(?=/|$)", "/{{ param }}", normalized_path)
+{% endfor %}
         handler_name = f"handle_{method}_{normalized_path.lstrip('/').replace('/', '_')}"
         handler_method = getattr(self, handler_name, None)
 
         if handler_method:
             kwargs = {"body": body} if method in {"post", "put", "patch", "delete"} else {}
-            id_match = re.search(r"/(\d+)(?=/|$)", path)
-            if id_match:
-                kwargs["user_id"] = id_match.group(1)
-
+{% for param in path_params %}
+            {{ param }}_match = re.search(r"/(\d+)(?=/|$)", path)
+            if {{ param }}_match:
+                kwargs["{{ param }}"] = {{ param }}_match.group(1)
+{% endfor %}
             return handler_method(message, **kwargs)
 
         return self.handle_unexpected_message(message)
