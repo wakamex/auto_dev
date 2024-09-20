@@ -1,10 +1,9 @@
     def handle(self, message: ApiHttpMessage) -> None:
         """Handle incoming API HTTP messages."""
         method = message.method.lower()
-        url = message.url
+        parsed_url = urlparse(unquote(message.url))
+        path = parsed_url.path
         body = message.body
-
-        path = "/" + "/".join(url.split("/")[3:])
 
         normalized_path = path.rstrip("/")
 {% for param in path_params %}

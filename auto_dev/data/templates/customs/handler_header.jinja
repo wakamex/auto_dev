@@ -20,6 +20,7 @@
 
 import re
 from typing import Optional, cast
+from urllib.parse import unquote, urlparse
 
 from aea.skills.base import Handler
 from aea.protocols.base import Message
