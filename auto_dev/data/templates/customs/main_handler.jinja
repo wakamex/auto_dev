@@ -1,24 +1,28 @@
-    def handle(self, message: HttpMessage) -> None:
-        """Handle incoming HTTP messages."""
+    def handle(self, message: ApiHttpMessage) -> None:
+        """Handle incoming API HTTP messages."""
         method = message.method.lower()
-        url = message.url
+        parsed_url = urlparse(unquote(message.url))
+        path = parsed_url.path
         body = message.body
 
-        path_parts = url.split("/")
-        path = "/" + "/".join(path_parts[1:])
-
-        if "{{ '{{' }}" in path:
-            id_index = path_parts.index([part for part in path_parts if "{{ '{{' }}" in part][0])
-            id = path_parts[id_index]
-            path = "/" + "/".join(path_parts[1:id_index] + ["{{ '{{' }}" + path_parts[id_index][1:-1] + "{{ '}}' }}"] + path_parts[id_index + 1:])
-
-        handler_method = getattr(self, f"handle_{method.lower()}_{path.lstrip('/').replace('/', '_').replace('{{ '{{' }}', '').replace('{{ '}}' }}', '')}", None)
+        normalized_path = path.rstrip("/")
+{% for param in path_params %}
+        normalized_path = re.sub(r"/(\d+)(?=/|$)", "/{{ param }}", normalized_path)
+{% endfor %}
+        handler_name = f"handle_{method}_{normalized_path.lstrip('/').replace('/', '_')}"
+{% for param in path_params %}
+        handler_name = handler_name.replace("{{ param }}", "by_{{ param }}")
+{% endfor %}
+        handler_method = getattr(self, handler_name, None)
 
         if handler_method:
-            kwargs = {"body": body} if method.lower() in {"post", "put", "patch", "delete"} else {}
-            if "{{ '{{' }}" in path:
-                kwargs["id"] = id
-            return handler_method(**kwargs)
+            kwargs = {"body": body} if method in {"post", "put", "patch", "delete"} else {}
+{% for param in path_params %}
+            {{ param }}_match = re.search(r"/(\d+)(?=/|$)", path)
+            if {{ param }}_match:
+                kwargs["{{ param }}"] = {{ param }}_match.group(1)
+{% endfor %}
+            return handler_method(message, **kwargs)
 
         return self.handle_unexpected_message(message)
 

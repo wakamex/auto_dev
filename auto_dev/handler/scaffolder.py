@@ -1,6 +1,7 @@
 """Handler scaffolder."""
 # ruff: noqa: E501
 
+import re
 from pathlib import Path
 
 import yaml
@@ -101,11 +102,7 @@ class HandlerScaffolder:
 
         for path, path_spec in openapi_spec.get("paths", {}).items():
             for method in path_spec:
-                method_name = f"handle_{method.lower()}" + (
-                    f"_{path.lstrip('/').replace('/', '_').replace('{', '').replace('}', '').replace('-', '_')}"
-                    if path != "/"
-                    else ""
-                )
+                method_name = self.generate_method_name(method, path)
                 params = []
 
                 path_params = [
@@ -133,12 +130,34 @@ class HandlerScaffolder:
         main_handler_template = self.jinja_env.get_template("main_handler.jinja")
         unexpected_message_handler_template = self.jinja_env.get_template("unexpected_message_handler.jinja")
 
+        path_params = set()
+        for path in openapi_spec.get("paths", {}):
+            path_params.update(re.findall(r"\{(\w+)\}", path))
+
         main_handler = main_handler_template.render(
-            all_methods=all_methods, unexpected_message_handler=unexpected_message_handler_template.render()
+            all_methods=all_methods,
+            unexpected_message_handler=unexpected_message_handler_template.render(),
+            path_params=path_params,
         )
 
         handler_code += main_handler
         return handler_code
+
+    def generate_method_name(self, http_method, path):
+        """Generate method name."""
+        method_name = "handle_" + http_method.lower()
+        parts = [part for part in path.strip("/").split("/") if part]
+        name_parts = []
+        for part in parts:
+            if part.startswith("{") and part.endswith("}"):
+                param_name = part.strip("{}")
+                param_name = self.sanitize_identifier(param_name)
+                name_parts.append("by_" + param_name)
+            else:
+                part_name = self.sanitize_identifier(part)
+                name_parts.append(part_name)
+        method_name += "_" + "_".join(name_parts)
+        return method_name
 
     def save_handler(self, path) -> None:
         """Save handler to file."""
@@ -273,6 +292,13 @@ class HandlerScaffolder:
                 return False
 
         return True
+
+    def sanitize_identifier(self, name: str) -> str:
+        """Sanitize the identifier."""
+        name = re.sub(r"[^0-9a-zA-Z_]", "_", name)
+        if name and name[0].isdigit():
+            name = "_" + name
+        return name.lower()
 
 
 class HandlerScaffoldBuilder:

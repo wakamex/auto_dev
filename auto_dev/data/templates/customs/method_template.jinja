@@ -1,4 +1,4 @@
-    def {{ method_name }}({{ param_str }}):
+    def {{ method_name }}({{ param_str }}, message: ApiHttpMessage):
         {% raw %}"""{% endraw %}Handle {{ method|upper }} request for {{ path }}.{% raw %}"""{% endraw %}
         # TODO: Implement {{ method|upper }} logic for {{ path }}
         raise NotImplementedError
