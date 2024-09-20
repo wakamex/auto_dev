@@ -11,6 +11,9 @@
         normalized_path = re.sub(r"/(\d+)(?=/|$)", "/{{ param }}", normalized_path)
 {% endfor %}
         handler_name = f"handle_{method}_{normalized_path.lstrip('/').replace('/', '_')}"
+{% for param in path_params %}
+        handler_name = handler_name.replace("{{ param }}", "by_{{ param }}")
+{% endfor %}
         handler_method = getattr(self, handler_name, None)
 
         if handler_method:
