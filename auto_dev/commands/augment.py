@@ -303,14 +303,18 @@ def customs(ctx, component_type, auto_confirm):
     component_name = customs_config.get("name")
     public_id = PublicId(component_author, component_name.split(":")[0])
 
-    scaffolder = HandlerScaffoldBuilder().create_scaffolder(
-        api_spec_path,
-        public_id,
-        logger,
-        verbose,
-        new_skill=False,
-        auto_confirm=auto_confirm,
-        ).build()
+    scaffolder = (
+        HandlerScaffoldBuilder()
+        .create_scaffolder(
+            api_spec_path,
+            public_id,
+            logger,
+            verbose,
+            new_skill=False,
+            auto_confirm=auto_confirm,
+        )
+        .build()
+    )
 
     handler_code = scaffolder.generate_handler()
 
@@ -323,7 +327,7 @@ def customs(ctx, component_type, auto_confirm):
                 existing_handler_code.splitlines(keepends=True),
                 handler_code.splitlines(keepends=True),
                 fromfile="existing",
-                tofile="new"
+                tofile="new",
             )
             logger.info("Differences in handlers.py:")
             logger.info("".join(diff))

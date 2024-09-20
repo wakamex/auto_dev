@@ -137,7 +137,7 @@ class HandlerScaffolder:
         main_handler = main_handler_template.render(
             all_methods=all_methods,
             unexpected_message_handler=unexpected_message_handler_template.render(),
-            path_params=path_params
+            path_params=path_params,
         )
 
         handler_code += main_handler
