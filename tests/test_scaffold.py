@@ -3,15 +3,19 @@
 import sys
 import subprocess
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 import yaml
 import pytest
+from jinja2 import Environment
 from aea.cli import cli as aea_cli
 from aea.configurations.base import PublicId
 
 from auto_dev.cli import cli
 from auto_dev.utils import get_logger
 from auto_dev.constants import DEFAULT_ENCODING
+from auto_dev.dao.generator import DAOGenerator
+from auto_dev.dao.scaffolder import DAOScaffolder
 from auto_dev.handler.scaffolder import HandlerScaffoldBuilder
 from auto_dev.protocols.scaffolder import read_protocol
 
@@ -20,10 +24,10 @@ FSM_SPEC = Path("auto_dev/data/fsm/fsm_specification.yaml").absolute()
 
 
 class Mockers:
-    """Class containing mock objects for testing"""
+    """Class containing mock objects for testing."""
 
     class MockRunner:
-        """Mock runner for testing scaffold commands"""
+        """Mock runner for testing scaffold commands."""
 
         def __init__(self):
             self.return_code = 0
@@ -94,7 +98,7 @@ def test_scaffold_protocol(cli_runner, dummy_agent_tim, caplog):
 
 
 def test_scaffold_handler(dummy_agent_tim, openapi_test_case):
-    """Test scaffold handler"""
+    """Test scaffold handler."""
 
     openapi_file, expected_handlers = openapi_test_case
     openapi_spec_path, public_id = prepare_scaffold_inputs(openapi_file, dummy_agent_tim)
@@ -123,7 +127,7 @@ def prepare_scaffold_inputs(openapi_file, dummy_agent_tim):
 
 
 def run_scaffold_command(openapi_spec_path, public_id, new_skill, auto_confirm):
-    """Run scaffold command"""
+    """Run scaffold command."""
     logger = get_logger()
     verbose = True
 
@@ -239,3 +243,90 @@ class TestScaffoldConnection:
         for path in (connection_path, test_connection_path):
             result = subprocess.run([sys.executable, path], shell=True, check=True, capture_output=True)
             assert result.returncode == 0, result.stderr
+
+
+class TestDAOScaffolder:
+    """Test DAOScaffolder class."""
+
+    @pytest.fixture
+    def mock_logger(self):
+        """Mock logger for testing."""
+        return MagicMock()
+
+    def test_dao_scaffolder_initialization(self, mock_logger):
+        """Test DAOScaffolder initialization."""
+        scaffolder = DAOScaffolder(mock_logger, verbose=True)
+        assert scaffolder.logger == mock_logger
+        assert scaffolder.verbose is True
+        assert isinstance(scaffolder.env, Environment)
+
+    @patch("auto_dev.dao.scaffolder.Path")
+    @patch("auto_dev.dao.scaffolder.read_from_file")
+    @patch("auto_dev.dao.scaffolder.write_to_file")
+    @patch("auto_dev.dao.scaffolder.Environment")
+    def test_dao_scaffolder_scaffold(self, mock_env, mock_write, mock_read, mock_path, mock_logger):
+        """Test DAOScaffolder scaffold method."""
+        mock_env_instance = MagicMock()
+        mock_env.return_value = mock_env_instance
+        # ... rest of the test setup ...
+
+        mock_component_yaml = MagicMock()
+        mock_component_yaml.exists.return_value = True
+        mock_path.return_value = mock_component_yaml
+
+        mock_read.return_value = {"api_spec": "fake_api_spec.yaml"}
+
+        mock_api_spec = MagicMock()
+        mock_api_spec.exists.return_value = True
+        mock_api_spec.suffix = ".yaml"
+        mock_path.return_value = mock_api_spec
+
+        with patch("auto_dev.dao.scaffolder.yaml.safe_load") as mock_yaml_load:
+            mock_yaml_load.return_value = {
+                "components": {
+                    "schemas": {
+                        "TestModel": {
+                            "type": "object",
+                            "properties": {"id": {"type": "integer"}, "name": {"type": "string"}},
+                        }
+                    }
+                },
+                "paths": {},
+            }
+
+            scaffolder = DAOScaffolder(mock_logger, verbose=True)
+            scaffolder.scaffold()
+
+        assert mock_write.call_count > 0
+        mock_logger.info.assert_called_with("DAO scaffolding and test script generation completed successfully.")
+
+
+class TestDAOGenerator:
+    """Test DAOGenerator class."""
+
+    @pytest.fixture
+    def sample_models(self):
+        """Sample models for testing."""
+        return {"testmodel": {"type": "object", "properties": {"id": {"type": "integer"}, "name": {"type": "string"}}}}
+
+    @pytest.fixture
+    def sample_paths(self):
+        """Sample paths for testing."""
+        return {}
+
+    def test_dao_generator_initialization(self, sample_models, sample_paths):
+        """Test DAOGenerator initialization."""
+        generator = DAOGenerator(sample_models, sample_paths)
+        assert generator.models == sample_models
+        assert generator.paths == sample_paths
+        assert isinstance(generator.env, Environment)
+        assert generator.template is not None
+
+    def test_generate_dao_classes(self, sample_models, sample_paths):
+        """Test DAOGenerator generate_dao_classes method."""
+        generator = DAOGenerator(sample_models, sample_paths)
+        dao_classes = generator.generate_dao_classes()
+
+        assert "testmodelDAO" in dao_classes
+        assert "class TestmodelDAO(BaseDAO):" in dao_classes["testmodelDAO"]
+        assert "def __init__(self):" in dao_classes["testmodelDAO"]

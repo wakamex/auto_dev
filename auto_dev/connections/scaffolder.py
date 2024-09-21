@@ -12,8 +12,9 @@ from aea import AEA_DIR
 from aea.helpers.yaml_utils import yaml_dump
 from aea.configurations.data_types import PublicId
 
+from auto_dev.enums import FileType
 from auto_dev.utils import get_logger, write_to_file, folder_swapper
-from auto_dev.constants import AEA_CONFIG, DEFAULT_ENCODING, FileType
+from auto_dev.constants import AEA_CONFIG, DEFAULT_ENCODING
 from auto_dev.cli_executor import CommandExecutor
 from auto_dev.protocols.scaffolder import ProtocolSpecification, read_protocol
 from auto_dev.data.connections.template import HEADER, CONNECTION_TEMPLATE
