@@ -22,6 +22,7 @@ from auto_dev.utils import load_aea_ctx, remove_suffix, camel_to_snake
 from auto_dev.constants import BASE_FSM_SKILLS, DEFAULT_ENCODING, JINJA_TEMPLATE_FOLDER
 from auto_dev.cli_executor import CommandExecutor
 from auto_dev.handlers.base import HandlerTypes, HandlerScaffolder
+from auto_dev.dao.scaffolder import DAOScaffolder
 from auto_dev.handler.scaffolder import HandlerScaffoldBuilder
 from auto_dev.dialogues.scaffolder import DialogueTypes, DialogueScaffolder
 from auto_dev.protocols.scaffolder import ProtocolScaffolder
@@ -315,13 +316,27 @@ def tests(
     """
     logger = ctx.obj["LOGGER"]
     verbose = ctx.obj["VERBOSE"]
-    env = Environment(loader=FileSystemLoader(JINJA_TEMPLATE_FOLDER), autoescape=True)
+    env = Environment(loader=FileSystemLoader(Path(JINJA_TEMPLATE_FOLDER, "tests", "customs")), autoescape=True)
     template = env.get_template("test_custom.jinja")
     output = template.render(
         name="test",
     )
     if verbose:
         logger.info(f"Generated tests: {output}")
+
+
+@scaffold.command()
+@click.pass_context
+def dao(ctx) -> None:
+    """Scaffold Data Access Objects (DAOs) and generate test script based on an OpenAPI 3 specification."""
+    logger = ctx.obj["LOGGER"]
+    verbose = ctx.obj["VERBOSE"]
+
+    try:
+        scaffolder = DAOScaffolder(logger, verbose)
+        scaffolder.scaffold()
+    except Exception as e:
+        logger.exception(f"Error during DAO scaffolding and test generation: {e}")
 
 
 if __name__ == "__main__":

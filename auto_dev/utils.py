@@ -26,10 +26,9 @@ from openapi_spec_validator import validate_spec
 from aea.configurations.base import AgentConfig
 from openapi_spec_validator.exceptions import OpenAPIValidationError
 
-from auto_dev.enums import FileOperation
+from auto_dev.enums import FileType, FileOperation
+from auto_dev.constants import DEFAULT_ENCODING, AUTONOMY_PACKAGES_FILE
 from auto_dev.exceptions import NotFound, OperationError
-
-from .constants import DEFAULT_ENCODING, AUTONOMY_PACKAGES_FILE, FileType
 
 
 def get_logger(name: str = __name__, log_level: str = "INFO") -> logging.Logger:
@@ -294,7 +293,7 @@ def currenttz():
         return timezone(timedelta(seconds=-time.timezone), time.tzname[0])
 
 
-def write_to_file(file_path: str, content: Any, file_type: FileType = FileType.TEXT) -> None:
+def write_to_file(file_path: str, content: Any, file_type: FileType = FileType.TEXT, **kwargs) -> None:
     """Write content to a file."""
     try:
         with open(file_path, "w", encoding=DEFAULT_ENCODING) as f:
@@ -306,7 +305,11 @@ def write_to_file(file_path: str, content: Any, file_type: FileType = FileType.T
                 else:
                     yaml.dump(content, f, default_flow_style=False, sort_keys=False)
             elif file_type == FileType.JSON:
-                json.dump(content, f, separators=(",", ":"))
+                json_kwargs = {"separators": (",", ":")}
+                json_kwargs.update(kwargs)
+                json.dump(content, f, **json_kwargs)
+            elif file_type == FileType.PYTHON:
+                f.write(content)
             else:
                 msg = f"Invalid file_type, must be one of {list(FileType)}."
                 raise ValueError(msg)

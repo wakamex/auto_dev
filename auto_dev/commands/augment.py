@@ -12,6 +12,9 @@ from auto_dev.base import build_cli
 from auto_dev.utils import get_logger, write_to_file, read_from_file
 from auto_dev.constants import DEFAULT_ENCODING, FileType
 from auto_dev.handler.scaffolder import HandlerScaffoldBuilder
+from auto_dev.enums import FileType
+from auto_dev.utils import get_logger, write_to_file
+from auto_dev.constants import DEFAULT_ENCODING
 
 
 logger = get_logger()

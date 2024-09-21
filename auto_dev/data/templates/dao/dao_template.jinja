@@ -1,0 +1,11 @@
+from base_dao import BaseDAO
+
+
+class {{ model_name|capitalize }}DAO(BaseDAO):
+    """{{ model_name|capitalize }}DAO is a class that provides methods to interact with the {{ model_name }} data."""
+
+    def __init__(self):
+        super().__init__()
+        self.model_name = "{{ model_name }}"
+        self.other_model_names = {{ other_model_names | tojson }}
+
