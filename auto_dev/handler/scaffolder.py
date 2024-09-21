@@ -1,191 +1,20 @@
 """Handler scaffolder."""
 # ruff: noqa: E501
 
+import re
 from pathlib import Path
 
 import yaml
+from jinja2 import Environment, FileSystemLoader
 from aea.configurations.base import PublicId
 
-from auto_dev.utils import change_dir, get_logger
-from auto_dev.constants import DEFAULT_ENCODING
+from auto_dev.utils import change_dir, get_logger, validate_openapi_spec
+from auto_dev.constants import DEFAULT_ENCODING, JINJA_TEMPLATE_FOLDER
 from auto_dev.cli_executor import CommandExecutor
 from auto_dev.commands.metadata import read_yaml_file
 
 
 HTTP_PROTOCOL = "eightballer/http:0.1.0:bafybeihmhy6ax5uyjt7yxppn4viqswibcs5lsjhl3kvrsesorqe2u44jcm"
-HANDLER_HEADER_TEMPLATE = """
-# -*- coding: utf-8 -*-
-# ------------------------------------------------------------------------------
-#
-#   Copyright 2024 {author}
-#
-#   Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-#
-# ------------------------------------------------------------------------------
-
-"This package contains a scaffold of a handler."
-
-from typing import Optional, cast
-
-from aea.protocols.base import Message
-from aea.skills.base import Handler
-
-from packages.eightballer.protocols.http.message import HttpMessage
-from packages.{author}.skills.{skill_name}.dialogues import HttpDialogue
-from packages.{author}.skills.{skill_name}.strategy import Strategy
-
-class HttpHandler(Handler):
-    \"\"\"Implements the HTTP handler.\"\"\"
-
-    SUPPORTED_PROTOCOL = HttpMessage.protocol_id  # type: Optional[str]
-
-    def setup(self) -> None:
-        \"\"\"Set up the handler.\"\"\"
-        self.strategy = cast(Strategy, self.context.strategy)
-
-    def handle_get(self, route, id=None):
-        \"\"\"handle get protocol\"\"\"
-        raise NotImplementedError
-
-    def handle_post(self, route, id, body):
-        \"\"\"handle post protocol\"\"\"
-        raise NotImplementedError
-
-    def teardown(self) -> None:
-        \"\"\"Tear down the handler.\"\"\"
-        pass
-
-"""
-
-
-PATH_FILTER_TEMPLATE = """
-        if filter == "{path}":
-            return self.{method_filters}{route}(message)
-"""
-
-UNEXPECTED_MESSAGE_HANDLER_TEMPLATE = """
-    def handle_unexpected_message(self, message):
-        \"\"\"handler for unexpected messages\"\"\"
-        self.context.logger.info("received unexpected message: {}".format(message))
-        raise NotImplementedError
-"""
-
-DIALOGUES_CODE = """
-# -*- coding: utf-8 -*-
-# ------------------------------------------------------------------------------
-#
-#   Copyright 2022 Valory AG
-#   Copyright 2018-2021 Fetch.AI Limited
-#
-#   Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-#
-# ------------------------------------------------------------------------------
-
-# we do a backslash here like so:
-\"\"\"
-This module contains the classes required for dialogue management.
-
-- DefaultDialogue: The dialogue class maintains state of a dialogue of type default and manages it.
-- DefaultDialogues: The dialogues class keeps track of all dialogues of type default.
-- HttpDialogue: The dialogue class maintains state of a dialogue of type http and manages it.
-- HttpDialogues: The dialogues class keeps track of all dialogues of type http.
-
-
-\"\"\"
-
-from typing import Any
-
-from aea.protocols.base import Address, Message
-from aea.protocols.dialogue.base import Dialogue as BaseDialogue
-from aea.skills.base import Model
-
-from packages.eightballer.protocols.http.dialogues import (
-    HttpDialogue as BaseHttpDialogue,
-)
-from packages.eightballer.protocols.http.dialogues import (
-    HttpDialogues as BaseHttpDialogues,
-)
-
-HttpDialogue = BaseHttpDialogue
-
-
-class HttpDialogues(Model, BaseHttpDialogues):
-    \"\"\"The dialogues class keeps track of all dialogues.\"\"\"
-
-    def __init__(self, **kwargs: Any) -> None:
-        \"\"\"Initialize the Dialogues class.\"\"\"
-        Model.__init__(self, **kwargs)
-
-        def role_from_first_message(  # pylint: disable=unused-argument
-            message: Message, receiver_address: Address
-        ) -> BaseDialogue.Role:
-            \"\"\"
-            Infer the role of the agent from an incoming/outgoing first message.
-
-            :param message: an incoming/outgoing first message
-            :param receiver_address: the address of the receiving agent
-            :return: The role of the agent
-            \"\"\"
-            del message, receiver_address
-            return BaseHttpDialogue.Role.SERVER
-
-        BaseHttpDialogues.__init__(
-            self,
-            self_address=str(self.skill_id),
-            role_from_first_message=role_from_first_message,
-        )
-
-"""
-
-MAIN_HANDLER_TEMPLATE = """
-    def handle(self, message: HttpMessage) -> None:
-        \"\"\"Handle incoming HTTP messages\"\"\"
-        method = message.method
-        url = message.url
-        body = message.body
-
-        path_parts = url.split('/')
-        path = '/' + '/'.join(path_parts[1:])
-
-        if '{{' in path:
-            id_index = path_parts.index([part for part in path_parts if '{{' in part][0])
-            id = path_parts[id_index]
-            path = '/' + '/'.join(path_parts[1:id_index] + ['{{'+ path_parts[id_index][1:-1] + '}}'] + path_parts[id_index+1:])
-
-        handler_method = getattr(self, f"handle_{{method.lower()}}_{{path.lstrip('/').replace('/', '_').replace('{{', '').replace('}}', '')}}", None)
-
-        if handler_method:
-            kwargs = {{'body': body}} if method.lower() in ['post', 'put', 'patch', 'delete'] else {{}}
-            if '{{' in path:
-                kwargs['id'] = id
-            return handler_method(**kwargs)
-
-        return self.handle_unexpected_message(message)
-
-{all_methods}
-
-{unexpected_message_handler}
-"""
 
 
 class ScaffolderConfig:
@@ -210,9 +39,7 @@ class ScaffolderConfig:
 
 
 class HandlerScaffolder:
-    """
-    Handler Scaffolder
-    """
+    """Handler Scaffolder."""
 
     def __init__(
         self,
@@ -224,6 +51,10 @@ class HandlerScaffolder:
         self.config = config
         self.logger = logger or get_logger()
         self.handler_code = ""
+        self.jinja_env = Environment(
+            loader=FileSystemLoader(Path(JINJA_TEMPLATE_FOLDER) / "customs"),
+            autoescape=False,  # noqa: S701
+        )
 
     def scaffold(self):
         """Scaffold the handler."""
@@ -259,20 +90,19 @@ class HandlerScaffolder:
 
     def generate_handler(self) -> None:
         """Generate handler."""
-
-        if not self.config.new_skill:
-            skill_path = Path("skills") / self.config.output
-            if not skill_path.exists():
-                self.logger.warning(f"Skill '{self.config.output}' not found in the 'skills' directory. Exiting.")
-
         openapi_spec = read_yaml_file(self.config.spec_file_path)
+        if not validate_openapi_spec(openapi_spec, self.logger):
+            raise SystemExit(1)
+
+        if not all(path.startswith("/api") for path in openapi_spec.get("paths", {})):
+            self.logger.error("All paths in the OpenAPI spec must start with '/api'")
+            raise SystemExit(1)
+
         handler_methods = []
 
         for path, path_spec in openapi_spec.get("paths", {}).items():
-            for method, operation in path_spec.items():  # noqa
-                method_name: str = (
-                    f"handle_{method.lower()}_{path.lstrip('/').replace('/', '_').replace('{', '').replace('}', '')}"
-                )
+            for method in path_spec:
+                method_name = self.generate_method_name(method, path)
                 params = []
 
                 path_params = [
@@ -280,30 +110,54 @@ class HandlerScaffolder:
                 ]
                 params.extend(path_params)
 
-                if method.lower() in ["post", "put", "patch", "delete"]:
+                if method.lower() in {"post", "put", "patch", "delete"}:
                     params.append("body")
 
-                param_str: str = ", ".join(["self", *params])
+                param_str = ", ".join(["self", *params])
 
-                method_code: str = f"""
-    def {method_name}({param_str}):
-        \"\"\"
-        Handle {method.upper()} request for {path}
-        \"\"\"
-        # TODO: Implement {method.upper()} logic for {path}
-        raise NotImplementedError
-    """
+                method_template = self.jinja_env.get_template("method_template.jinja")
+                method_code = method_template.render(
+                    method_name=method_name, param_str=param_str, method=method, path=path
+                )
+
                 handler_methods.append(method_code)
 
-        all_methods: str = "\n".join(handler_methods)
+        all_methods = "\n\n".join(handler_methods)
 
-        self.handler_code: str = HANDLER_HEADER_TEMPLATE.format(
-            author=self.config.author, skill_name=self.config.output
+        header_template = self.jinja_env.get_template("handler_header.jinja")
+        handler_code = header_template.render(author=self.config.author, skill_name=self.config.output)
+
+        main_handler_template = self.jinja_env.get_template("main_handler.jinja")
+        unexpected_message_handler_template = self.jinja_env.get_template("unexpected_message_handler.jinja")
+
+        path_params = set()
+        for path in openapi_spec.get("paths", {}):
+            path_params.update(re.findall(r"\{(\w+)\}", path))
+
+        main_handler = main_handler_template.render(
+            all_methods=all_methods,
+            unexpected_message_handler=unexpected_message_handler_template.render(),
+            path_params=path_params,
         )
-        main_handler: str = MAIN_HANDLER_TEMPLATE.format(
-            all_methods=all_methods, unexpected_message_handler=UNEXPECTED_MESSAGE_HANDLER_TEMPLATE
-        )
-        self.handler_code += main_handler
+
+        handler_code += main_handler
+        return handler_code
+
+    def generate_method_name(self, http_method, path):
+        """Generate method name."""
+        method_name = "handle_" + http_method.lower()
+        parts = [part for part in path.strip("/").split("/") if part]
+        name_parts = []
+        for part in parts:
+            if part.startswith("{") and part.endswith("}"):
+                param_name = part.strip("{}")
+                param_name = self.sanitize_identifier(param_name)
+                name_parts.append("by_" + param_name)
+            else:
+                part_name = self.sanitize_identifier(part)
+                name_parts.append(part_name)
+        method_name += "_" + "_".join(name_parts)
+        return method_name
 
     def save_handler(self, path) -> None:
         """Save handler to file."""
@@ -375,13 +229,12 @@ class HandlerScaffolder:
     def create_dialogues(self) -> None:
         """Create the dialogues."""
         dialogues_file = "dialogues.py"
+        dialogues_template = self.jinja_env.get_template("dialogues.jinja")
         with open(dialogues_file, "w", encoding=DEFAULT_ENCODING) as f:
-            f.write(DIALOGUES_CODE)
+            f.write(dialogues_template.render())
 
     def fingerprint(self):
-        """
-        Fingerprint the skill
-        """
+        """Fingerprint the skill."""
         skill_id = PublicId(self.config.author, self.config.output, "0.1.0")
         cli_executor = CommandExecutor(f"aea fingerprint skill {skill_id}".split())
         result = cli_executor.execute(verbose=True)
@@ -393,15 +246,15 @@ class HandlerScaffolder:
         """Install the aea."""
         install_cmd = ["aea", "install"]
         if not CommandExecutor(install_cmd).execute(verbose=self.config.verbose):
-            raise ValueError(f"Failed to execute {install_cmd}.")
+            msg = f"Failed to execute {install_cmd}."
+            raise ValueError(msg)
 
     def add_protocol(self):
-        """
-        Add the protocol
-        """
+        """Add the protocol."""
         protocol_cmd = f"aea add protocol {HTTP_PROTOCOL}".split(" ")
         if not CommandExecutor(protocol_cmd).execute(verbose=self.config.verbose):
-            raise ValueError(f"Failed to add {HTTP_PROTOCOL}.")
+            msg = f"Failed to add {HTTP_PROTOCOL}."
+            raise ValueError(msg)
 
     def confirm_action(self, message):
         """Prompt the user for confirmation before performing an action."""
@@ -409,10 +262,10 @@ class HandlerScaffolder:
             self.logger.info(f"Auto confirming: {message}")
             return True
         response = input(f"{message} (y/n): ").lower().strip()
-        return response in ("y", "yes")
+        return response in {"y", "yes"}
 
     def present_actions(self):
-        """Present the scaffold summary"""
+        """Present the scaffold summary."""
         actions = [
             f"Generating handler based on OpenAPI spec: {self.config.spec_file_path}",
             f"Saving handler to: skills/{self.config.output}/handlers.py",
@@ -434,15 +287,22 @@ class HandlerScaffolder:
 
         if not self.config.auto_confirm:
             confirm = input("Do you want to proceed? (y/n): ").lower().strip()
-            if confirm not in ("y", "yes"):
+            if confirm not in {"y", "yes"}:
                 self.logger.info("Scaffolding cancelled.")
                 return False
 
         return True
 
+    def sanitize_identifier(self, name: str) -> str:
+        """Sanitize the identifier."""
+        name = re.sub(r"[^0-9a-zA-Z_]", "_", name)
+        if name and name[0].isdigit():
+            name = "_" + name
+        return name.lower()
+
 
 class HandlerScaffoldBuilder:
-    """Builder for HandlerScaffolder"""
+    """Builder for HandlerScaffolder."""
 
     def __init__(self):
         """Initialize HandlerScaffoldBuilder."""
@@ -466,5 +326,6 @@ class HandlerScaffoldBuilder:
     def build(self) -> HandlerScaffolder:
         """Build the scaffolder."""
         if not self.config:
-            raise ValueError("Scaffolder not initialized. Call create_scaffolder first.")
+            msg = "Scaffolder not initialized. Call create_scaffolder first."
+            raise ValueError(msg)
         return HandlerScaffolder(self.config, self.logger)

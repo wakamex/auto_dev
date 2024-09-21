@@ -2787,6 +2787,23 @@ all = ["click (>=8.1.0,<9)", "coverage (>=6.4.4,<8.0.0)", "open-aea-cli-ipfs (==
 cli = ["click (>=8.1.0,<9)", "coverage (>=6.4.4,<8.0.0)", "open-aea-cli-ipfs (==1.55.0)", "pytest (>=7.0.0,<7.3.0)", "python-dotenv (>=0.14.5,<0.22.0)", "texttable (==1.6.7)"]
 
 [[package]]
+name = "openapi-spec-validator"
+version = "0.2.8"
+description = ""
+optional = false
+python-versions = "*"
+files = [
+    {file = "openapi-spec-validator-0.2.8.tar.gz", hash = "sha256:e489c7a273284bc78277ac22791482e8058d323b4a265015e9fcddf6a8045bcd"},
+    {file = "openapi_spec_validator-0.2.8-py2-none-any.whl", hash = "sha256:d4da8aef72bf5be40cf0df444abd20009a41baf9048a8e03750c07a934f1bdd8"},
+    {file = "openapi_spec_validator-0.2.8-py3-none-any.whl", hash = "sha256:0caacd9829e9e3051e830165367bf58d436d9487b29a09220fa7edb9f47ff81b"},
+]
+
+[package.dependencies]
+jsonschema = "*"
+PyYAML = ">=5.1"
+six = "*"
+
+[[package]]
 name = "packaging"
 version = "23.2"
 description = "Core utilities for Python packages"
@@ -4658,11 +4675,11 @@ cffi = {version = ">=1.11", markers = "platform_python_implementation == \"PyPy\
 cffi = ["cffi (>=1.11)"]
 
 [extras]
-all = ["open-aea-ledger-cosmos", "open-aea-ledger-ethereum", "open-aea-ledger-solana", "open-autonomy", "pydantic", "ruff", "tbump"]
+all = ["isort", "open-aea-ledger-cosmos", "open-aea-ledger-ethereum", "open-aea-ledger-solana", "open-autonomy", "pydantic", "ruff", "tbump"]
 dev = ["tbump", "toml"]
 doc = []
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.12"
-content-hash = "4ec9226a194a5be747defc12214fd295eabfbeae87ec23c24252630e608ea435"
+content-hash = "5a7ce56d2f864b70ff6e5f72adce0fe2d335db47003ca006a7e80ab03faab18b"

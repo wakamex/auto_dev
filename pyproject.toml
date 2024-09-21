@@ -68,6 +68,7 @@ pytest-xdist = "^3.6.1"
 ruff = "^0.5.7"
 pydantic = "^2.8.2"
 isort = "^5.13.2"
+openapi-spec-validator = "0.2.8"
 
 [tool.poetry.dev-dependencies]
 responses = "^0.23.1"

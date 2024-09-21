@@ -22,7 +22,9 @@ import rich_click as click
 from rich.logging import RichHandler
 from aea.cli.utils.config import get_registry_path_from_cli_config
 from aea.cli.utils.context import Context
+from openapi_spec_validator import validate_spec
 from aea.configurations.base import AgentConfig
+from openapi_spec_validator.exceptions import OpenAPIValidationError
 
 from auto_dev.enums import FileType, FileOperation
 from auto_dev.constants import DEFAULT_ENCODING, AUTONOMY_PACKAGES_FILE
@@ -295,7 +297,7 @@ def write_to_file(file_path: str, content: Any, file_type: FileType = FileType.T
     """Write content to a file."""
     try:
         with open(file_path, "w", encoding=DEFAULT_ENCODING) as f:
-            if file_type == FileType.TEXT:
+            if file_type in {FileType.TEXT, FileType.PYTHON}:
                 f.write(content)
             elif file_type == FileType.YAML:
                 if isinstance(content, list):
@@ -333,6 +335,17 @@ def read_from_file(file_path: str, file_type: FileType = FileType.TEXT) -> Any:
     except Exception as e:
         msg = f"Error reading from file {file_path}: {e}"
         raise ValueError(msg) from e
+
+
+def validate_openapi_spec(openapi_spec: dict, logger: logging.Logger) -> bool:
+    """Validate an OpenAPI specification."""
+    try:
+        validate_spec(openapi_spec)
+        logger.info("OpenAPI spec validation successful")
+        return True
+    except OpenAPIValidationError as e:
+        logger.exception(f"OpenAPI spec validation failed: {e!s}")
+        return False
 
 
 # We want to use emojis as much as possible in all output.

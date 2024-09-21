@@ -1,0 +1,31 @@
+    def handle(self, message: ApiHttpMessage) -> None:
+        """Handle incoming API HTTP messages."""
+        method = message.method.lower()
+        parsed_url = urlparse(unquote(message.url))
+        path = parsed_url.path
+        body = message.body
+
+        normalized_path = path.rstrip("/")
+{% for param in path_params %}
+        normalized_path = re.sub(r"/(\d+)(?=/|$)", "/{{ param }}", normalized_path)
+{% endfor %}
+        handler_name = f"handle_{method}_{normalized_path.lstrip('/').replace('/', '_')}"
+{% for param in path_params %}
+        handler_name = handler_name.replace("{{ param }}", "by_{{ param }}")
+{% endfor %}
+        handler_method = getattr(self, handler_name, None)
+
+        if handler_method:
+            kwargs = {"body": body} if method in {"post", "put", "patch", "delete"} else {}
+{% for param in path_params %}
+            {{ param }}_match = re.search(r"/(\d+)(?=/|$)", path)
+            if {{ param }}_match:
+                kwargs["{{ param }}"] = {{ param }}_match.group(1)
+{% endfor %}
+            return handler_method(message, **kwargs)
+
+        return self.handle_unexpected_message(message)
+
+{{ all_methods }}
+
+{{ unexpected_message_handler }}

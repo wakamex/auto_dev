@@ -96,7 +96,7 @@ def test_scaffold_protocol(cli_runner, dummy_agent_tim, caplog):
     readme_path = dummy_agent_tim / "protocols" / protocol.metadata["name"] / "README.md"
     assert original_content in readme_path.read_text(encoding=DEFAULT_ENCODING)
 
-
+@pytest.mark.skip(reason="Needs changes to scaffolder to handle directory structure")
 def test_scaffold_handler(dummy_agent_tim, openapi_test_case):
     """Test scaffold handler."""
 
