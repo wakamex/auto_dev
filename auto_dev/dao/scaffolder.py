@@ -156,7 +156,7 @@ class DAOScaffolder:
 
     def _save_aggregated_dummy_data(self, aggregated_dummy_data: dict[str, Any]) -> None:
         try:
-            dao_dir = Path("generated/dao")
+            dao_dir = Path("daos")
             dao_dir.mkdir(parents=True, exist_ok=True)
             json_file_path = dao_dir / "aggregated_data.json"
             write_to_file(json_file_path, aggregated_dummy_data, FileType.JSON, indent=2)
@@ -167,7 +167,7 @@ class DAOScaffolder:
 
     def _save_dao_classes(self, dao_classes: dict[str, str]) -> None:
         try:
-            dao_dir = Path("generated/dao")
+            dao_dir = Path("daos")
             dao_dir.mkdir(parents=True, exist_ok=True)
             for class_name, class_code in dao_classes.items():
                 snake_case_name = camel_to_snake(class_name[:-3]) + "_dao"
@@ -180,7 +180,7 @@ class DAOScaffolder:
 
     def _save_base_dao(self, content: str) -> None:
         try:
-            dao_dir = Path("generated/dao")
+            dao_dir = Path("daos")
             dao_dir.mkdir(parents=True, exist_ok=True)
             file_path = dao_dir / "base_dao.py"
             write_to_file(file_path, content, FileType.PYTHON)
