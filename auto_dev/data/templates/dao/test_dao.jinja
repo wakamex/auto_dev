@@ -1,5 +1,6 @@
+"""Test DAOs."""
+
 import sys
-import json
 import random
 import unittest
 from copy import deepcopy
@@ -7,10 +8,12 @@ from pathlib import Path
 from contextlib import contextmanager
 
 
-sys.path.append(str(Path(__file__).parent / "dao"))
+DAOS_PATH = Path(__file__).parent.parent / "daos"
+
+sys.path.append(str(DAOS_PATH))
 
 {% for i in range(model_names|length) %}
-from {{ dao_file_names[i] }} import {{ model_names[i]|capitalize }}DAO
+from {{ dao_file_names[i] }} import {{ model_names[i] }}DAO
 {% endfor %}
 
 
@@ -20,23 +23,20 @@ class TestDAOs(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Setup class-level fixtures."""
-        cls.data_file = Path(__file__).parent / "dao" / "aggregated_data.json"
-        cls.backup_file = cls.data_file.with_suffix('.json.bak')
-
-        # Create a backup of the original file
+        cls.data_file = DAOS_PATH / "aggregated_data.json"
+        cls.backup_file = cls.data_file.with_suffix(".json.bak")
         cls.data_file.rename(cls.backup_file)
 
     @classmethod
     def tearDownClass(cls):
         """Tear down class-level fixtures."""
-        # Restore the original file
         if cls.backup_file.exists():
             cls.backup_file.rename(cls.data_file)
 
     def setUp(self):
         """Setup DAOs and restore data file before each test."""
         {% for model_name in model_names %}
-        self.{{ model_name.lower() }}dao = {{ model_name|capitalize }}DAO()
+        self.{{ model_name.lower() }}dao = {{ model_name }}DAO()
         {% endfor %}
         self._restore_data_file()
 
@@ -59,7 +59,7 @@ class TestDAOs(unittest.TestCase):
 
     {% for model_name in model_names %}
     def test_{{ model_name.lower() }}dao(self):
-        """Test CRUD operations for {{ model_name|capitalize }}DAO."""
+        """Test CRUD operations for {{ model_name }}DAO."""
         with self._data_file_context():
             dummy_data = {{ dummy_data.get(model_name, {}) | tojson }}
 
@@ -69,9 +69,9 @@ class TestDAOs(unittest.TestCase):
                 all_data = self.{{ model_name.lower() }}dao.get_all()
                 self.assertEqual(len(all_data), 6)
                 self.assertTrue(any(item == dummy_data for item in all_data))
-                print("Insert operation successful for {{ model_name|capitalize }}DAO")
+                print("Insert operation successful for {{ model_name }}DAO")
             except Exception as e:
-                self.fail(f"Insert operation failed for {{ model_name|capitalize }}DAO: {e}")
+                self.fail(f"Insert operation failed for {{ model_name }}DAO: {e}")
 
             # Test get_all
             try:
@@ -79,9 +79,9 @@ class TestDAOs(unittest.TestCase):
                 self.assertIsInstance(result, list)
                 self.assertEqual(len(result), 6)
                 self.assertTrue(any(all(item[k] == v for k, v in dummy_data.items()) for item in result))
-                print("Get all operation successful for {{ model_name|capitalize }}DAO")
+                print("Get all operation successful for {{ model_name }}DAO")
             except Exception as e:
-                self.fail(f"Get all operation failed for {{ model_name|capitalize }}DAO: {e}")
+                self.fail(f"Get all operation failed for {{ model_name }}DAO: {e}")
 
             # Test get_by_id
             try:
@@ -91,9 +91,9 @@ class TestDAOs(unittest.TestCase):
 
                 self.assertIsNotNone(result)
                 self.assertEqual(result, dummy_data)
-                print("Get by id operation successful for {{ model_name|capitalize }}DAO")
+                print("Get by id operation successful for {{ model_name }}DAO")
             except Exception as e:
-                self.fail(f"Get by id operation failed for {{ model_name|capitalize }}DAO: {e}")
+                self.fail(f"Get by id operation failed for {{ model_name }}DAO: {e}")
 
             # Test update
             try:
@@ -108,9 +108,9 @@ class TestDAOs(unittest.TestCase):
                 self.assertEqual(update_data, all_items[int(hashmap_key) - 1])
                 updated_item = self.{{ model_name.lower() }}dao.get_by_id(hashmap_key)
                 self.assertEqual(updated_item, update_data)
-                print("Update operation successful for {{ model_name|capitalize }}DAO")
+                print("Update operation successful for {{ model_name }}DAO")
             except Exception as e:
-                self.fail(f"Update operation failed for {{ model_name|capitalize }}DAO: {e}")
+                self.fail(f"Update operation failed for {{ model_name }}DAO: {e}")
 
             # Test delete
             try:
@@ -126,9 +126,9 @@ class TestDAOs(unittest.TestCase):
                 self.assertEqual(len(all_data_after_delete), len(all_items) - 1)
                 deleted_item = self.{{ model_name.lower() }}dao.get_by_id(hashmap_key)
                 self.assertIsNone(deleted_item)
-                print("Delete operation successful for {{ model_name|capitalize }}DAO")
+                print("Delete operation successful for {{ model_name }}DAO")
             except Exception as e:
-                self.fail(f"Delete operation failed for {{ model_name|capitalize }}DAO: {e}")
+                self.fail(f"Delete operation failed for {{ model_name }}DAO: {e}")
 
     {% endfor %}
 
