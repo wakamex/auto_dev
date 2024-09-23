@@ -19,7 +19,7 @@ def _generate_model_dummy_data(model_schema: dict[str, Any]) -> dict[str, Any]:
         if prop_schema.get("type") == "array":
             dummy_instance[prop_name] = [
                 _generate_property_dummy_data(prop_schema["items"])
-                for _ in range(3)  # Generate 3 items for nested arrays
+                for _ in range(3)
             ]
         else:
             dummy_instance[prop_name] = _generate_property_dummy_data(prop_schema)
