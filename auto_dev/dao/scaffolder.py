@@ -202,7 +202,7 @@ class DAOScaffolder:
         return template.render(model_names=model_names, dao_file_names=dao_file_names, dummy_data=test_dummy_data)
 
     def _save_test_script(self, test_script: str) -> None:
-        test_script_path = Path("generated/test_dao.py")
+        test_script_path = Path("tests/test_dao.py")
         test_script_path.parent.mkdir(parents=True, exist_ok=True)
         write_to_file(test_script_path, test_script, FileType.PYTHON)
         self.logger.info(f"Test script saved to: {test_script_path}")
