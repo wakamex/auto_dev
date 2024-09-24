@@ -68,7 +68,7 @@ class BaseDAO:
 
     def get_all(self) -> list[dict[str, Any]]:
         """Get all items from the data."""
-        return list(self._data[self.model_name].values())
+        return list(self.data.values())
 
     def get_by_id(self, hashmap_key: str) -> dict[str, Any] | None:
         """Get an item by id."""
