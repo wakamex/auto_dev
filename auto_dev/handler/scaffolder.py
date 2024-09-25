@@ -8,7 +8,7 @@ import yaml
 from jinja2 import Environment, FileSystemLoader
 from aea.configurations.base import PublicId
 
-from auto_dev.utils import change_dir, get_logger, validate_openapi_spec
+from auto_dev.utils import change_dir, get_logger, validate_openapi_spec, camel_to_snake
 from auto_dev.constants import DEFAULT_ENCODING, JINJA_TEMPLATE_FOLDER
 from auto_dev.cli_executor import CommandExecutor
 from auto_dev.commands.metadata import read_yaml_file
@@ -55,6 +55,7 @@ class HandlerScaffolder:
             loader=FileSystemLoader(Path(JINJA_TEMPLATE_FOLDER) / "customs"),
             autoescape=False,  # noqa: S701
         )
+        self.jinja_env.globals["zip"] = zip
 
     def scaffold(self):
         """Scaffold the handler."""
@@ -98,26 +99,86 @@ class HandlerScaffolder:
             self.logger.error("All paths in the OpenAPI spec must start with '/api'")
             raise SystemExit(1)
 
+        schemas = set()
+        for path, path_spec in openapi_spec.get("paths", {}).items():
+            # For GET responses
+            if "get" in path_spec and "{" not in path:
+                schema_ref = path_spec["get"]["responses"]["200"]["content"]["application/json"]["schema"]["items"].get("$ref")
+                if schema_ref:
+                    schema_name = schema_ref.split("/")[-1]
+                    schemas.add(schema_name)
+
+            # For POST request bodies
+            if "post" in path_spec:
+                request_body = path_spec["post"].get("requestBody", {})
+                content = request_body.get("content", {}).get("application/json", {})
+                schema_def = content.get("schema", {})
+                schema_ref = schema_def.get("$ref")
+                if schema_ref:
+                    schema_name = schema_ref.split("/")[-1]
+                    schemas.add(schema_name)
+
+        # Convert schema names to snake_case for consistency
+        schema_filenames = [camel_to_snake(schema) + "_dao" for schema in schemas]
+
         handler_methods = []
 
-        for path, path_spec in openapi_spec.get("paths", {}).items():
-            for method in path_spec:
-                method_name = self.generate_method_name(method, path)
-                params = []
+        def extract_schema(operation, method):
+            if method.lower() == 'post':
+                request_body = operation.get('requestBody', {})
+                content = request_body.get('content', {}).get('application/json', {})
+                schema_def = content.get('schema', {})
+                schema_ref = schema_def.get('$ref')
+                return schema_ref.split("/")[-1] if schema_ref else None
+            else:
+                if "responses" not in operation:
+                    return None
 
+                success_response = operation["responses"].get("200", {})
+                content = success_response.get("content", {}).get("application/json", {})
+                schema_def = content.get("schema", {})
+
+                if schema_def.get("type") == "array":
+                    schema_ref = schema_def.get("items", {}).get("$ref")
+                else:
+                    schema_ref = schema_def.get("$ref")
+
+                return schema_ref.split("/")[-1] if schema_ref else None
+
+        def classify_post_operation(path, operation):
+            keywords = operation.get('operationId', '') + ' ' + operation.get('summary', '') + ' ' + operation.get('description', '')
+            keywords = keywords.lower()
+
+            if '{' in path:
+                return 'update'
+            elif any(word in keywords for word in ['create', 'new']):
+                return 'insert'
+            elif any(word in keywords for word in ['update', 'modify']):
+                return 'update'
+            else:
+                return 'other'
+
+        for path, path_item in openapi_spec["paths"].items():
+            for method, operation in path_item.items():
+                method_name = self.generate_method_name(method, path)
                 path_params = [
                     param.strip("{}") for param in path.split("/") if param.startswith("{") and param.endswith("}")
                 ]
-                params.extend(path_params)
 
-                if method.lower() in {"post", "put", "patch", "delete"}:
-                    params.append("body")
+                schema = extract_schema(operation, method)
 
-                param_str = ", ".join(["self", *params])
+                operation_type = 'other'
+                if method.lower() == 'post':
+                    operation_type = classify_post_operation(path, operation)
 
                 method_template = self.jinja_env.get_template("method_template.jinja")
                 method_code = method_template.render(
-                    method_name=method_name, param_str=param_str, method=method, path=path
+                    method_name=method_name,
+                    method=method,
+                    path=path,
+                    path_params=path_params,
+                    schema=schema,
+                    operation_type=operation_type
                 )
 
                 handler_methods.append(method_code)
@@ -125,7 +186,12 @@ class HandlerScaffolder:
         all_methods = "\n\n".join(handler_methods)
 
         header_template = self.jinja_env.get_template("handler_header.jinja")
-        handler_code = header_template.render(author=self.config.author, skill_name=self.config.output)
+        handler_code = header_template.render(
+            author=self.config.author,
+            skill_name=self.config.output,
+            schemas=schemas,
+            schema_filenames=schema_filenames
+        )
 
         main_handler_template = self.jinja_env.get_template("main_handler.jinja")
         unexpected_message_handler_template = self.jinja_env.get_template("unexpected_message_handler.jinja")
