@@ -3,14 +3,17 @@
 
 import re
 from pathlib import Path
+from collections import defaultdict
+from typing import Any
 
 import yaml
 from jinja2 import Environment, FileSystemLoader
 from aea.configurations.base import PublicId
 
-from auto_dev.utils import change_dir, get_logger, validate_openapi_spec, camel_to_snake
+from auto_dev.utils import change_dir, get_logger, camel_to_snake, validate_openapi_spec
 from auto_dev.constants import DEFAULT_ENCODING, JINJA_TEMPLATE_FOLDER
 from auto_dev.cli_executor import CommandExecutor
+from auto_dev.dao.scaffolder import DAOScaffolder
 from auto_dev.commands.metadata import read_yaml_file
 
 
@@ -99,51 +102,40 @@ class HandlerScaffolder:
             self.logger.error("All paths in the OpenAPI spec must start with '/api'")
             raise SystemExit(1)
 
-        schemas = set()
-        for path, path_spec in openapi_spec.get("paths", {}).items():
-            # For GET responses
-            if "get" in path_spec and "{" not in path:
-                schema_ref = path_spec["get"]["responses"]["200"]["content"]["application/json"]["schema"]["items"].get("$ref")
-                if schema_ref:
-                    schema_name = schema_ref.split("/")[-1]
-                    schemas.add(schema_name)
+        schemas = openapi_spec.get("components", {}).get("schemas", {})
+        persistent_schemas = [schema for schema, details in schemas.items() if details.get("x-persistent")]
 
-            # For POST request bodies
-            if "post" in path_spec:
-                request_body = path_spec["post"].get("requestBody", {})
-                content = request_body.get("content", {}).get("application/json", {})
-                schema_def = content.get("schema", {})
-                schema_ref = schema_def.get("$ref")
-                if schema_ref:
-                    schema_name = schema_ref.split("/")[-1]
-                    schemas.add(schema_name)
+        if not persistent_schemas:
+            persistent_schemas = self.identify_persistent_schemas(openapi_spec)
 
-        # Convert schema names to snake_case for consistency
-        schema_filenames = [camel_to_snake(schema) + "_dao" for schema in schemas]
+        self.logger.info("Persistent schemas:")
+        for schema in persistent_schemas:
+            self.logger.info(f"  - {schema}")
+
+        user_input = input("Use these schemas for augmenting? (y/n): ").lower().strip()
+        if user_input != "y":
+            self.logger.info("Exiting augmenting process.")
+            return
+
+        schema_filenames = [camel_to_snake(schema) + "_dao" for schema in persistent_schemas]
 
         handler_methods = []
 
-        def extract_schema(operation, method):
-            if method.lower() == 'post':
-                request_body = operation.get('requestBody', {})
-                content = request_body.get('content', {}).get('application/json', {})
-                schema_def = content.get('schema', {})
-                schema_ref = schema_def.get('$ref')
-                return schema_ref.split("/")[-1] if schema_ref else None
+        def extract_schema(operation):
+            if "responses" not in operation:
+                return None
+
+            success_response = next((operation["responses"].get(code, {}) for code in ["201", "200"] if code in operation["responses"]), {})
+            content = success_response.get("content", {}).get("application/json", {})
+            schema_def = content.get("schema", {})
+
+            if schema_def.get("type") == "array":
+                schema_ref = schema_def.get("items", {}).get("$ref")
             else:
-                if "responses" not in operation:
-                    return None
+                schema_ref = schema_def.get("$ref")
 
-                success_response = operation["responses"].get("200", {})
-                content = success_response.get("content", {}).get("application/json", {})
-                schema_def = content.get("schema", {})
-
-                if schema_def.get("type") == "array":
-                    schema_ref = schema_def.get("items", {}).get("$ref")
-                else:
-                    schema_ref = schema_def.get("$ref")
-
-                return schema_ref.split("/")[-1] if schema_ref else None
+            schema_name = schema_ref.split("/")[-1] if schema_ref else None
+            return schema_name if schema_name in persistent_schemas else None
 
         def classify_post_operation(path, operation):
             keywords = operation.get('operationId', '') + ' ' + operation.get('summary', '') + ' ' + operation.get('description', '')
@@ -165,7 +157,7 @@ class HandlerScaffolder:
                     param.strip("{}") for param in path.split("/") if param.startswith("{") and param.endswith("}")
                 ]
 
-                schema = extract_schema(operation, method)
+                schema = extract_schema(operation)
 
                 operation_type = 'other'
                 if method.lower() == 'post':
@@ -189,7 +181,7 @@ class HandlerScaffolder:
         handler_code = header_template.render(
             author=self.config.author,
             skill_name=self.config.output,
-            schemas=schemas,
+            schemas=persistent_schemas,
             schema_filenames=schema_filenames
         )
 
@@ -365,6 +357,47 @@ class HandlerScaffolder:
         if name and name[0].isdigit():
             name = "_" + name
         return name.lower()
+
+    def identify_persistent_schemas(self, api_spec: dict[str, Any]) -> list[str]:
+        schemas = api_spec.get("components", {}).get("schemas", {})
+        schema_usage = defaultdict(set)
+
+        def process_schema(schema: dict[str, Any]) -> str | None:
+            if "$ref" in schema:
+                return schema["$ref"].split("/")[-1]
+            return None
+
+        def analyze_schema(schema: dict[str, Any], usage_type: str) -> None:
+            schema_name = process_schema(schema)
+            if schema_name:
+                schema_usage[schema_name].add(usage_type)
+            if "properties" in schemas.get(schema_name, {}):
+                for prop in schemas[schema_name].get("properties", {}).values():
+                    nested_schema_name = process_schema(prop)
+                    if nested_schema_name:
+                        schema_usage[nested_schema_name].add(f"nested_{usage_type}")
+
+        def analyze_content(content: dict[str, Any], usage_type: str) -> None:
+            for media_details in content.values():
+                schema = media_details.get("schema", {})
+                if schema.get("type") == "array":
+                    analyze_schema(schema.get("items", {}), usage_type)
+                else:
+                    analyze_schema(schema, usage_type)
+
+        for path_details in api_spec.get("paths", {}).values():
+            for method_details in path_details.values():
+                if "requestBody" in method_details:
+                    analyze_content(method_details["requestBody"].get("content", {}), "request")
+
+                for response_details in method_details.get("responses", {}).values():
+                    analyze_content(response_details.get("content", {}), "response")
+
+        return [
+            schema
+            for schema, usage in schema_usage.items()
+            if "response" in usage or "nested_request" in usage
+        ]
 
 
 class HandlerScaffoldBuilder:

@@ -1,14 +1,15 @@
 """DAOScaffolder class is responsible for scaffolding DAO classes and test scripts."""
 
 import json
-from typing import Any
+from typing import Any, Dict, List, Set
 from pathlib import Path
 
 import yaml
 from jinja2 import Environment, FileSystemLoader
+from collections import defaultdict
 
 from auto_dev.enums import FileType
-from auto_dev.utils import write_to_file, camel_to_snake, read_from_file
+from auto_dev.utils import write_to_file, camel_to_snake, read_from_file, validate_openapi_spec
 from auto_dev.constants import JINJA_TEMPLATE_FOLDER
 from auto_dev.dao.generator import DAOGenerator
 from auto_dev.dao.dummy_data import generate_dummy_data, generate_single_dummy_data, generate_aggregated_dummy_data
@@ -36,7 +37,27 @@ class DAOScaffolder:
             api_spec_path = self._get_api_spec_path(component_data)
             api_spec = self._load_and_validate_api_spec(api_spec_path)
 
-            models = api_spec.get("components", {}).get("schemas", {})
+            schemas = api_spec.get("components", {}).get("schemas", {})
+            persistent_schemas = [schema for schema, details in schemas.items() if details.get("x-persistent")]
+
+            if persistent_schemas:
+                self.logger.info("Found schemas with x-persistent tag:")
+                for schema in persistent_schemas:
+                    self.logger.info(f"  - {schema}")
+                user_input = input("Use these x-persistent schemas for scaffolding? (y/n): ").lower().strip()
+            else:
+                persistent_schemas = self.identify_persistent_schemas(api_spec)
+                self.logger.info("Identified persistent schemas:")
+                for schema in persistent_schemas:
+                    self.logger.info(f"  - {schema}")
+                user_input = input("Use these identified persistent schemas for scaffolding? (y/n): ").lower().strip()
+
+            if user_input != "y":
+                self.logger.info("Exiting scaffolding process.")
+                return
+
+            # Filter models to only include persistent schemas
+            models = {k: v for k, v in schemas.items() if k in persistent_schemas}
             paths = api_spec.get("paths", {})
 
             aggregated_dummy_data = self._generate_aggregated_dummy_data(models)
@@ -100,6 +121,9 @@ class DAOScaffolder:
                 msg = "OpenAPI spec does not contain explicit models in 'components/schemas'."
                 self.logger.error(msg)
                 raise ValueError(msg)
+
+            if not validate_openapi_spec(api_spec, self.logger):
+                raise SystemExit(1)
 
             return api_spec
 
@@ -206,3 +230,44 @@ class DAOScaffolder:
         test_script_path.parent.mkdir(parents=True, exist_ok=True)
         write_to_file(test_script_path, test_script, FileType.PYTHON)
         self.logger.info(f"Test script saved to: {test_script_path}")
+
+    def identify_persistent_schemas(self, api_spec: dict[str, Any]) -> list[str]:
+        schemas = api_spec.get("components", {}).get("schemas", {})
+        schema_usage = defaultdict(set)
+
+        def process_schema(schema: dict[str, Any]) -> str | None:
+            if "$ref" in schema:
+                return schema["$ref"].split("/")[-1]
+            return None
+
+        def analyze_schema(schema: dict[str, Any], usage_type: str) -> None:
+            schema_name = process_schema(schema)
+            if schema_name:
+                schema_usage[schema_name].add(usage_type)
+            if "properties" in schemas.get(schema_name, {}):
+                for prop in schemas[schema_name].get("properties", {}).values():
+                    nested_schema_name = process_schema(prop)
+                    if nested_schema_name:
+                        schema_usage[nested_schema_name].add(f"nested_{usage_type}")
+
+        def analyze_content(content: dict[str, Any], usage_type: str) -> None:
+            for media_details in content.values():
+                schema = media_details.get("schema", {})
+                if schema.get("type") == "array":
+                    analyze_schema(schema.get("items", {}), usage_type)
+                else:
+                    analyze_schema(schema, usage_type)
+
+        for path_details in api_spec.get("paths", {}).values():
+            for method_details in path_details.values():
+                if "requestBody" in method_details:
+                    analyze_content(method_details["requestBody"].get("content", {}), "request")
+
+                for response_details in method_details.get("responses", {}).values():
+                    analyze_content(response_details.get("content", {}), "response")
+
+        return [
+            schema
+            for schema, usage in schema_usage.items()
+            if "response" in usage or "nested_request" in usage
+        ]
