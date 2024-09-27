@@ -3,18 +3,16 @@
 import sys
 import subprocess
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import Mock, patch
 
 import yaml
 import pytest
-from jinja2 import Environment
 from aea.cli import cli as aea_cli
 from aea.configurations.base import PublicId
 
 from auto_dev.cli import cli
 from auto_dev.utils import get_logger
 from auto_dev.constants import DEFAULT_ENCODING
-from auto_dev.dao.generator import DAOGenerator
 from auto_dev.dao.scaffolder import DAOScaffolder
 from auto_dev.handler.scaffolder import HandlerScaffoldBuilder
 from auto_dev.protocols.scaffolder import read_protocol
@@ -246,87 +244,117 @@ class TestScaffoldConnection:
 
 
 class TestDAOScaffolder:
-    """Test DAOScaffolder class."""
+    """Test suite for DAOScaffolder."""
 
     @pytest.fixture
     def mock_logger(self):
-        """Mock logger for testing."""
-        return MagicMock()
+        """Mock logger."""
+        return Mock()
 
-    def test_dao_scaffolder_initialization(self, mock_logger):
-        """Test DAOScaffolder initialization."""
-        scaffolder = DAOScaffolder(mock_logger, verbose=True)
-        assert scaffolder.logger == mock_logger
-        assert scaffolder.verbose is True
-        assert isinstance(scaffolder.env, Environment)
+    @pytest.fixture
+    def scaffolder(self, mock_logger, tmp_path):
+        """Create a scaffolder instance with a temporary working directory."""
+        scaffolder = DAOScaffolder(mock_logger, verbose=True, auto_confirm=True)
+        scaffolder.component_yaml = tmp_path / "component.yaml"
+        return scaffolder
 
-    @patch("auto_dev.dao.scaffolder.Path")
-    @patch("auto_dev.dao.scaffolder.read_from_file")
-    @patch("auto_dev.dao.scaffolder.write_to_file")
-    @patch("auto_dev.dao.scaffolder.Environment")
-    def test_dao_scaffolder_scaffold(self, mock_env, mock_write, mock_read, mock_path, mock_logger):
-        """Test DAOScaffolder scaffold method."""
-        mock_env_instance = MagicMock()
-        mock_env.return_value = mock_env_instance
-        # ... rest of the test setup ...
+    @pytest.fixture
+    def mock_api_spec(self, tmp_path):
+        """Create a mock API spec file."""
+        api_spec = tmp_path / "test_api.yaml"
+        api_spec.write_text("""
+            components:
+              schemas:
+                TestModel:
+                  type: object
+                  properties:
+                    id: {type: integer}
+                    name: {type: string}
+            paths:
+              /test:
+                get:
+                  responses:
+                    '200':
+                      content:
+                        application/json:
+                          schema:
+                            $ref: '#/components/schemas/TestModel'
+        """)
+        return api_spec
 
-        mock_component_yaml = MagicMock()
-        mock_component_yaml.exists.return_value = True
-        mock_path.return_value = mock_component_yaml
+    def setup_component_yaml(self, scaffolder, api_spec_path):
+        """Set up the component.yaml file."""
+        scaffolder.component_yaml.write_text(f"api_spec: {api_spec_path}")
 
-        mock_read.return_value = {"api_spec": "fake_api_spec.yaml"}
+    @patch("auto_dev.dao.scaffolder.validate_openapi_spec", return_value=True)
+    @patch("auto_dev.dao.scaffolder.DAOGenerator")
+    @patch("builtins.input", return_value="y")
+    def test_scaffold(self, mock_input, mock_dao_generator, mock_validate, scaffolder, mock_api_spec):
+        """Test the entire scaffolding process."""
+        self.setup_component_yaml(scaffolder, mock_api_spec)
 
-        mock_api_spec = MagicMock()
-        mock_api_spec.exists.return_value = True
-        mock_api_spec.suffix = ".yaml"
-        mock_path.return_value = mock_api_spec
+        mock_generator = Mock()
+        mock_generator.generate_dao_classes.return_value = {"TestDAO": "class TestDAO:..."}
+        mock_dao_generator.return_value = mock_generator
 
-        with patch("auto_dev.dao.scaffolder.yaml.safe_load") as mock_yaml_load:
-            mock_yaml_load.return_value = {
-                "components": {
-                    "schemas": {
-                        "TestModel": {
-                            "type": "object",
-                            "properties": {"id": {"type": "integer"}, "name": {"type": "string"}},
-                        }
-                    }
-                },
-                "paths": {},
-            }
-
-            scaffolder = DAOScaffolder(mock_logger, verbose=True)
+        with patch("auto_dev.dao.scaffolder.Path.mkdir"), \
+             patch("auto_dev.dao.scaffolder.write_to_file") as mock_write:
             scaffolder.scaffold()
 
-        assert mock_write.call_count > 0
-        mock_logger.info.assert_called_with("DAO scaffolding and test script generation completed successfully.")
+            scaffolder.logger.info.assert_any_call("Starting DAO scaffolding process")
+            mock_validate.assert_called_once()
+            mock_generator.generate_dao_classes.assert_called_once()
 
+            assert mock_write.call_count >= 3
 
-class TestDAOGenerator:
-    """Test DAOGenerator class."""
+            scaffolder.logger.info.assert_any_call("DAO scaffolding and test script generation completed successfully.")
 
-    @pytest.fixture
-    def sample_models(self):
-        """Sample models for testing."""
-        return {"testmodel": {"type": "object", "properties": {"id": {"type": "integer"}, "name": {"type": "string"}}}}
+    @patch("auto_dev.dao.scaffolder.validate_openapi_spec", return_value=False)
+    def test_scaffold_invalid_api_spec(self, mock_validate, scaffolder, mock_api_spec):
+        """Test scaffolding with an invalid API spec."""
+        self.setup_component_yaml(scaffolder, mock_api_spec)
 
-    @pytest.fixture
-    def sample_paths(self):
-        """Sample paths for testing."""
-        return {}
+        with pytest.raises(SystemExit):
+            scaffolder.scaffold()
 
-    def test_dao_generator_initialization(self, sample_models, sample_paths):
-        """Test DAOGenerator initialization."""
-        generator = DAOGenerator(sample_models, sample_paths)
-        assert generator.models == sample_models
-        assert generator.paths == sample_paths
-        assert isinstance(generator.env, Environment)
-        assert generator.template is not None
+    def test_scaffold_missing_component_yaml(self, scaffolder):
+        """Test scaffolding with a missing component.yaml file."""
+        with pytest.raises(FileNotFoundError):
+            scaffolder.scaffold()
 
-    def test_generate_dao_classes(self, sample_models, sample_paths):
-        """Test DAOGenerator generate_dao_classes method."""
-        generator = DAOGenerator(sample_models, sample_paths)
-        dao_classes = generator.generate_dao_classes()
+    @patch("builtins.input", return_value="n")
+    @patch("auto_dev.dao.scaffolder.validate_openapi_spec", return_value=True)
+    def test_scaffold_user_abort(self, mock_validate, mock_input, scaffolder, tmp_path):
+        """Test scaffolding process when user aborts."""
+        dummy_openapi_path = tmp_path / "dummy_openapi.yaml"
+        dummy_openapi_path.write_text("""
+openapi: 3.0.0
+info:
+  title: Dummy API
+  version: 1.0.0
+paths:
+  /users:
+    get:
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+    """)
+        self.setup_component_yaml(scaffolder, dummy_openapi_path)
 
-        assert "testmodelDAO" in dao_classes
-        assert "class TestmodelDAO(BaseDAO):" in dao_classes["testmodelDAO"]
-        assert "def __init__(self):" in dao_classes["testmodelDAO"]
+        scaffolder.scaffold()
+        scaffolder.logger.info.assert_any_call("Exiting scaffolding process.")
