@@ -69,6 +69,8 @@ class DAOScaffolder:
             self._save_aggregated_dummy_data(aggregated_dummy_data)
             self._save_dao_classes(dao_classes)
 
+            self._generate_and_save_init_file(dao_classes)
+
             base_dao_template = self.env.get_template("base_dao.jinja")
             base_dao_content = base_dao_template.render()
             self._save_base_dao(base_dao_content)
@@ -230,6 +232,19 @@ class DAOScaffolder:
         test_script_path.parent.mkdir(parents=True, exist_ok=True)
         write_to_file(test_script_path, test_script, FileType.PYTHON)
         self.logger.info(f"Test script saved to: {test_script_path}")
+
+    def _generate_and_save_init_file(self, dao_classes: dict[str, str]) -> None:
+        try:
+            model_names = [class_name[:-3] for class_name in dao_classes.keys()]
+            init_template = self.env.get_template("__init__.jinja")
+            init_content = init_template.render(model_names=model_names)
+            dao_dir = Path("daos")
+            init_file_path = dao_dir / "__init__.py"
+            write_to_file(init_file_path, init_content, FileType.PYTHON)
+            self.logger.info(f"Generated and saved __init__.py: {init_file_path}")
+        except Exception as e:
+            self.logger.exception(f"Error generating and saving __init__.py: {e!s}")
+            raise
 
     def identify_persistent_schemas(self, api_spec: dict[str, Any]) -> list[str]:
         schemas = api_spec.get("components", {}).get("schemas", {})

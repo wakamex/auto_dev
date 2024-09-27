@@ -33,7 +33,7 @@ def _generate_property_dummy_data(prop_schema: dict[str, Any]) -> Any:
         "string": lambda: f"dummy_{random.randint(1000, 9999)}",  # noqa: S311
         "integer": lambda: random.randint(1, 100),  # noqa: S311
         "number": lambda: round(random.uniform(1, 100), 2),  # noqa: S311
-        "boolean": lambda: random.choice([True, False]),  # noqa: S311
+        "boolean": lambda: random.choice(["True", "False"]),  # noqa: S311
         "array": lambda: _generate_array_dummy_data(prop_schema),
         "object": lambda: _generate_model_dummy_data(prop_schema),
     }
