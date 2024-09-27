@@ -326,14 +326,15 @@ def tests(
 
 
 @scaffold.command()
+@click.option("--auto-confirm", is_flag=True, default=False, help="Auto confirm all actions")
 @click.pass_context
-def dao(ctx) -> None:
+def dao(ctx, auto_confirm) -> None:
     """Scaffold Data Access Objects (DAOs) and generate test script based on an OpenAPI 3 specification."""
     logger = ctx.obj["LOGGER"]
     verbose = ctx.obj["VERBOSE"]
 
     try:
-        scaffolder = DAOScaffolder(logger, verbose)
+        scaffolder = DAOScaffolder(logger, verbose, auto_confirm)
         scaffolder.scaffold()
     except Exception as e:
         logger.exception(f"Error during DAO scaffolding and test generation: {e}")

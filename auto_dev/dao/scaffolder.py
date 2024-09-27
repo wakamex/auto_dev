@@ -18,9 +18,10 @@ from auto_dev.dao.dummy_data import generate_dummy_data, generate_single_dummy_d
 class DAOScaffolder:
     """DAOScaffolder class is responsible for scaffolding DAO classes and test scripts."""
 
-    def __init__(self, logger: Any, verbose: bool):
+    def __init__(self, logger: Any, verbose: bool, auto_confirm: bool):
         self.logger = logger
         self.verbose = verbose
+        self.auto_confirm = auto_confirm
         self.env = Environment(
             loader=FileSystemLoader(Path(JINJA_TEMPLATE_FOLDER, "dao")),
             autoescape=True,
