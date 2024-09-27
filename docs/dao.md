@@ -38,6 +38,19 @@ The scaffolding process creates the following:
 To identify the persistent schemas, the scaffolder uses the following logic:
 
 1. It checks whether custom x-persistent field is set to true for a schema. If it is, the schema is identified as a persistent schema.
+
+   ```yaml
+   components:
+      schemas:
+         User:
+            x-persistent: true  # Marking the schema as persistent
+            type: object
+            properties:
+               name:
+                  type: string
+                  ...
+   ```
+
 2. If no x-persistent tags are found, it then attempts to identify all the schemas in the OpenAPI specification by checking if they are used in any request or response.
 3. If the schema is used in a request and is used in multiple contexts (request or response), it is identified as a persistent schema.
 
