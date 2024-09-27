@@ -2,22 +2,18 @@
 # ruff: noqa: E501
 
 import re
+from typing import Any
 from pathlib import Path
 from collections import defaultdict
-from typing import Any
 
 import yaml
 from jinja2 import Environment, FileSystemLoader
 from aea.configurations.base import PublicId
 
-from auto_dev.utils import change_dir, get_logger, camel_to_snake, validate_openapi_spec
-from auto_dev.constants import DEFAULT_ENCODING, JINJA_TEMPLATE_FOLDER
+from auto_dev.utils import change_dir, get_logger, write_to_file, camel_to_snake, validate_openapi_spec
+from auto_dev.constants import DEFAULT_ENCODING, JINJA_TEMPLATE_FOLDER, FileType
 from auto_dev.cli_executor import CommandExecutor
-from auto_dev.dao.scaffolder import DAOScaffolder
 from auto_dev.commands.metadata import read_yaml_file
-
-
-HTTP_PROTOCOL = "eightballer/http:0.1.0:bafybeihmhy6ax5uyjt7yxppn4viqswibcs5lsjhl3kvrsesorqe2u44jcm"
 
 
 class ScaffolderConfig:
@@ -72,7 +68,7 @@ class HandlerScaffolder:
         self.generate_handler()
 
         with self._change_dir():
-            self.save_handler(self.config.output / Path("handlers.py"))
+            self.save_handler()
             self.update_skill_yaml(Path("skill.yaml"))
             self.move_and_update_my_model()
             self.remove_behaviours()
@@ -80,7 +76,6 @@ class HandlerScaffolder:
 
         self.fingerprint()
         self.aea_install()
-        self.add_protocol()
 
     def _change_dir(self):
         return change_dir(Path("skills") / self.config.output)
@@ -92,6 +87,49 @@ class HandlerScaffolder:
             msg = "Failed to scaffold skill."
             raise ValueError(msg)
 
+    def extract_schema(self, operation, persistent_schemas):
+        """Extract the schema from the operation."""
+        if "responses" not in operation:
+            return None
+
+        success_response = next(
+            (
+                operation["responses"].get(code, {})
+                for code in ["201", "200"]
+                if code in operation["responses"]
+            ),
+            {},
+        )
+        content = success_response.get("content", {}).get("application/json", {})
+        schema_def = content.get("schema", {})
+
+        schema_ref = None
+        if schema_def.get("type") == "array":
+            schema_ref = schema_def.get("items", {}).get("$ref")
+        else:
+            schema_ref = schema_def.get("$ref")
+
+        schema_name = schema_ref.split("/")[-1] if schema_ref else None
+        return schema_name if schema_name in persistent_schemas else None
+
+    def classify_post_operation(self, path, operation):
+        """Classify the post operation."""
+        keywords = (
+            operation.get("operationId", "")
+            + " "
+            + operation.get("summary", "")
+            + " "
+            + operation.get("description", "")
+        ).lower()
+
+        if "{" in path:
+            return "update"
+        if any(word in keywords for word in ["create", "new"]):
+            return "insert"
+        if any(word in keywords for word in ["update", "modify"]):
+            return "update"
+        return "other"
+
     def generate_handler(self) -> None:
         """Generate handler."""
         openapi_spec = read_yaml_file(self.config.spec_file_path)
@@ -102,104 +140,80 @@ class HandlerScaffolder:
             self.logger.error("All paths in the OpenAPI spec must start with '/api'")
             raise SystemExit(1)
 
+        persistent_schemas = self._get_persistent_schemas(openapi_spec)
+        if not self._confirm_schemas(persistent_schemas):
+            raise SystemExit(1)
+
+        handler_methods = self._generate_handler_methods(openapi_spec, persistent_schemas)
+        if not handler_methods:
+            self.logger.error("Error: handler_methods is None. Unable to process.")
+            raise SystemExit(1)
+
+        self.handler_code = self._generate_handler_code(
+            persistent_schemas,
+            "\n\n".join(handler_methods),
+            self._get_path_params(openapi_spec)
+        )
+
+        if not self.handler_code:
+            self.logger.error("Error: handler_code is None. Unable to process.")
+            raise SystemExit(1)
+
+        return self.handler_code
+
+    def _get_persistent_schemas(self, openapi_spec):
         schemas = openapi_spec.get("components", {}).get("schemas", {})
-        persistent_schemas = [schema for schema, details in schemas.items() if details.get("x-persistent")]
+        persistent_schemas = [
+            schema for schema, details in schemas.items() if details.get("x-persistent")
+        ]
+        return persistent_schemas or self.identify_persistent_schemas(openapi_spec)
 
-        if not persistent_schemas:
-            persistent_schemas = self.identify_persistent_schemas(openapi_spec)
-
+    def _confirm_schemas(self, persistent_schemas):
         self.logger.info("Persistent schemas:")
         for schema in persistent_schemas:
             self.logger.info(f"  - {schema}")
+        return input("Use these schemas for augmenting? (y/n): ").lower().strip() == "y"
 
-        user_input = input("Use these schemas for augmenting? (y/n): ").lower().strip()
-        if user_input != "y":
-            self.logger.info("Exiting augmenting process.")
-            return
-
-        schema_filenames = [camel_to_snake(schema) + "_dao" for schema in persistent_schemas]
-
+    def _generate_handler_methods(self, openapi_spec, persistent_schemas):
         handler_methods = []
-
-        def extract_schema(operation):
-            if "responses" not in operation:
-                return None
-
-            success_response = next((operation["responses"].get(code, {}) for code in ["201", "200"] if code in operation["responses"]), {})
-            content = success_response.get("content", {}).get("application/json", {})
-            schema_def = content.get("schema", {})
-
-            if schema_def.get("type") == "array":
-                schema_ref = schema_def.get("items", {}).get("$ref")
-            else:
-                schema_ref = schema_def.get("$ref")
-
-            schema_name = schema_ref.split("/")[-1] if schema_ref else None
-            return schema_name if schema_name in persistent_schemas else None
-
-        def classify_post_operation(path, operation):
-            keywords = operation.get('operationId', '') + ' ' + operation.get('summary', '') + ' ' + operation.get('description', '')
-            keywords = keywords.lower()
-
-            if '{' in path:
-                return 'update'
-            elif any(word in keywords for word in ['create', 'new']):
-                return 'insert'
-            elif any(word in keywords for word in ['update', 'modify']):
-                return 'update'
-            else:
-                return 'other'
-
         for path, path_item in openapi_spec["paths"].items():
             for method, operation in path_item.items():
                 method_name = self.generate_method_name(method, path)
-                path_params = [
-                    param.strip("{}") for param in path.split("/") if param.startswith("{") and param.endswith("}")
-                ]
+                path_params = [param.strip("{}") for param in path.split("/") if param.startswith("{") and param.endswith("}")]
+                path_params_snake_case = [camel_to_snake(param) for param in path_params]
+                schema = self.extract_schema(operation, persistent_schemas)
+                operation_type = "other" if method.lower() != "post" else self.classify_post_operation(path, operation)
 
-                schema = extract_schema(operation)
-
-                operation_type = 'other'
-                if method.lower() == 'post':
-                    operation_type = classify_post_operation(path, operation)
-
-                method_template = self.jinja_env.get_template("method_template.jinja")
-                method_code = method_template.render(
-                    method_name=method_name,
-                    method=method,
-                    path=path,
-                    path_params=path_params,
-                    schema=schema,
-                    operation_type=operation_type
+                method_code = self.jinja_env.get_template("method_template.jinja").render(
+                    method_name=method_name, method=method, path=path,
+                    path_params=path_params, path_params_snake_case=path_params_snake_case,
+                    schema=schema, operation_type=operation_type,
                 )
-
                 handler_methods.append(method_code)
+        return handler_methods
 
-        all_methods = "\n\n".join(handler_methods)
-
-        header_template = self.jinja_env.get_template("handler_header.jinja")
-        handler_code = header_template.render(
-            author=self.config.author,
-            skill_name=self.config.output,
-            schemas=persistent_schemas,
-            schema_filenames=schema_filenames
+    def _generate_handler_code(self, persistent_schemas, all_methods, path_params):
+        schema_filenames = [camel_to_snake(schema) + "_dao" for schema in persistent_schemas]
+        header = self.jinja_env.get_template("handler_header.jinja").render(
+            author=self.config.author, skill_name=self.config.output,
+            schemas=persistent_schemas, schema_filenames=schema_filenames,
         )
-
-        main_handler_template = self.jinja_env.get_template("main_handler.jinja")
-        unexpected_message_handler_template = self.jinja_env.get_template("unexpected_message_handler.jinja")
-
-        path_params = set()
-        for path in openapi_spec.get("paths", {}):
-            path_params.update(re.findall(r"\{(\w+)\}", path))
-
-        main_handler = main_handler_template.render(
+        main_handler = self.jinja_env.get_template("main_handler.jinja").render(
             all_methods=all_methods,
-            unexpected_message_handler=unexpected_message_handler_template.render(),
-            path_params=path_params,
+            unexpected_message_handler=self.jinja_env.get_template("unexpected_message_handler.jinja").render(),
+            path_params=path_params[0], path_params_mapping=path_params[1],
         )
+        return header + main_handler
 
-        handler_code += main_handler
-        return handler_code
+    def _get_path_params(self, openapi_spec):
+        path_params = set()
+        path_params_mapping = {}
+        for path in openapi_spec.get("paths", {}):
+            for param in re.findall(r"\{(\w+)\}", path):
+                snake_case_param = camel_to_snake(param)
+                path_params.add(snake_case_param)
+                path_params_mapping[param] = snake_case_param
+        return path_params, path_params_mapping
 
     def generate_method_name(self, http_method, path):
         """Generate method name."""
@@ -217,21 +231,14 @@ class HandlerScaffolder:
         method_name += "_" + "_".join(name_parts)
         return method_name
 
-    def save_handler(self, path) -> None:
+    def save_handler(self) -> None:
         """Save handler to file."""
-        path = Path("handlers.py")
-        with open(path, "w", encoding=DEFAULT_ENCODING) as f:
-            try:
-                f.write(self.handler_code)
-            except Exception as e:
-                msg = f"Error writing to file: {e}"
-                raise ValueError(msg) from e
+        write_to_file(Path("handlers.py"), self.handler_code, file_type=FileType.PYTHON)
 
     def update_skill_yaml(self, file) -> None:
         """Update the skill.yaml file."""
         skill_yaml = read_yaml_file(file)
 
-        skill_yaml["protocols"] = [HTTP_PROTOCOL]
         skill_yaml["behaviours"] = {}
         del skill_yaml["handlers"]
         skill_yaml["handlers"] = {
@@ -307,13 +314,6 @@ class HandlerScaffolder:
             msg = f"Failed to execute {install_cmd}."
             raise ValueError(msg)
 
-    def add_protocol(self):
-        """Add the protocol."""
-        protocol_cmd = f"aea add protocol {HTTP_PROTOCOL}".split(" ")
-        if not CommandExecutor(protocol_cmd).execute(verbose=self.config.verbose):
-            msg = f"Failed to add {HTTP_PROTOCOL}."
-            raise ValueError(msg)
-
     def confirm_action(self, message):
         """Prompt the user for confirmation before performing an action."""
         if self.config.auto_confirm:
@@ -333,7 +333,6 @@ class HandlerScaffolder:
             f"Creating dialogues.py in: skills/{self.config.output}/",
             "Fingerprinting the skill",
             "Running 'aea install'",
-            f"Adding HTTP protocol: {HTTP_PROTOCOL}",
         ]
 
         if self.config.new_skill:
@@ -353,49 +352,37 @@ class HandlerScaffolder:
 
     def sanitize_identifier(self, name: str) -> str:
         """Sanitize the identifier."""
+        name = camel_to_snake(name)
         name = re.sub(r"[^0-9a-zA-Z_]", "_", name)
         if name and name[0].isdigit():
             name = "_" + name
         return name.lower()
 
     def identify_persistent_schemas(self, api_spec: dict[str, Any]) -> list[str]:
+        """Identify the persistent schemas."""
         schemas = api_spec.get("components", {}).get("schemas", {})
         schema_usage = defaultdict(set)
 
-        def process_schema(schema: dict[str, Any]) -> str | None:
+        def process_schema(schema: dict[str, Any], usage_type: str) -> None:
             if "$ref" in schema:
-                return schema["$ref"].split("/")[-1]
-            return None
-
-        def analyze_schema(schema: dict[str, Any], usage_type: str) -> None:
-            schema_name = process_schema(schema)
-            if schema_name:
+                schema_name = schema["$ref"].split("/")[-1]
                 schema_usage[schema_name].add(usage_type)
-            if "properties" in schemas.get(schema_name, {}):
-                for prop in schemas[schema_name].get("properties", {}).values():
-                    nested_schema_name = process_schema(prop)
-                    if nested_schema_name:
-                        schema_usage[nested_schema_name].add(f"nested_{usage_type}")
+                for prop in schemas.get(schema_name, {}).get("properties", {}).values():
+                    process_schema(prop, f"nested_{usage_type}")
+            elif schema.get("type") == "array" and "items" in schema:
+                process_schema(schema["items"], usage_type)
 
-        def analyze_content(content: dict[str, Any], usage_type: str) -> None:
-            for media_details in content.values():
-                schema = media_details.get("schema", {})
-                if schema.get("type") == "array":
-                    analyze_schema(schema.get("items", {}), usage_type)
-                else:
-                    analyze_schema(schema, usage_type)
-
-        for path_details in api_spec.get("paths", {}).values():
-            for method_details in path_details.values():
-                if "requestBody" in method_details:
-                    analyze_content(method_details["requestBody"].get("content", {}), "request")
-
-                for response_details in method_details.get("responses", {}).values():
-                    analyze_content(response_details.get("content", {}), "response")
+        for path in api_spec.get("paths", {}).values():
+            for method in path.values():
+                if "requestBody" in method:
+                    for content in method["requestBody"].get("content", {}).values():
+                        process_schema(content.get("schema", {}), "request")
+                for response in method.get("responses", {}).values():
+                    for content in response.get("content", {}).values():
+                        process_schema(content.get("schema", {}), "response")
 
         return [
-            schema
-            for schema, usage in schema_usage.items()
+            schema for schema, usage in schema_usage.items()
             if "response" in usage or "nested_request" in usage
         ]
 

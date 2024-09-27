@@ -20,13 +20,10 @@
 
 import re
 import json
-from typing import Optional, cast
 from urllib.parse import unquote, urlparse
 
 from aea.skills.base import Handler
-from aea.protocols.base import Message
 from packages.eightballer.protocols.http.message import HttpMessage as ApiHttpMessage
-from packages.{{ author }}.skills.{{ skill_name }}.dialogues import HttpDialogue
 
 {% for schema, filename in zip(schemas, schema_filenames) -%}
 from .daos.{{ filename }} import {{ schema }}DAO

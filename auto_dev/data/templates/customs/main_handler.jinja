@@ -5,26 +5,36 @@
         path = parsed_url.path
         body = message.body
 
+        self.context.logger.info(f"Received {method.upper()} request for {path}")
+
         normalized_path = path.rstrip("/")
-{% for param in path_params %}
-        normalized_path = re.sub(r"/(\d+)(?=/|$)", "/{{ param }}", normalized_path)
+{% for original, snake_case in path_params_mapping.items() %}
+        normalized_path = re.sub(r"/(\d+)(?=/|$)", "/{{ original }}", normalized_path)
 {% endfor %}
         handler_name = f"handle_{method}_{normalized_path.lstrip('/').replace('/', '_')}"
-{% for param in path_params %}
-        handler_name = handler_name.replace("{{ param }}", "by_{{ param }}")
+{% for original, snake_case in path_params_mapping.items() %}
+        handler_name = handler_name.replace("{{ original }}", "by_{{ snake_case }}")
 {% endfor %}
         handler_method = getattr(self, handler_name, None)
 
         if handler_method:
+            self.context.logger.debug(f"Found handler method: {handler_name}")
             kwargs = {"body": body} if method in {"post", "put", "patch", "delete"} else {}
-{% for param in path_params %}
-            {{ param }}_match = re.search(r"/(\d+)(?=/|$)", path)
-            if {{ param }}_match:
-                kwargs["{{ param }}"] = {{ param }}_match.group(1)
+{% for original, snake_case in path_params_mapping.items() %}
+            {{ snake_case }}_match = re.search(r"/(\d+)(?=/|$)", path)
+            if {{ snake_case }}_match:
+                kwargs["{{ snake_case }}"] = {{ snake_case }}_match.group(1)
 {% endfor %}
-            return handler_method(message, **kwargs)
-
-        return self.handle_unexpected_message(message)
+            try:
+                result = handler_method(message, **kwargs)
+                self.context.logger.info(f"Successfully handled {method.upper()} request for {path}")
+                return result
+            except Exception as e:
+                self.context.logger.exception(f"Error handling {method.upper()} request for {path}: {e!s}")
+                raise
+        else:
+            self.context.logger.warning(f"No handler found for {method.upper()} request to {path}")
+            return self.handle_unexpected_message(message)
 
 {{ all_methods }}
 
