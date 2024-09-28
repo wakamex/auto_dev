@@ -237,8 +237,12 @@ class DAOScaffolder:
     def _generate_and_save_init_file(self, dao_classes: dict[str, str]) -> None:
         try:
             model_names = [class_name[:-3] for class_name in dao_classes.keys()]
+            file_names = [camel_to_snake(model) for model in model_names]
+            model_file_pairs = list(zip(model_names, file_names, strict=False))
             init_template = self.env.get_template("__init__.jinja")
-            init_content = init_template.render(model_names=model_names)
+            init_content = init_template.render(
+                model_file_pairs=model_file_pairs
+                )
             dao_dir = Path("daos")
             init_file_path = dao_dir / "__init__.py"
             write_to_file(init_file_path, init_content, FileType.PYTHON)

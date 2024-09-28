@@ -10,8 +10,9 @@ import yaml
 from jinja2 import Environment, FileSystemLoader
 from aea.configurations.base import PublicId
 
+from auto_dev.enums import FileType
 from auto_dev.utils import change_dir, get_logger, write_to_file, camel_to_snake, validate_openapi_spec
-from auto_dev.constants import DEFAULT_ENCODING, JINJA_TEMPLATE_FOLDER, FileType
+from auto_dev.constants import DEFAULT_ENCODING, JINJA_TEMPLATE_FOLDER
 from auto_dev.cli_executor import CommandExecutor
 from auto_dev.commands.metadata import read_yaml_file
 
@@ -73,7 +74,7 @@ class HandlerScaffolder:
             self.move_and_update_my_model()
             self.remove_behaviours()
             self.create_dialogues()
-
+            self.create_exceptions()
         self.fingerprint()
         self.aea_install()
 
@@ -184,24 +185,38 @@ class HandlerScaffolder:
                 schema = self.extract_schema(operation, persistent_schemas)
                 operation_type = "other" if method.lower() != "post" else self.classify_post_operation(path, operation)
 
+                # Extract response information
+                response_info = self._extract_response_info(operation)
+                
+                # Extract error responses
+                error_responses = self._extract_error_responses(operation)
+
                 method_code = self.jinja_env.get_template("method_template.jinja").render(
                     method_name=method_name, method=method, path=path,
                     path_params=path_params, path_params_snake_case=path_params_snake_case,
                     schema=schema, operation_type=operation_type,
+                    status_code=response_info['status_code'],
+                    status_text=response_info['status_text'],
+                    headers=response_info['headers'],
+                    error_responses=error_responses,
                 )
                 handler_methods.append(method_code)
         return handler_methods
 
     def _generate_handler_code(self, persistent_schemas, all_methods, path_params):
         schema_filenames = [camel_to_snake(schema) + "_dao" for schema in persistent_schemas]
+
         header = self.jinja_env.get_template("handler_header.jinja").render(
-            author=self.config.author, skill_name=self.config.output,
-            schemas=persistent_schemas, schema_filenames=schema_filenames,
+            author=self.config.author,
+            skill_name=self.config.output,
+            schemas=persistent_schemas,
+            schema_filenames=schema_filenames,
         )
         main_handler = self.jinja_env.get_template("main_handler.jinja").render(
             all_methods=all_methods,
             unexpected_message_handler=self.jinja_env.get_template("unexpected_message_handler.jinja").render(),
-            path_params=path_params[0], path_params_mapping=path_params[1],
+            path_params=path_params[0],
+            path_params_mapping=path_params[1],
         )
         return header + main_handler
 
@@ -322,6 +337,11 @@ class HandlerScaffolder:
         response = input(f"{message} (y/n): ").lower().strip()
         return response in {"y", "yes"}
 
+    def create_exceptions(self) -> None:
+        """Create the exceptions file."""
+        exceptions_template = self.jinja_env.get_template("exceptions.jinja").render()
+        write_to_file(Path("exceptions.py"), exceptions_template, file_type=FileType.PYTHON)
+
     def present_actions(self):
         """Present the scaffold summary."""
         actions = [
@@ -331,6 +351,7 @@ class HandlerScaffolder:
             f"Moving and updating my_model.py to strategy.py in: skills/{self.config.output}/",
             f"Removing behaviours.py in: skills/{self.config.output}/",
             f"Creating dialogues.py in: skills/{self.config.output}/",
+            f"Creating exceptions.py in: skills/{self.config.output}/",
             "Fingerprinting the skill",
             "Running 'aea install'",
         ]
@@ -385,6 +406,49 @@ class HandlerScaffolder:
             schema for schema, usage in schema_usage.items()
             if "response" in usage or "nested_request" in usage
         ]
+
+    def _extract_response_info(self, operation):
+        responses = operation.get("responses", {})
+
+        status_code = 200
+        status_text = "OK"
+        headers = {}
+
+        for code, response in responses.items():
+            if 200 <= int(code) < 300:
+                status_code = int(code)
+                status_text = response.get("description", "OK")
+                headers = response.get("headers", {})
+                break
+
+        return {
+            "status_code": status_code,
+            "status_text": status_text,
+            "headers": headers,
+        }
+
+    def _extract_error_responses(self, operation):
+        responses = operation.get("responses", {})
+        error_responses = {}
+
+        error_mapping = {
+            "400": ("BadRequestError", "Bad Request"),
+            "401": ("UnauthorizedError", "Unauthorized"),
+            "403": ("ForbiddenError", "Forbidden"),
+            "404": ("NotFoundError", "Not Found"),
+            "422": ("ValidationError", "Unprocessable Entity"),
+        }
+
+        for code, response in responses.items():
+            if 400 <= int(code) < 600:
+                error_info = error_mapping.get(code, ("Exception", response.get("description", "Error")))
+                error_responses[code] = {
+                    "exception": error_info[0],
+                    "message": response.get("description", error_info[1]),
+                    "status_text": error_info[1],
+                }
+
+        return error_responses
 
 
 class HandlerScaffoldBuilder:

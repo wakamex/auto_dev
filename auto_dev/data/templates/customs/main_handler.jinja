@@ -9,7 +9,7 @@
 
         normalized_path = path.rstrip("/")
 {% for original, snake_case in path_params_mapping.items() %}
-        normalized_path = re.sub(r"/(\d+)(?=/|$)", "/{{ original }}", normalized_path)
+        normalized_path = re.sub(r"/(?P<{{ snake_case }}>\d+?)(?=/|$)", "/{{ original }}", normalized_path)
 {% endfor %}
         handler_name = f"handle_{method}_{normalized_path.lstrip('/').replace('/', '_')}"
 {% for original, snake_case in path_params_mapping.items() %}
@@ -21,7 +21,7 @@
             self.context.logger.debug(f"Found handler method: {handler_name}")
             kwargs = {"body": body} if method in {"post", "put", "patch", "delete"} else {}
 {% for original, snake_case in path_params_mapping.items() %}
-            {{ snake_case }}_match = re.search(r"/(\d+)(?=/|$)", path)
+            {{ snake_case }}_match = re.search(r"/(?P<{{ snake_case }}>\d+?)(?=/|$)", path)
             if {{ snake_case }}_match:
                 kwargs["{{ snake_case }}"] = {{ snake_case }}_match.group(1)
 {% endfor %}
