@@ -1,12 +1,12 @@
 """DAOScaffolder class is responsible for scaffolding DAO classes and test scripts."""
 
 import json
-from typing import Any, Dict, List, Set
+from typing import Any
 from pathlib import Path
+from collections import defaultdict
 
 import yaml
 from jinja2 import Environment, FileSystemLoader
-from collections import defaultdict
 
 from auto_dev.enums import FileType
 from auto_dev.utils import write_to_file, camel_to_snake, read_from_file, validate_openapi_spec
@@ -252,42 +252,75 @@ class DAOScaffolder:
             raise
 
     def identify_persistent_schemas(self, api_spec: dict[str, Any]) -> list[str]:
+        """Identify persistent schemas in the API spec."""
         schemas = api_spec.get("components", {}).get("schemas", {})
         schema_usage = defaultdict(set)
 
-        def process_schema(schema: dict[str, Any]) -> str | None:
-            if "$ref" in schema:
-                return schema["$ref"].split("/")[-1]
-            return None
-
-        def analyze_schema(schema: dict[str, Any], usage_type: str) -> None:
-            schema_name = process_schema(schema)
-            if schema_name:
-                schema_usage[schema_name].add(usage_type)
-            if "properties" in schemas.get(schema_name, {}):
-                for prop in schemas[schema_name].get("properties", {}).values():
-                    nested_schema_name = process_schema(prop)
-                    if nested_schema_name:
-                        schema_usage[nested_schema_name].add(f"nested_{usage_type}")
-
-        def analyze_content(content: dict[str, Any], usage_type: str) -> None:
-            for media_details in content.values():
-                schema = media_details.get("schema", {})
-                if schema.get("type") == "array":
-                    analyze_schema(schema.get("items", {}), usage_type)
-                else:
-                    analyze_schema(schema, usage_type)
-
-        for path_details in api_spec.get("paths", {}).values():
-            for method_details in path_details.values():
-                if "requestBody" in method_details:
-                    analyze_content(method_details["requestBody"].get("content", {}), "request")
-
-                for response_details in method_details.get("responses", {}).values():
-                    analyze_content(response_details.get("content", {}), "response")
+        self._analyze_paths(api_spec, schema_usage, schemas)
 
         return [
             schema
             for schema, usage in schema_usage.items()
             if "response" in usage or "nested_request" in usage
         ]
+
+    def _analyze_paths(self, api_spec: dict[str, Any], schema_usage: dict[str, set], schemas: dict[str, Any]) -> None:
+        for path_details in api_spec.get("paths", {}).values():
+            for method_details in path_details.values():
+                self._analyze_method(method_details, schema_usage, schemas)
+
+    def _analyze_method(
+        self,
+        method_details: dict[str, Any],
+        schema_usage: dict[str, set],
+        schemas: dict[str, Any]
+    ) -> None:
+        if "requestBody" in method_details:
+            self._analyze_content(method_details["requestBody"].get("content", {}), "request", schema_usage, schemas)
+
+        for response_details in method_details.get("responses", {}).values():
+            self._analyze_content(response_details.get("content", {}), "response", schema_usage, schemas)
+
+    def _analyze_content(
+        self,
+        content: dict[str, Any],
+        usage_type: str,
+        schema_usage: dict[str, set],
+        schemas: dict[str, Any]
+    ) -> None:
+        for media_details in content.values():
+            schema = media_details.get("schema", {})
+            if schema.get("type") == "array":
+                self._analyze_schema(schema.get("items", {}), usage_type, schema_usage, schemas)
+            else:
+                self._analyze_schema(schema, usage_type, schema_usage, schemas)
+
+    def _analyze_schema(
+        self,
+        schema: dict[str, Any],
+        usage_type: str,
+        schema_usage: dict[str, set],
+        schemas: dict[str, Any]
+    ) -> None:
+        schema_name = self._process_schema(schema)
+        if schema_name:
+            schema_usage[schema_name].add(usage_type)
+            self._analyze_nested_properties(schema_name, usage_type, schema_usage, schemas)
+
+    def _analyze_nested_properties(
+        self,
+        schema_name: str,
+        usage_type: str,
+        schema_usage: dict[str, set],
+        schemas: dict[str, Any]
+    ) -> None:
+        if "properties" in schemas.get(schema_name, {}):
+            for prop in schemas[schema_name].get("properties", {}).values():
+                nested_schema_name = self._process_schema(prop)
+                if nested_schema_name:
+                    schema_usage[nested_schema_name].add(f"nested_{usage_type}")
+
+    def _process_schema(self, schema: dict[str, Any]) -> str | None:
+        if "$ref" in schema:
+            return schema["$ref"].split("/")[-1]
+        return None

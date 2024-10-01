@@ -291,6 +291,7 @@ class TestDAOScaffolder:
     @patch("builtins.input", return_value="y")
     def test_scaffold(self, mock_input, mock_dao_generator, mock_validate, scaffolder, mock_api_spec):
         """Test the entire scaffolding process."""
+        assert mock_input.return_value == "y"
         self.setup_component_yaml(scaffolder, mock_api_spec)
 
         mock_generator = Mock()
@@ -317,6 +318,8 @@ class TestDAOScaffolder:
         with pytest.raises(SystemExit):
             scaffolder.scaffold()
 
+        assert mock_validate.return_value is False
+
     def test_scaffold_missing_component_yaml(self, scaffolder):
         """Test scaffolding with a missing component.yaml file."""
         with pytest.raises(FileNotFoundError):
@@ -326,6 +329,9 @@ class TestDAOScaffolder:
     @patch("auto_dev.dao.scaffolder.validate_openapi_spec", return_value=True)
     def test_scaffold_user_abort(self, mock_validate, mock_input, scaffolder, tmp_path):
         """Test scaffolding process when user aborts."""
+
+        assert mock_input.return_value == "n"
+        assert mock_validate.return_value is True
         dummy_openapi_path = tmp_path / "dummy_openapi.yaml"
         dummy_openapi_path.write_text("""
 openapi: 3.0.0
