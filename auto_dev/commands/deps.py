@@ -47,6 +47,7 @@ from rich.progress import track
 from auto_dev.base import build_cli
 from auto_dev.utils import FileLoader, write_to_file
 from auto_dev.constants import DEFAULT_TIMEOUT, DEFAULT_ENCODING, FileType
+from auto_dev.enums import FileType
 from auto_dev.exceptions import AuthenticationError, NetworkTimeoutError
 
 
@@ -408,7 +409,7 @@ open_aea_repo = GitDependency(
 
 auto_dev_repo = GitDependency(
     name="autonomy-dev",
-    version="0.2.73",
+    version="0.2.75",
     location=DependencyLocation.REMOTE,
     url="https://api.github.com/repos/8ball030/auto_dev",
     extras=["all"],

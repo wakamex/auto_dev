@@ -1,14 +1,18 @@
 """Implement scaffolding tooling."""
 
+import difflib
 from copy import deepcopy
 from pathlib import Path
 
 import yaml
 import rich_click as click
+from aea.configurations.base import PublicId
 
 from auto_dev.base import build_cli
-from auto_dev.utils import get_logger, write_to_file
-from auto_dev.constants import DEFAULT_ENCODING, FileType
+from auto_dev.enums import FileType
+from auto_dev.utils import get_logger, write_to_file, read_from_file
+from auto_dev.constants import DEFAULT_ENCODING
+from auto_dev.handler.scaffolder import HandlerScaffoldBuilder
 
 
 logger = get_logger()
@@ -273,6 +277,77 @@ def connection(connections) -> None:
     connection_scaffolder = ConnectionScaffolder()
     connection_scaffolder.scaffold(connections)
     logger.info("Connections scaffolded.")
+
+
+@augment.command()
+@click.argument("component_type", type=click.Choice(["openapi3"]))
+@click.option("--auto-confirm", is_flag=True, default=False, help="Auto confirm the augmentation")
+@click.pass_context
+def customs(ctx, component_type, auto_confirm):
+    """Augment a customs component with OpenAPI3 handlers."""
+    logger = ctx.obj["LOGGER"]
+    logger.info(f"Augmenting {component_type} component")
+    verbose = ctx.obj["VERBOSE"]
+
+    if not Path("component.yaml").exists():
+        logger.error("component.yaml not found in the current directory.")
+        return
+
+    customs_config = read_from_file(Path("component.yaml"), FileType.YAML)
+    if customs_config is None:
+        logger.error("Error: customs_config is None. Unable to process.")
+        return
+
+    api_spec_path = customs_config.get("api_spec")
+    if not api_spec_path:
+        logger.error("api_spec key not found in component.yaml")
+        return
+
+    component_author = customs_config.get("author")
+    component_name = customs_config.get("name")
+    public_id = PublicId(component_author, component_name.split(":")[0])
+
+    scaffolder = (
+        HandlerScaffoldBuilder()
+        .create_scaffolder(
+            api_spec_path,
+            public_id,
+            logger,
+            verbose,
+            new_skill=False,
+            auto_confirm=auto_confirm,
+        )
+        .build()
+    )
+
+    handler_code = scaffolder.generate_handler()
+
+    handler_path = Path("handlers.py")
+    if handler_path.exists():
+        existing_handler_code = read_from_file(handler_path, FileType.PYTHON)
+
+        if existing_handler_code != handler_code:
+            diff = difflib.unified_diff(
+                existing_handler_code.splitlines(keepends=True),
+                handler_code.splitlines(keepends=True),
+                fromfile="existing",
+                tofile="new",
+            )
+            logger.info("Differences in handlers.py:")
+            logger.info("".join(diff))
+
+            if not auto_confirm:
+                confirm = click.confirm("Do you want to update handlers.py with these changes?")
+                if not confirm:
+                    logger.info("Exiting.")
+                    return
+
+    write_to_file(handler_path, handler_code, FileType.PYTHON)
+    logger.info(f"Handler code written to {handler_path}")
+
+    scaffolder.create_dialogues()
+    scaffolder.create_exceptions()
+    logger.info("OpenAPI3 scaffolding completed successfully.")
 
 
 if __name__ == "__main__":

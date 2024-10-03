@@ -2,6 +2,7 @@
 
 import os
 import json
+import time
 import shutil
 import logging
 import operator
@@ -10,6 +11,7 @@ import subprocess
 from glob import glob
 from typing import Any
 from pathlib import Path
+from datetime import timezone, timedelta
 from functools import reduce
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -20,12 +22,13 @@ import rich_click as click
 from rich.logging import RichHandler
 from aea.cli.utils.config import get_registry_path_from_cli_config
 from aea.cli.utils.context import Context
+from openapi_spec_validator import validate_spec
 from aea.configurations.base import AgentConfig
+from openapi_spec_validator.exceptions import OpenAPIValidationError
 
-from auto_dev.enums import FileOperation
+from auto_dev.enums import FileType, FileOperation
+from auto_dev.constants import DEFAULT_ENCODING, AUTONOMY_PACKAGES_FILE
 from auto_dev.exceptions import NotFound, OperationError
-
-from .constants import DEFAULT_ENCODING, AUTONOMY_PACKAGES_FILE, FileType
 
 
 def get_logger(name: str = __name__, log_level: str = "INFO") -> logging.Logger:
@@ -58,19 +61,24 @@ def get_logger(name: str = __name__, log_level: str = "INFO") -> logging.Logger:
     return log
 
 
-def get_packages():
+def get_packages(
+    autonomy_packages_file: str = AUTONOMY_PACKAGES_FILE, type="dev", check=True, hashmap=False
+) -> list[Path]:
     """Get the packages file."""
-    with open(AUTONOMY_PACKAGES_FILE, encoding=DEFAULT_ENCODING) as file:
+    with open(autonomy_packages_file, encoding=DEFAULT_ENCODING) as file:
         packages = json.load(file)
-    dev_packages = packages["dev"]
-    results = []
+    dev_packages = packages[type]
+    results = {} if hashmap else []
     for package in dev_packages:
         component_type, author, component_name, _ = package.split("/")
         package_path = Path(f"packages/{author}/{component_type}s/{component_name}")
-        if not package_path.exists():
+        if not package_path.exists() and check:
             msg = f"Package {package} not found at: {package_path} does not exist"
             raise FileNotFoundError(msg)
-        results.append(package_path)
+        if hashmap:
+            results[package_path] = dev_packages[package]
+        else:
+            results.append(package_path)
     return results
 
 
@@ -121,7 +129,9 @@ def get_paths(path: str | None = None, changed_only: bool = False):
     def filter_git_interferace_files(file_path: str):
         regexs = [
             "M  ",
+            "A  ",
             "MM ",
+            "AM ",
         ]
         for regex in regexs:
             if regex in file_path:
@@ -242,20 +252,30 @@ def remove_suffix(text: str, suffix: str) -> str:
     return text[: -len(suffix)] if suffix and text.endswith(suffix) else text
 
 
+def load_aea_config():
+    """Load the aea-config.yaml file."""
+    aea_config = Path("aea-config.yaml")
+    if not aea_config.exists():
+        msg = f"Could not find {aea_config}"
+        raise FileNotFoundError(msg)
+
+    # Notes, we have a bit of an issue here.
+    # The loader for the agent config only loads the first document in the yaml file.
+    # We have to load all the documents in the yaml file, however, later on, we run into issues
+    # with the agent config loader not being able to load the yaml file.
+    # I propose we we raise an issue to address ALL instances of agent loading
+    agent_config_yaml = list(yaml.safe_load_all(aea_config.read_text(encoding=DEFAULT_ENCODING)))[0]
+    agent_config_json = json.loads(json.dumps(agent_config_yaml))
+    return agent_config_json
+
+
 def load_aea_ctx(func: Callable[[click.Context, Any, Any], Any]) -> Callable[[click.Context, Any, Any], Any]:
     """Load aea Context and AgentConfig if aea-config.yaml exists."""
 
     def wrapper(ctx: click.Context, *args, **kwargs):
-        aea_config = Path("aea-config.yaml")
-        if not aea_config.exists():
-            msg = f"Could not find {aea_config}"
-            raise FileNotFoundError(msg)
-
+        agent_config_json = load_aea_config()
         registry_path = get_registry_path_from_cli_config()
         ctx.aea_ctx = Context(cwd=".", verbosity="INFO", registry_path=registry_path)
-
-        agent_config_yaml = yaml.safe_load(aea_config.read_text(encoding=DEFAULT_ENCODING))
-        agent_config_json = json.loads(json.dumps(agent_config_yaml))
         ctx.aea_ctx.agent_config = AgentConfig.from_json(agent_config_json)
 
         return func(ctx, *args, **kwargs)
@@ -265,11 +285,19 @@ def load_aea_ctx(func: Callable[[click.Context, Any, Any], Any]) -> Callable[[cl
     return wrapper
 
 
-def write_to_file(file_path: str, content: Any, file_type: FileType = FileType.TEXT) -> None:
+def currenttz():
+    """Return the current timezone."""
+    if time.daylight:
+        return timezone(timedelta(seconds=-time.altzone), time.tzname[1])
+    else:
+        return timezone(timedelta(seconds=-time.timezone), time.tzname[0])
+
+
+def write_to_file(file_path: str, content: Any, file_type: FileType = FileType.TEXT, **kwargs) -> None:
     """Write content to a file."""
     try:
         with open(file_path, "w", encoding=DEFAULT_ENCODING) as f:
-            if file_type == FileType.TEXT:
+            if file_type in {FileType.TEXT, FileType.PYTHON}:
                 f.write(content)
             elif file_type == FileType.YAML:
                 if isinstance(content, list):
@@ -277,7 +305,11 @@ def write_to_file(file_path: str, content: Any, file_type: FileType = FileType.T
                 else:
                     yaml.dump(content, f, default_flow_style=False, sort_keys=False)
             elif file_type == FileType.JSON:
-                json.dump(content, f, separators=(",", ":"))
+                json_kwargs = {"separators": (",", ":")}
+                json_kwargs.update(kwargs)
+                json.dump(content, f, **json_kwargs)
+            elif file_type == FileType.PYTHON:
+                f.write(content)
             else:
                 msg = f"Invalid file_type, must be one of {list(FileType)}."
                 raise ValueError(msg)
@@ -296,11 +328,24 @@ def read_from_file(file_path: str, file_type: FileType = FileType.TEXT) -> Any:
                 return yaml.safe_load(f)
             if file_type == FileType.JSON:
                 return json.load(f)
+            if file_type == FileType.PYTHON:
+                return f.read()
             msg = f"Invalid file_type, must be one of {list(FileType)}."
             raise ValueError(msg)
     except Exception as e:
         msg = f"Error reading from file {file_path}: {e}"
         raise ValueError(msg) from e
+
+
+def validate_openapi_spec(openapi_spec: dict, logger: logging.Logger) -> bool:
+    """Validate an OpenAPI specification."""
+    try:
+        validate_spec(openapi_spec)
+        logger.info("OpenAPI spec validation successful")
+        return True
+    except OpenAPIValidationError as e:
+        logger.exception(f"OpenAPI spec validation failed: {e!s}")
+        return False
 
 
 # We want to use emojis as much as possible in all output.

@@ -27,8 +27,9 @@ from aea.configurations.constants import (
 )
 
 from auto_dev.base import build_cli
+from auto_dev.enums import FileType
 from auto_dev.utils import write_to_file
-from auto_dev.constants import DEFAULT_ENCODING, FileType
+from auto_dev.constants import DEFAULT_ENCODING
 
 
 cli = build_cli()

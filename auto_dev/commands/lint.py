@@ -24,7 +24,7 @@ cli = build_cli()
     "-p",
     "--path",
     help="Path to code to lint. If not provided will lint all packages.",
-    type=click.Path(exists=True, file_okay=False),
+    type=click.Path(exists=True, file_okay=True),
     default=None,
 )
 @click.option(
