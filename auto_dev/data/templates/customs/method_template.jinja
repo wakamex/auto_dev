@@ -1,0 +1,48 @@
+    def {{ method_name }}(self, _message: ApiHttpMessage{% for param in path_params_snake_case %}, {{ param }}{% endfor %}{% if method|lower in ['post', 'put', 'patch', 'delete'] %}, body{% endif %}):
+        {% raw %}"""{% endraw %}Handle {{ method|upper }} request for {{ path }}.{% raw %}"""{% endraw %}
+{%- if path_params_snake_case %}
+        self.context.logger.debug(f"Path parameters: {% for param in path_params_snake_case %}{{ param }}={{ '{' }}{{ param }}{{ '}' }}{% if not loop.last %}, {% endif %}{% endfor %}")
+{%- endif %}
+{%- if method|lower in ['post', 'put', 'patch', 'delete'] %}
+        self.context.logger.debug(f"Request body: {body}")
+{% endif %}
+        try:
+            {%- if method|lower == 'get' and not path_params %}
+            result = {{ schema|lower|replace(' ', '_') }}_dao.get_all()
+            {%- elif method|lower == 'post' and operation_type == 'insert' %}
+            {{ schema|lower|replace(' ', '_') }}_body = json.loads(body)
+            result = {{ schema|lower|replace(' ', '_') }}_dao.insert({{ schema|lower|replace(' ', '_') }}_body)
+            {%- elif method|lower == 'post' and operation_type == 'update' %}
+            {{ schema|lower|replace(' ', '_') }}_body = json.loads(body)
+            result = {{ schema|lower|replace(' ', '_') }}_dao.update({{ path_params_snake_case[0] }}, {{ schema|lower|replace(' ', '_') }}_body)
+            {%- else %}
+            # TODO: Implement {{ method|upper }} logic for {{ path }}
+            raise NotImplementedError
+            {%- endif %}
+
+            self.context.logger.info("Successfully processed {{ method|upper }} request for {{ path }}")
+            self.context.logger.debug(f"Result: {result}")
+            return ApiResponse(
+                headers={{ headers }},
+                content=result,
+                status_code={{ status_code }},
+                status_text="{{ status_text }}"
+            )
+{% for error_code, error_info in error_responses.items() %}
+        except {{ error_info.exception }}:
+            self.context.logger.exception("{{ error_info.message }}")
+            return ApiResponse(
+                headers={{ headers }},
+                content=json.dumps({"error": "{{ error_info.message }}"}).encode("utf-8"),
+                status_code={{ error_code }},
+                status_text="{{ error_info.status_text }}"
+            )
+{% endfor %}
+        except Exception as e:
+            self.context.logger.exception("Unhandled exception")
+            return ApiResponse(
+                headers={{ headers }},
+                content=json.dumps({"error": str(e)}).encode("utf-8"),
+                status_code=500,
+                status_text="Internal Server Error"
+            )

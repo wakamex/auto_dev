@@ -2,18 +2,23 @@
 
 import re
 import ast
+import datetime
 import tempfile
+import textwrap
 import subprocess
+from typing import Any
 from pathlib import Path
 from itertools import starmap
 from collections import namedtuple
 
 import yaml
+from jinja2 import Environment, FileSystemLoader
 from aea.protocols.generator.base import ProtocolGenerator
 
 from auto_dev.fmt import Formatter
-from auto_dev.utils import get_logger, remove_prefix, camel_to_snake
-from auto_dev.constants import DEFAULT_ENCODING
+from auto_dev.utils import currenttz, get_logger, remove_prefix, camel_to_snake
+from auto_dev.constants import DEFAULT_TZ, DEFAULT_ENCODING, JINJA_TEMPLATE_FOLDER
+from auto_dev.data.connections.template import HEADER
 
 
 ProtocolSpecification = namedtuple("ProtocolSpecification", ["metadata", "custom_types", "speech_acts"])
@@ -52,6 +57,23 @@ def read_protocol(filepath: str) -> ProtocolSpecification:
     metadata, custom_types, speech_acts = yaml.safe_load_all(content)
 
     return ProtocolSpecification(metadata, custom_types, speech_acts)
+
+
+def get_dummy_data(field):
+    """Get dummy data."""
+    # We assume this is a custom type MIGHT MAKE A PROBLEM LATER!
+    res = 0
+    if field["type"] == "str":
+        res = f'{field["name"]}'
+    if field["type"] == "float":
+        res = float(res)
+    if field["type"] == "bool":
+        res = False
+    if field["type"].startswith("List"):
+        res = []
+    if field["type"].startswith("Dict"):
+        res = {}
+    return res
 
 
 def parse_enums(protocol: ProtocolSpecification) -> dict[str, dict[str, str]]:
@@ -129,7 +151,7 @@ class EnumModifier:
 
     def _format_and_write_to_file(self, file_path: Path, content: str) -> None:
         file_path.write_text(content)
-        Formatter.run_sort(file_path)
+        Formatter(verbose=False, remote=False).format(file_path)
 
     def _process_enum(self, node: ast.ClassDef, enums) -> None:
         camel_to_snake(node.name)
@@ -197,6 +219,95 @@ class EnumModifier:
         )
 
 
+class CommentSplitter(ast.NodeVisitor):
+    """CommentSplitter for parsing AST."""
+
+    def __init__(self, max_line_length=120):
+        self.max_line_length = max_line_length
+        self.result = []
+
+    def split_docstring(self, docstring):
+        """Split docstring."""
+        split_lines = []
+        for line in docstring.splitlines():
+            if len(line) > self.max_line_length:
+                indentation = len(line) - len(line.lstrip())
+                wrapped_lines = textwrap.wrap(line, width=self.max_line_length, subsequent_indent=" " * indentation)
+                split_lines.extend(wrapped_lines)
+            else:
+                split_lines.append(line)
+        return "\n".join(split_lines)
+
+    def visit_FunctionDef(self, node):  # noqa
+        """process the function's docstring"""
+        if ast.get_docstring(node):
+            original_docstring = ast.get_docstring(node, clean=False)
+            split_docstring = self.split_docstring(original_docstring)
+            node.body[0].value = ast.Str(s=split_docstring)
+
+        # Continue visiting the rest of the function
+        self.generic_visit(node)
+
+    def visit_Module(self, node):  # noqa
+        """Process the module-level docstring"""
+        if ast.get_docstring(node):
+            original_docstring = ast.get_docstring(node, clean=False)
+            split_docstring = self.split_docstring(original_docstring)
+            node.body[0].value = ast.Str(s=split_docstring)
+
+        # Continue visiting the rest of the module
+        self.generic_visit(node)
+
+
+def split_long_comment_lines(code: str, max_line_length: int = 120) -> str:
+    """Split long comment lines given a code string."""
+    tree = ast.parse(code)
+    splitter = CommentSplitter(max_line_length=max_line_length)
+    splitter.visit(tree)
+    return ast.unparse(tree)
+
+
+PROTOBUF_TO_PYTHON = {
+    "string": "str",
+    "int32": "int",
+    "int64": "int",
+    "float": "float",
+    "bool": "bool",
+}
+
+
+def parse_protobuf_type(protobuf_type, required_type_imports=[]):
+    """Parse protobuf type into python type."""
+    output = {}
+
+    if protobuf_type.startswith("repeated"):
+        repeated_type = protobuf_type.split()[1]
+        attr_name = protobuf_type.split()[2]
+        output["name"] = attr_name
+        if repeated_type in PROTOBUF_TO_PYTHON:
+            output["type"] = f"List[{PROTOBUF_TO_PYTHON[repeated_type]}] = []"
+        else:
+            output["type"] = f"List[{repeated_type}] = []"
+        required_type_imports.append("List")
+    elif protobuf_type.startswith("map"):
+        attr_name = protobuf_type.split()[2]
+        key_val_part = protobuf_type.split(">")[0]
+        key_type_raw, val_type = key_val_part.split(", ")
+        key_type = key_type_raw.split("<")[1]
+        output["name"] = attr_name
+        output["type"] = f"Dict[{PROTOBUF_TO_PYTHON[key_type]}, {PROTOBUF_TO_PYTHON[val_type]}] = {{}}"
+        required_type_imports.append("Dict")
+    else:
+        _type = protobuf_type.split()[0]
+        attr_name = protobuf_type.split()[1]
+        output["name"] = attr_name
+        if _type in PROTOBUF_TO_PYTHON:
+            output["type"] = PROTOBUF_TO_PYTHON[_type]
+        else:
+            output["type"] = _type
+    return output
+
+
 class ProtocolScaffolder:
     """ProtocolScaffolder."""
 
@@ -234,6 +345,13 @@ class ProtocolScaffolder:
 
         EnumModifier(protocol_path, self.logger).augment_enums()
 
+        self.cleanup_protocol(protocol_path, protocol_author, protocol_definition, protocol_name)
+        self.generate_pydantic_models(protocol_path, protocol_name, protocol)
+        self.clean_tests(
+            protocol_path,
+            protocol,
+        )
+
         command = f"aea fingerprint protocol {protocol_author}/{protocol_name}:{protocol_version}"
         result = subprocess.run(command, shell=True, capture_output=True, check=False)
         if result.returncode != 0:
@@ -241,4 +359,213 @@ class ProtocolScaffolder:
             raise ValueError(msg)
 
         protocol_path = Path.cwd() / "protocols" / protocol_name
+
         self.logger.info(f"New protocol scaffolded at {protocol_path}")
+
+    def cleanup_protocol(self, protocol_path, protocol_author, protocol_definition, protocol_name) -> None:
+        """Cleanup protocol."""
+        # We add in some files. that are necessary for the protocol to pass linting...
+        test_init = protocol_path / "tests" / "__init__.py"
+        test_init.touch()
+
+        # We template in the necessary copywrite information
+        test_init.write_text(
+            HEADER.format(
+                author=protocol_author,
+                year=datetime.datetime.now(tz=currenttz()).year,
+            ),
+            encoding=DEFAULT_ENCODING,
+        )
+        # We make a protocol_spec.yaml file
+        protocol_spec = protocol_path / "protocol_spec.yaml"
+        protocol_spec.write_text(protocol_definition, encoding=DEFAULT_ENCODING)
+
+        # We remove from the following lines from the *_pb2.py file
+        regexs = [
+            "_runtime_version",
+        ]
+        pb2_file = protocol_path / f"{protocol_name}_pb2.py"
+        content = pb2_file.read_text(encoding=DEFAULT_ENCODING)
+        new_content = ""
+        for line in content.splitlines():
+            for regex in regexs:
+                if regex in line:
+                    break
+            else:
+                new_content += line + "\n"
+        pb2_file.write_text(new_content, encoding=DEFAULT_ENCODING)
+
+        # We split long lines in the protocol_spec.yaml file
+        custom_types = protocol_path / "custom_types.py"
+        content = custom_types.read_text(encoding=DEFAULT_ENCODING)
+        updated_content = split_long_comment_lines(content)
+        custom_types.write_text(updated_content, encoding=DEFAULT_ENCODING)
+
+    def _get_definition_of_custom_types(self, protocol, required_type_imports=["Any"]):
+        """Get the definition of data types."""
+        raw_classes = []
+        all_dummy_data = {}
+        enums = parse_enums(protocol)
+        for custom_type, definition in protocol.custom_types.items():
+            if definition.startswith("enum "):
+                continue
+            class_data = {
+                "name": custom_type.split(":")[1],
+                "fields": [
+                    parse_protobuf_type(field, required_type_imports) for field in definition.split(";\n") if field
+                ],
+                "type": "data",
+            }
+            raw_classes.append(class_data)
+
+            dummy_data = {field["name"]: get_dummy_data(field) for field in class_data["fields"]}
+
+            all_dummy_data[class_data["name"]] = dummy_data
+        return raw_classes, all_dummy_data, enums
+
+    def generate_pydantic_models(self, protocol_path, protocol_name, protocol):
+        """Generate data classes."""
+        # We check if there are any custom types
+        # We assume the enums are handled correctly,
+        # and we only need to generate the data classes
+        env = Environment(loader=FileSystemLoader(Path(JINJA_TEMPLATE_FOLDER) / "protocols"), autoescape=True)
+
+        required_type_imports = ["Any"]
+
+        raw_classes, all_dummy_data, enums = self._get_definition_of_custom_types(protocol, required_type_imports)
+
+        # We need to generate the data class
+        template = env.get_template("data_class.jinja")
+        pydantic_output = template.render(
+            classes=raw_classes,
+            enums=enums.keys(),
+            protocol_name=protocol_name,
+        )
+
+        # We write this to a yaml file in the protocol folder
+        dummy_data_path = protocol_path / "tests" / "dummy_data.yaml"
+        dummy_data_path.write_text(yaml.dump(all_dummy_data), encoding=DEFAULT_ENCODING)
+
+        self.output_pydantic_models(pydantic_output, protocol_path, required_type_imports)
+
+    def output_pydantic_models(self, pydantic_output, protocol_path, required_type_imports):
+        """
+        Ouput the pydantic models to the custom_types.py file.
+        """
+        new_ast = ast.parse(pydantic_output)
+        imports = []
+        classes = []
+
+        for node in new_ast.body:
+            if isinstance(node, ast.Import):
+                imports.append(node)
+            classes.append(node)
+
+        # We now read in the custom_types.py file
+        custom_types_path = protocol_path / "custom_types.py"
+        content = custom_types_path.read_text()
+        root = ast.parse(content)
+
+        # We now update the classes
+        base_model_class = classes.pop(0)
+        for node in classes:
+            for i, existing_node in enumerate(root.body):
+                if isinstance(node, ast.Assign):
+                    continue
+                if isinstance(existing_node, ast.ClassDef):
+                    if existing_node.name == node.name:
+                        root.body[i] = node
+                        break
+            else:
+                root.body.append(node)
+
+        # We now write the updated content to the custom_types.py file
+        updated_content = ast.unparse(root)
+        # We add in the imports
+        typing_import_line = textwrap.dedent(
+            """
+        from pydantic import BaseModel
+        """
+        )
+
+        if required_type_imports:
+            typing_import_line += f"\nfrom typing import {', '.join(set(required_type_imports))}"
+
+        updated_content_lines = updated_content.split("\n")
+        updated_content_lines.insert(2, typing_import_line)
+
+        base_model_code = ast.unparse(base_model_class)
+        base_model_code_lines = base_model_code.split("\n")
+        updated_content_lines = updated_content_lines[:4] + base_model_code_lines + updated_content_lines[4:]
+        updated_content = "\n".join(updated_content_lines)
+        custom_types_path.write_text(updated_content)
+        Formatter(verbose=False, remote=False).format(custom_types_path)
+
+    def clean_tests(
+        self,
+        protocol_path,
+        protocol,
+    ) -> None:
+        """Clean tests."""
+        # We need to remove the test files
+        tests_path = protocol_path / "tests" / f"test_{protocol_path.name}_messages.py"
+
+        # We ensure that all enum instances are instantiated with 0 in this file.
+        content = tests_path.read_text()
+
+        test_data_loader = textwrap.dedent(
+            """
+            import os
+            import yaml
+            def load_data(custom_type):
+                '''Load test data.'''
+                with open(f"{os.path.dirname(__file__)}/dummy_data.yaml", "r", encoding="utf-8") as f:
+                    return yaml.safe_load(f)[custom_type]
+            
+            """
+        )
+
+        for custom_type in protocol.custom_types:
+            if protocol.custom_types[custom_type].startswith("enum"):
+                ct_name = custom_type.split(":")[1]
+                content = content.replace(f"{ct_name}()", f"{ct_name}(0)")
+                continue
+            # We build the line to load the data types;
+            ct_name = custom_type[3:]
+            replace_line = f"{ct_name}(**load_data('{ct_name}'))"
+            search_line = f"{ct_name}()"
+            content = content.replace(search_line, replace_line)
+
+        # We need to insert this at the top of the file just above the first class definition
+        original_content = content.split("\n")
+        new_content = []
+        start_line = 0
+        for ix, line in enumerate(original_content):
+            if line.startswith("class"):
+                break
+            start_line = ix
+
+        import_defs = textwrap.dedent(
+            f"""
+            from typing import Any
+            """
+        )
+        function_defs = test_data_loader.split("\n")
+        new_content.extend(original_content[:start_line])
+        new_content.extend([import_defs])
+        new_content.extend(function_defs)
+        new_content.extend(original_content[start_line:])
+        content = "\n".join(new_content)
+        # We also make a dummy init file in the tests folder
+        tests_init = protocol_path / "tests" / "__init__.py"
+        tests_init.touch()
+        tests_init.write_text(
+            HEADER.format(
+                author=protocol.metadata["author"],
+                year=datetime.datetime.now(tz=currenttz()).year,
+            ),
+            encoding=DEFAULT_ENCODING,
+        )
+
+        tests_path.write_text(content, encoding=DEFAULT_ENCODING)
+        Formatter(verbose=False, remote=False).format(tests_path)

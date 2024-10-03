@@ -24,11 +24,11 @@ class Formatter:
     def _remote_format_path(self, path, verbose=False):
         """Format the path."""
         # pylint: disable=R1732
-        with requests.Session() as session, open(path, "rb", encoding=DEFAULT_ENCODING) as file:
+        with requests.Session() as session, open(path, "r", encoding=DEFAULT_ENCODING) as file:
             data = file.read()
             result = session.post(
                 "http://localhost:26659/format",
-                data=data,
+                data=data.encode(DEFAULT_ENCODING),
                 timeout=150,
             )
         if verbose:
@@ -62,7 +62,7 @@ class Formatter:
 
     @staticmethod
     def run_sort(path, verbose=False):
-        """Run isort on the path."""
+        """Run sort on the path."""
         command = CommandExecutor(
             [
                 "poetry",

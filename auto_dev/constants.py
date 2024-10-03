@@ -8,6 +8,7 @@ from aea.cli.utils.config import get_or_create_cli_config
 
 
 DEFAULT_ENCODING = "utf-8"
+DEFAULT_TZ = "UTC"
 DEFAULT_TIMEOUT = 10
 # package directory
 PACKAGE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -16,7 +17,11 @@ AUTONOMY_PACKAGES_FILE = "packages/packages.json"
 AUTO_DEV_FOLDER = os.path.join(os.path.dirname(__file__))
 PLUGIN_FOLDER = os.path.join(AUTO_DEV_FOLDER, "commands")
 TEMPLATE_FOLDER = os.path.join(AUTO_DEV_FOLDER, "data", "repo", "templates")
-JINJA_TEMPLATE_FOLDER = os.path.join(AUTO_DEV_FOLDER, "data", "templates", "tests", "customs")
+JINJA_TEMPLATE_FOLDER = os.path.join(
+    AUTO_DEV_FOLDER,
+    "data",
+    "templates",
+)
 
 AEA_CONFIG = get_or_create_cli_config()
 
@@ -100,6 +105,7 @@ class FileType(Enum):
     TEXT = "text"
     YAML = "yaml"
     JSON = "json"
+    PYTHON = "python"
 
 
 class CheckResult(Enum):
@@ -108,3 +114,4 @@ class CheckResult(Enum):
     PASS = "PASS"
     FAIL = "FAIL"
     MODIFIED = "MODIFIED"
+    SKIPPED = "SKIPPED"

@@ -33,3 +33,5 @@ class ParamType(Enum):
     INT16 = "int16"
     BYTES4 = "bytes4"
     BYTES = "bytes"
+    BYTES_ARRAY = "bytes[]"
+    BYTES32_ARRAY_ARRAY = "bytes32[][]"
