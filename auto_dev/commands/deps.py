@@ -47,7 +47,6 @@ from rich.progress import track
 from auto_dev.base import build_cli
 from auto_dev.utils import FileLoader, write_to_file
 from auto_dev.constants import DEFAULT_TIMEOUT, DEFAULT_ENCODING, FileType
-from auto_dev.enums import FileType
 from auto_dev.exceptions import AuthenticationError, NetworkTimeoutError
 
 
