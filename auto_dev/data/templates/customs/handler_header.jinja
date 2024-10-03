@@ -19,14 +19,42 @@
 """This package contains a scaffold of a handler."""
 
 import re
-from typing import Optional, cast
+import json
+from dataclasses import dataclass
 from urllib.parse import unquote, urlparse
 
 from aea.skills.base import Handler
-from aea.protocols.base import Message
 from packages.eightballer.protocols.http.message import HttpMessage as ApiHttpMessage
-from packages.{{ author }}.skills.{{ skill_name }}.strategy import Strategy
-from packages.{{ author }}.skills.{{ skill_name }}.dialogues import HttpDialogue
+
+{% for schema, filename in zip(schemas, schema_filenames) -%}
+from .daos.{{ filename }} import {{ schema }}DAO
+{% endfor %}
+
+
+from .exceptions import (
+    BadRequestError,
+    UnauthorizedError,
+    ForbiddenError,
+    NotFoundError,
+    ConflictError,
+    ValidationError,
+    InternalServerError,
+    ServiceUnavailableError
+)
+
+
+{% for schema in schemas -%}
+{{ schema|lower|replace(' ', '_') }}_dao = {{ schema }}DAO()
+{% endfor %}
+
+
+@dataclass
+class ApiResponse:
+    """Api response."""
+    headers: dict[str, str]
+    content: bytes
+    status_code: int
+    status_text: str
 
 
 class ApiHttpHandler(Handler):

@@ -69,6 +69,7 @@ ruff = "^0.5.7"
 pydantic = "^2.8.2"
 isort = "^5.13.2"
 openapi-spec-validator = "0.2.8"
+faker = "^30.0.0"
 
 [tool.poetry.dev-dependencies]
 responses = "^0.23.1"

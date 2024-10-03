@@ -1,4 +1,7 @@
+"""This file contains the BaseDAO class that provides common methods for data access."""
+
 import json
+import logging
 from typing import Any
 from pathlib import Path
 from dataclasses import field, dataclass
@@ -14,6 +17,11 @@ class BaseDAO:
     _data: dict[str, Any] = field(default_factory=dict, init=False)
     model_name: str = field(init=False)
     other_model_names: list[str] = field(default_factory=list, init=False)
+    logger: logging.Logger = field(init=False)
+
+    def __post_init__(self):
+        """Post initialization setup."""
+        self.logger = logging.getLogger(f"aea.{self.__class__.__name__}")
 
     @property
     def data(self) -> dict[str, Any]:
@@ -33,23 +41,46 @@ class BaseDAO:
     def _save_data(self) -> None:
         """Save the updated model data to the file."""
         try:
+            self.logger.info(f"Attempting to save data to {self.file_name}")
+
+            try:
+                with open(self.file_name, encoding=ENCODING) as f:
+                    all_data = json.load(f)
+                    self.logger.debug(f"Loaded existing data: {all_data}")
+            except FileNotFoundError:
+                self.logger.warning(f"File not found, creating new file: {self.file_name}")
+                all_data = {}
+
+            for model in self.other_model_names:
+                if model not in all_data:
+                    all_data[model] = {}
+
+            all_data[self.model_name] = self._data[self.model_name]
+            self.logger.debug(f"Data to be saved: {all_data}")
+
+            with open(self.file_name, "w", encoding=ENCODING) as f:
+                json.dump(all_data, f, indent=2)
+                self.logger.info(f"Data successfully saved to {self.file_name}")
+
             with open(self.file_name, encoding=ENCODING) as f:
-                all_data = json.load(f)
-        except FileNotFoundError:
-            all_data = {}
+                saved_data = json.load(f)
+            if saved_data != all_data:
+                self.logger.error(f"Saved data does not match expected data. Saved: {saved_data}, ")
+            else:
+                self.logger.info("Data verification successful.")
 
-        for model in self.other_model_names:
-            if model not in all_data:
-                all_data[model] = {}
-
-        all_data[self.model_name] = self._data[self.model_name]
-
-        with open(self.file_name, "w", encoding=ENCODING) as f:
-            json.dump(all_data, f, indent=2)
+        except PermissionError:
+            self.logger.exception(f"Permission denied when trying to write to {self.file_name}")
+        except OSError as e:
+            self.logger.exception(f"IO error occurred when saving data: {e!s}")
+        except json.JSONDecodeError as e:
+            self.logger.exception(f"JSON decode error: {e!s}")
+        except Exception as e:
+            self.logger.exception(f"Unexpected error: {e!s}")
 
     def insert(self, data: dict[str, Any] | list[dict[str, Any]]) -> None:
         """Insert a new item or items into the data."""
-        self.load_data()  # Ensure we have the latest data
+        self.load_data()
 
         if self.model_name not in self._data:
             self._data[self.model_name] = {}
@@ -65,10 +96,11 @@ class BaseDAO:
             self._data[self.model_name][new_id] = data
 
         self._save_data()
+        return self.get_all()
 
     def get_all(self) -> list[dict[str, Any]]:
         """Get all items from the data."""
-        return list(self._data[self.model_name].values())
+        return self.data
 
     def get_by_id(self, hashmap_key: str) -> dict[str, Any] | None:
         """Get an item by id."""
@@ -79,12 +111,14 @@ class BaseDAO:
                 if str(value.get("id")) == hashmap_key:
                     return value
 
-        return item
+        return item or None
 
     def filter_items(self, **kwargs) -> list[dict[str, Any]]:
         """Filter items by the given criteria."""
-        return [{"id": key, **item} for key, item in self.data.items()
-                if all(item.get(k) == v for k, v in kwargs.items())]
+        return [
+            {"id": key, **item} for key, item in self.data.items()
+            if all(item.get(k) == v for k, v in kwargs.items())
+        ]
 
     def update(self, hashmap_key: str, **kwargs) -> dict[str, Any] | None:
         """Update an item by hashmap_key."""

@@ -40,8 +40,9 @@ The tools within the `openapi` subcommand are used to augment a customs componen
 
 ## Prerequisites
 
-1. An OpenAPI 3 specification file with paths defined.
+1. An OpenAPI 3 specification file with paths, operationIds, and schemas defined.
 2. A `component.yaml` file in the current directory that references the OpenAPI specification using the `api_spec` field.
+3. DAOs for each schema in the OpenAPI specification (see dao docs for how to scaffold these).
 
 ## Steps to Augment a Handler
 
