@@ -299,7 +299,11 @@ def parse_protobuf_type(protobuf_type, required_type_imports=[]):
         required_type_imports.append("Dict")
     else:
         _type = protobuf_type.split()[0]
-        attr_name = protobuf_type.split()[1]
+        try:
+            attr_name = protobuf_type.split()[1]
+        except IndexError as err:
+            raise ValueError(f"Error parsing attribute name from: {protobuf_type}") from err
+
         output["name"] = attr_name
         if _type in PROTOBUF_TO_PYTHON:
             output["type"] = PROTOBUF_TO_PYTHON[_type]
@@ -347,6 +351,7 @@ class ProtocolScaffolder:
 
         self.cleanup_protocol(protocol_path, protocol_author, protocol_definition, protocol_name)
         self.generate_pydantic_models(protocol_path, protocol_name, protocol)
+        self.generate_base_models(protocol_path, protocol_name, protocol)
         self.clean_tests(
             protocol_path,
             protocol,
@@ -400,6 +405,87 @@ class ProtocolScaffolder:
         content = custom_types.read_text(encoding=DEFAULT_ENCODING)
         updated_content = split_long_comment_lines(content)
         custom_types.write_text(updated_content, encoding=DEFAULT_ENCODING)
+
+    def generate_base_models(self, protocol_path, protocol_name, protocol):
+        """Generate base models."""
+        raw_classes, all_dummy_data, enums = self._get_definition_of_custom_types(protocol)
+        custom_types = protocol_path / "dialogues.py"
+        content = custom_types.read_text(encoding=DEFAULT_ENCODING)
+        # We want to add to the imports
+
+        new_imports = [
+            "from aea.skills.base import Model",
+        ]
+
+        content = content.replace(
+            f"class {protocol_name.capitalize()}Dialogues(",
+            f"class Base{protocol_name.capitalize()}Dialogues(Model, ",
+        )
+
+        if len(protocol.speech_acts["roles"]) > 1:
+            raise UserWarning("We currently only support one role in the protocol.")
+        role = list(protocol.speech_acts["roles"].keys())[0]
+
+        content = content.replace(
+            "role_from_first_message: Callable[[Message, Address], Dialogue.Role],",
+            f"role_from_first_message: Callable[[Message, Address], Dialogue.Role] = _role_from_first_message,",
+        )
+
+        content_lines = content.split("\n")
+        import_end_line = 0
+        for i, line in enumerate(content_lines):
+            if line.startswith("from"):
+                new_imports.append(line)
+            if line.startswith("class"):
+                break
+            import_end_line = i
+
+        # We also want to replace the base class with the correct one.
+
+        dialogues_class_str = textwrap.dedent(f"""
+        def _role_from_first_message(message: Message, sender: Address) -> Dialogue.Role:
+            '''Infer the role of the agent from an incoming/outgoing first message'''
+            del sender, message
+            return {protocol_name.capitalize()}Dialogue.Role.{role.upper()}
+        """)
+        dialogues_class_ast = ast.parse(dialogues_class_str)
+        dialogues_class_str = ast.unparse(dialogues_class_ast)
+
+        content_lines = (
+            content_lines[:import_end_line]
+            + new_imports
+            + dialogues_class_str.split("\n")
+            + content_lines[import_end_line:]
+        )
+
+        dialogues_class_str = textwrap.dedent(f"""
+        class {protocol_name.capitalize()}Dialogues(Base{protocol_name.capitalize()}Dialogues):
+            '''This class defines the dialogues used in {protocol_name.capitalize()}.'''
+            def __init__(self, **kwargs):
+                '''Initialize dialogues.'''
+                Model.__init__(self, keep_terminal_state_dialogues=False, **kwargs)
+                Base{protocol_name.capitalize()}Dialogues.__init__(self, self_address=str(self.context.skill_id))
+
+        """)
+        dialogues_class_ast = ast.parse(dialogues_class_str)
+        dialogues_class_str = ast.unparse(dialogues_class_ast)
+
+        updated_content = content_lines + dialogues_class_str.split("\n")
+        custom_types.write_text("\n".join(updated_content), encoding=DEFAULT_ENCODING)
+
+        # We also need to update the dialogues tests
+        dialogues_tests = protocol_path / "tests" / f"test_{protocol_name}_dialogues.py"
+        content = dialogues_tests.read_text(encoding=DEFAULT_ENCODING)
+        content = content.replace(
+            f"    {protocol_name.capitalize()}Dialogues",
+            f"    Base{protocol_name.capitalize()}Dialogues as {protocol_name.capitalize()}Dialogues",
+        )
+        dialogues_tests.write_text(content, encoding=DEFAULT_ENCODING)
+
+        # We just need to perform a simple updating of the dialogues.
+
+        Formatter(verbose=False, remote=False).format(dialogues_tests)
+        Formatter(verbose=False, remote=False).format(custom_types)
 
     def _get_definition_of_custom_types(self, protocol, required_type_imports=["Any"]):
         """Get the definition of data types."""
@@ -555,7 +641,25 @@ class ProtocolScaffolder:
         new_content.extend([import_defs])
         new_content.extend(function_defs)
         new_content.extend(original_content[start_line:])
+
+        # We drop everyuthing from the start of the line begining `build_inconsistent(self)` to the end of the file
+
         content = "\n".join(new_content)
+
+        drop_from = content.find("    def build_inconsistent(self)")
+
+        content = content[:drop_from]
+        # We then add a single function to the class
+        content += textwrap.dedent(
+            """
+            ----def build_inconsistent(self):
+            ----    '''Build inconsistent message.'''
+            ----    return []
+            """
+        )
+
+        content = content.replace("----", "    ")
+
         # We also make a dummy init file in the tests folder
         tests_init = protocol_path / "tests" / "__init__.py"
         tests_init.touch()
