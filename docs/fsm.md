@@ -8,8 +8,10 @@ We start with a simple fsm;
 
 ```bash
 cat auto_dev/data/fsm/fsm_specification.yaml
+```
 
-...
+Output:
+```yaml
 alphabet_in:
 - DONE
 - NO_MAJORITY
@@ -36,7 +38,10 @@ We can then convert this to a mermaid diagram using the adev tool.
 
 ```bash
 adev fsm from-file auto_dev/data/fsm/fsm_specification.yaml --output mermaid
-...
+```
+
+Output:
+```
 graph TD
   FirstRound
   FirstRound
