@@ -90,10 +90,9 @@ def dummy_agent_tim(test_filesystem, monkeypatch) -> Path:
 
     monkeypatch.syspath_prepend(test_filesystem)
     assert Path.cwd() == Path(test_filesystem)
-    (Path.cwd() / "packages").mkdir()
 
     agent = "tim"
-    command = f"aea create {agent}"
+    command = f"adev create {agent} -t eightballer/base "
     command_executor = CommandExecutor(command)
     result = command_executor.execute(verbose=True, shell=True)
     if not result:

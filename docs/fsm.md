@@ -31,7 +31,6 @@ transition_func:
   (FirstRound, DONE): FinalRound
   (FirstRound, NO_MAJORITY): ErrorRound
   (FirstRound, TIMEOUT): ErrorRound
-
 ```
 
 We can then convert this to a mermaid diagram using the adev tool.
@@ -41,7 +40,7 @@ adev fsm from-file auto_dev/data/fsm/fsm_specification.yaml --output mermaid
 ```
 
 Output:
-```
+```txt
 graph TD
   FirstRound
   FirstRound
@@ -50,7 +49,6 @@ graph TD
   FirstRound -->|DONE| FinalRound
   FirstRound -->|NO_MAJORITY| ErrorRound
   FirstRound -->|TIMEOUT| ErrorRound
-
 ```
 which can be rendered as a mermaid diagram as so;
 
@@ -68,7 +66,7 @@ graph TD
 We now scaffold the agent.
 
 ```bash
-aea create new_agent
+adev create -t eightballer/base new_agent
 ```
 We now have a new agent.
 
