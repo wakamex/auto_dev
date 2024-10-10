@@ -419,7 +419,7 @@ class ProtocolScaffolder:
 
         content = content.replace(
             f"class {protocol_name.capitalize()}Dialogues(",
-            f"class Base{protocol_name.capitalize()}Dialogues(Model, ",
+            f"class Base{protocol_name.capitalize()}Dialogues(Dialogues, ABC):",
         )
 
         if len(protocol.speech_acts["roles"]) > 1:
@@ -459,7 +459,7 @@ class ProtocolScaffolder:
         )
 
         dialogues_class_str = textwrap.dedent(f"""
-        class {protocol_name.capitalize()}Dialogues(Base{protocol_name.capitalize()}Dialogues):
+        class {protocol_name.capitalize()}Dialogues(Base{protocol_name.capitalize()}Dialogues, Model):
             '''This class defines the dialogues used in {protocol_name.capitalize()}.'''
             def __init__(self, **kwargs):
                 '''Initialize dialogues.'''
