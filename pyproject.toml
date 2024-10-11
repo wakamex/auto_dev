@@ -4,7 +4,7 @@ requires = ["poetry-core>=1.0.0", "setuptools"]
 
 [tool.poetry]
 name = "autonomy_dev"
-version = "0.2.75"
+version = "0.2.76"
 homepage = "https://github.com/8ball030/auto_dev"
 description = "A collection of tooling to enable open source development of autonomy tools"
 authors = ["8Baller <8ball030@gmail.com>"]
@@ -37,13 +37,13 @@ exclude = "/(\n    \\.eggs\n  | \\.git\n  | \\.hg\n  | \\.mypy_cache\n  | \\.tox
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.12"
-open-autonomy = "==0.15.2"
-open-aea = "==1.55.0"
-open-aea-test-autonomy = "==0.15.2"
-open-aea-ledger-ethereum = "==1.55.0"
-open-aea-ledger-solana = "==1.55.0"
-open-aea-ledger-cosmos = "==1.55.0"
-open-aea-cli-ipfs = "==1.55.0"
+open-autonomy = "==0.16.1"
+open-aea = "==1.57.0"
+open-aea-test-autonomy = "==0.16.1"
+open-aea-ledger-ethereum = "==1.57.0"
+open-aea-ledger-solana = "==1.57.0"
+open-aea-ledger-cosmos = "==1.57.0"
+open-aea-cli-ipfs = "==1.57.0"
 web3 = "<7,>=6.0.0"
 ipfshttpclient = "==0.8.0a2"
 typing_extensions = ">=3.10.0.2"
