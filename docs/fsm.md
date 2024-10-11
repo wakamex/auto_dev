@@ -36,7 +36,7 @@ transition_func:
 We can then convert this to a mermaid diagram using the adev tool.
 
 ```bash
-adev fsm from-file auto_dev/data/fsm/fsm_specification.yaml --output mermaid
+adev fsm from-file auto_dev/data/fsm/fsm_specification.yaml --output mermaid DemoAbciApp
 ```
 
 Output:
