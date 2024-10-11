@@ -26,6 +26,8 @@ tag_template = "v{new_version}"
 src = "pyproject.toml"
 
 [[file]]
+src = "adev_config.yaml"
+[[file]]
 src = "auto_dev/data/repo/templates/autonomy/pyproject.toml.template"
 
 # You can specify a list of commands to
