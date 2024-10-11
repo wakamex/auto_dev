@@ -71,6 +71,7 @@ class CommandExecutor:
                 cwd=self.cwd,
                 universal_newlines=True,
                 shell=shell,
+                env=os.environ,
             ) as process:
                 for stdout_line in iter(process.stdout.readline, ""):  # type: ignore
                     self.stdout.append(stdout_line.strip())

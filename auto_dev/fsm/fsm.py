@@ -120,6 +120,8 @@ class FsmSpec:
                     msg = f"Invalid line {line}"
                     raise ValueError(msg)
                 start_state, _transition, end_state = items
+
+                states.extend((start_state, end_state))
                 transition = _transition.split("|")[1]
                 transitions.append(((start_state, transition), end_state))
         # we need to create the alphabet_in
