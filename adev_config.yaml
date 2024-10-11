@@ -1,6 +1,6 @@
 autonomy_dependencies:
 - name: open-autonomy
-  version: 0.16.1
+  version: 0.15.2
   location: remote
   url: https://api.github.com/repos/valory-xyz/open-autonomy
   plugins: &id001
