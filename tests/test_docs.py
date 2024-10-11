@@ -34,17 +34,17 @@ def extract_code_blocks(doc):
 
 # we test the documents works.
 
-documenation = ["docs/fsm.md"]
+documentation = ["docs/fsm.md"]
 logger = getLogger()
 
 
-@pytest.mark.parametrize("doc", documenation)
+@pytest.mark.parametrize("doc", documentation)
 def test_documentation(doc):
     """Test the documentation."""
     assert Path(doc).exists()
 
 
-@pytest.mark.parametrize("doc", documenation)
+@pytest.mark.parametrize("doc", documentation)
 def test_doc_code_execution(doc, test_filesystem):
     """Test the documentation."""
 
