@@ -3,7 +3,7 @@
 import rich_click as click
 
 from auto_dev.base import build_cli
-from auto_dev.utils import get_logger
+from auto_dev.utils import get_logger, snake_to_camel
 from auto_dev.fsm.fsm import FsmSpec
 from auto_dev.constants import DEFAULT_ENCODING
 
@@ -21,9 +21,10 @@ def fsm() -> None:
 
 @fsm.command()
 @click.argument("fsm-spec", type=click.File("r", encoding=DEFAULT_ENCODING))
+@click.argument("fsm_name", type=str)
 @click.option("--in-type", type=click.Choice(["mermaid", "fsm-spec"], case_sensitive=False))
 @click.option("--output", type=click.Choice(["mermaid", "fsm-spec"], case_sensitive=False))
-def from_file(fsm_spec: str, in_type: str, output: str) -> None:
+def from_file(fsm_spec: str, fsm_name: str, in_type: str, output: str) -> None:
     """We template from a file."""
     # we need perform the following steps:
     # 1. load the yaml file
@@ -37,11 +38,23 @@ def from_file(fsm_spec: str, in_type: str, output: str) -> None:
 
     if in_type == "mermaid":
         _fsm_spec = fsm_spec.read()
-        FsmSpec.from_mermaid(_fsm_spec)
+        fsm = FsmSpec.from_mermaid(_fsm_spec)
     else:
-        FsmSpec.from_yaml(fsm_spec)
+        fsm = FsmSpec.from_yaml(fsm_spec)
+
+    def validate_name(name: str) -> str:
+        if not name:
+            raise ValueError("Name must not be empty.")
+        if not name.endswith("AbciApp"):
+            raise ValueError("Name must end with AbciApp.")
+        return name
+
+    fsm.label = validate_name(fsm_name)
 
     if output == "mermaid":
-        pass
-    else:
-        pass
+        output = fsm.to_mermaid()
+    else:   
+        output = fsm.to_string()
+
+    click.echo(output)
+
