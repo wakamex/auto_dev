@@ -305,7 +305,7 @@ def write_to_file(file_path: str, content: Any, file_type: FileType = FileType.T
                 else:
                     yaml.dump(content, f, default_flow_style=False, sort_keys=False)
             elif file_type is FileType.JSON:
-                json_kwargs = {"separators": (",", ":")}
+                json_kwargs = {"separators": (",", ": ")}
                 json_kwargs.update(kwargs)
                 json.dump(content, f, **json_kwargs)
             elif file_type is FileType.PYTHON:
