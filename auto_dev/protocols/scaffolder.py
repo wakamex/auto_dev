@@ -297,6 +297,12 @@ def parse_protobuf_type(protobuf_type, required_type_imports=[]):
         output["name"] = attr_name
         output["type"] = f"Dict[{PROTOBUF_TO_PYTHON[key_type]}, {PROTOBUF_TO_PYTHON[val_type]}] = {{}}"
         required_type_imports.append("Dict")
+    elif protobuf_type.startswith("optional"):
+        attr_name = protobuf_type.split()[2]
+
+        output["name"] = attr_name
+        output["type"] = f"Optional[{PROTOBUF_TO_PYTHON[protobuf_type.split()[1]]}] = None"
+        required_type_imports.append("Optional")
     else:
         _type = protobuf_type.split()[0]
         try:
@@ -356,6 +362,16 @@ class ProtocolScaffolder:
             protocol_path,
             protocol,
         )
+
+        # We now update the protocol.yaml dependencies key to include 'pydantic'
+
+        protocol_yaml = protocol_path / "protocol.yaml"
+        # We keey the order of the yaml file
+        content = yaml.safe_load(
+            protocol_yaml.read_text(encoding=DEFAULT_ENCODING),
+        )
+        content["dependencies"]["pydanctic"] = {}
+        protocol_yaml.write_text(yaml.dump(content, sort_keys=False), encoding=DEFAULT_ENCODING)
 
         command = f"aea fingerprint protocol {protocol_author}/{protocol_name}:{protocol_version}"
         result = subprocess.run(command, shell=True, capture_output=True, check=False)
