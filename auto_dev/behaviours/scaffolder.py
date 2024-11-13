@@ -287,6 +287,8 @@ def get_py_type_and_args(arg, arg_type, type_map):
     if py_type not in DEFAULT_TYPE_MAP:
         if py_type.startswith("Optional"):
             DEFAULT_TYPE_MAP[py_type] = None
+        elif py_type.startswith("Dict"):
+            DEFAULT_TYPE_MAP[py_type] = {}
         else:
             raise ValueError(f"Type {py_type} not found in the default type map.")
 

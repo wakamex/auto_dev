@@ -73,6 +73,9 @@ def get_dummy_data(field):
         res = []
     if field["type"].startswith("Dict"):
         res = {}
+    if field["type"].startswith("Optional"):
+        # We recursively call this function to get the dummy data
+        res = get_dummy_data({"type": field["type"].split("Optional[")[1].split("]")[0], "name": field["name"]})
     return res
 
 
@@ -370,7 +373,7 @@ class ProtocolScaffolder:
         content = yaml.safe_load(
             protocol_yaml.read_text(encoding=DEFAULT_ENCODING),
         )
-        content["dependencies"]["pydanctic"] = {}
+        content["dependencies"]["pydantic"] = {}
         protocol_yaml.write_text(yaml.dump(content, sort_keys=False), encoding=DEFAULT_ENCODING)
 
         command = f"aea fingerprint protocol {protocol_author}/{protocol_name}:{protocol_version}"
