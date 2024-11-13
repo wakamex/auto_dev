@@ -27,6 +27,7 @@ class ScaffolderConfig:
         verbose: bool = True,
         new_skill: bool = False,
         auto_confirm: bool = False,
+        use_daos: bool = False,
     ):
         """Initialize HandlerScaffolder."""
         self.verbose = verbose
@@ -36,6 +37,7 @@ class ScaffolderConfig:
         self.verbose = verbose
         self.new_skill = new_skill
         self.auto_confirm = auto_confirm
+        self.use_daos = use_daos
 
 
 class HandlerScaffolder:
@@ -141,9 +143,11 @@ class HandlerScaffolder:
             self.logger.error("All paths in the OpenAPI spec must start with '/api'")
             raise SystemExit(1)
 
-        persistent_schemas = self._get_persistent_schemas(openapi_spec)
-        if not self._confirm_schemas(persistent_schemas):
-            raise SystemExit(1)
+        persistent_schemas = []
+        if self.config.use_daos:
+            persistent_schemas = self._get_persistent_schemas(openapi_spec)
+            if not self._confirm_schemas(persistent_schemas):
+                raise SystemExit(1)
 
         handler_methods = self._generate_handler_methods(openapi_spec, persistent_schemas)
         if not handler_methods:
@@ -163,6 +167,8 @@ class HandlerScaffolder:
         return self.handler_code
 
     def _get_persistent_schemas(self, openapi_spec):
+        if not self.config.use_daos:
+            return []
         schemas = openapi_spec.get("components", {}).get("schemas", {})
         persistent_schemas = [
             schema for schema, details in schemas.items() if details.get("x-persistent")
@@ -211,6 +217,7 @@ class HandlerScaffolder:
             skill_name=self.config.output,
             schemas=persistent_schemas,
             schema_filenames=schema_filenames,
+            use_daos=self.config.use_daos
         )
         main_handler = self.jinja_env.get_template("main_handler.jinja").render(
             all_methods=all_methods,
@@ -467,9 +474,10 @@ class HandlerScaffoldBuilder:
         verbose: bool = True,
         new_skill: bool = False,
         auto_confirm: bool = False,
+        use_daos: bool = False,
     ):
         """Initialize HandlerScaffoldBuilder."""
-        self.config = ScaffolderConfig(spec_file_path, public_id, verbose, new_skill, auto_confirm)
+        self.config = ScaffolderConfig(spec_file_path, public_id, verbose, new_skill, auto_confirm, use_daos)
         self.logger = logger
         return self
 
