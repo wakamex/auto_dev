@@ -629,6 +629,17 @@ construct-typing = ">=0.5.1,<0.6.0"
 sumtypes = ">=0.1a5,<0.2"
 
 [[package]]
+name = "bracex"
+version = "2.5.post1"
+description = "Bash style brace expander."
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "bracex-2.5.post1-py3-none-any.whl", hash = "sha256:13e5732fec27828d6af308628285ad358047cec36801598368cb28bc631dbaf6"},
+    {file = "bracex-2.5.post1.tar.gz", hash = "sha256:12c50952415bfa773d2d9ccb8e79651b8cdb1f31a42f6091b804f6ba2b4a66b6"},
+]
+
+[[package]]
 name = "cached-property"
 version = "1.5.2"
 description = "A decorator for caching properties in classes."
@@ -2425,18 +2436,21 @@ pyyaml = ">=5.1"
 
 [[package]]
 name = "mkdocs-include-markdown-plugin"
-version = "3.9.1"
+version = "7.0.0"
 description = "Mkdocs Markdown includer plugin."
 optional = false
-python-versions = ">=3.6"
+python-versions = ">=3.9"
 files = [
-    {file = "mkdocs_include_markdown_plugin-3.9.1-py3-none-any.whl", hash = "sha256:f33687e29ac66d045ba181ea50f054646b0090b42b0a4318f08e7f1d1235e6f6"},
-    {file = "mkdocs_include_markdown_plugin-3.9.1.tar.gz", hash = "sha256:5e5698e78d7fea111be9873a456089daa333497988405acaac8eba2924a19152"},
+    {file = "mkdocs_include_markdown_plugin-7.0.0-py3-none-any.whl", hash = "sha256:bf8d19245ae3fb2eea395888e80c60bc91806a0d879279707d707896c24319c3"},
+    {file = "mkdocs_include_markdown_plugin-7.0.0.tar.gz", hash = "sha256:a8eac8f2e6aa391d82d1d5e473b819b52393d91464060c02db5741834fe9008b"},
 ]
 
+[package.dependencies]
+mkdocs = ">=1.4"
+wcmatch = "*"
+
 [package.extras]
-dev = ["bump2version (==1.0.1)", "mkdocs (==1.4.0)", "pre-commit", "pytest (==7.1.3)", "pytest-cov (==3.0.0)", "tox"]
-test = ["mkdocs (==1.4.0)", "pytest (==7.1.3)", "pytest-cov (==3.0.0)"]
+cache = ["platformdirs"]
 
 [[package]]
 name = "mkdocs-material"
@@ -4640,6 +4654,20 @@ files = [
 watchmedo = ["PyYAML (>=3.10)"]
 
 [[package]]
+name = "wcmatch"
+version = "10.0"
+description = "Wildcard/glob file name matcher."
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "wcmatch-10.0-py3-none-any.whl", hash = "sha256:0dd927072d03c0a6527a20d2e6ad5ba8d0380e60870c383bc533b71744df7b7a"},
+    {file = "wcmatch-10.0.tar.gz", hash = "sha256:e72f0de09bba6a04e0de70937b0cf06e55f36f37b3deb422dfaf854b867b840a"},
+]
+
+[package.dependencies]
+bracex = ">=2.1.1"
+
+[[package]]
 name = "web3"
 version = "6.20.3"
 description = "web3.py"
@@ -4978,4 +5006,4 @@ doc = ["mkdocstrings"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.12"
-content-hash = "2de0d0c99c43b034e3e0d6d62755371b33195ce968f36636768fe4c2bcdab22f"
+content-hash = "f664544ef9b8d15d2587d4db058ccc930324697564968baecda5d5816e7cbf12"
