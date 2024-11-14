@@ -48,15 +48,6 @@ from .exceptions import (
 {% endfor %}
 
 
-@dataclass
-class ApiResponse:
-    """Api response."""
-    headers: dict[str, str]
-    content: bytes
-    status_code: int
-    status_text: str
-
-
 class ApiHttpHandler(Handler):
     """Implements the API HTTP handler."""
 
