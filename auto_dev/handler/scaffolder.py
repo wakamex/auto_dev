@@ -615,17 +615,17 @@ class HandlerScaffolder:
 
         def process_schema(schema: Any, usage_type: str) -> None:
             try:
-                self.logger.info(f"Processing schema: {schema}, type: {type(schema)}")
+                self.logger.debug(f"Processing schema: {schema}, type: {type(schema)}")
                 schema = parse_schema_like(schema)
 
                 if isinstance(schema, Reference):
                     schema_name = schema.ref.split("/")[-1]
-                    self.logger.info(f"Found reference to {schema_name}")
+                    self.logger.debug(f"Found reference to {schema_name}")
                     schema_usage[schema_name].add(usage_type)
                     referenced_schema = schemas.get(schema_name)
                     if referenced_schema:
                         referenced_schema = parse_schema_like(referenced_schema)
-                        self.logger.info(f"Referenced schema: {referenced_schema}")
+                        self.logger.debug(f"Referenced schema: {referenced_schema}")
                         if referenced_schema.properties:
                             for prop in referenced_schema.properties.values():
                                 process_schema(prop, f"nested_{usage_type}")
