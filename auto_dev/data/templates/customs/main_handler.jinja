@@ -8,23 +8,37 @@
         self.context.logger.info(f"Received {method.upper()} request for {path}")
 
         normalized_path = path.rstrip("/")
-{% for original, snake_case in path_params_mapping.items() %}
-        normalized_path = re.sub(r"/(?P<{{ snake_case }}>\d+?)(?=/|$)", "/{{ original }}", normalized_path)
+{% for normalized_path, mapping in path_mappings.items() %}
+        normalized_path = re.sub(
+            r"{{ normalized_path.rstrip('/') }}/(?P<{{ mapping.params.values()|first }}>[^/]+)(?=/|$)",
+            "{{ mapping.original_path.replace('{', '').replace('}', '') }}",
+            normalized_path
+        )
 {% endfor %}
         handler_name = f"handle_{method}_{normalized_path.lstrip('/').replace('/', '_')}"
-{% for original, snake_case in path_params_mapping.items() %}
-        handler_name = handler_name.replace("{{ original }}", "by_{{ snake_case }}")
-{% endfor %}
+{% for normalized_path, mapping in path_mappings.items() %}
+        {% for param_name, snake_case in mapping.params.items() -%}
+            handler_name = handler_name.replace("{{ param_name }}", "by_{{ snake_case }}")
+        {%- endfor %}
+{%- endfor %}
         handler_method = getattr(self, handler_name, None)
 
         if handler_method:
             self.context.logger.debug(f"Found handler method: {handler_name}")
             kwargs = {"body": body} if method in {"post", "put", "patch", "delete"} else {}
-{% for original, snake_case in path_params_mapping.items() %}
-            {{ snake_case }}_match = re.search(r"/(?P<{{ snake_case }}>\d+?)(?=/|$)", path)
-            if {{ snake_case }}_match:
-                kwargs["{{ snake_case }}"] = {{ snake_case }}_match.group(1)
-{% endfor %}
+{% for normalized_path, mapping in path_mappings.items() %}
+            {% for param_name, snake_case in mapping.params.items() -%}
+                {{ snake_case }}_match = re.search(r"{{ normalized_path.rstrip('/') }}/(?P<{{ snake_case }}>\d+?)(?=/|$)", path)
+            {%- endfor %}
+{%- endfor %}
+{% for normalized_path, mapping in path_mappings.items() %}
+            {% set outer_loop = loop %}
+            {% for param_name, snake_case in mapping.params.items() -%}
+                {% if loop.first and outer_loop.first %}if{% else %}elif{% endif %} {{ snake_case }}_match:
+                    kwargs["{{ snake_case }}"] = {{ snake_case }}_match.group(1)
+            {%- endfor %}
+{%- endfor %}
+
             try:
                 result = handler_method(message, **kwargs)
                 self.context.logger.info(f"Successfully handled {method.upper()} request for {path}")

@@ -416,7 +416,7 @@ class HandlerScaffolder:
         path_params: tuple[set[str], dict[str, str]]
     ):
         schema_filenames = [camel_to_snake(schema) + "_dao" for schema in persistent_schemas]
-
+        
         header = self.jinja_env.get_template("handler_header.jinja").render(
             author=self.config.public_id.author,
             skill_name=self.config.public_id.name,
@@ -427,14 +427,46 @@ class HandlerScaffolder:
             all_methods=all_methods,
             unexpected_message_handler=self.jinja_env.get_template("unexpected_message_handler.jinja").render(),
             path_params=path_params[0],
-            path_params_mapping=path_params[1],
+            path_mappings=path_params[1],
         )
         return header + main_handler
 
     def _get_path_params(self, openapi_spec: OpenAPI) -> tuple[set[str], dict[str, str]]:
+        # parameter_paths_without_params = set()
         path_params = set()
-        path_params_mapping = {}
+        path_mappings = {}
+
         for path, path_item in openapi_spec.paths.items():
+            path_segments = path.split("/")
+            path_without_params = []
+            params_mapping = {}
+
+            # Check if path has any parameters
+            has_params = any(segment.startswith("{") and segment.endswith("}") 
+                            for segment in path_segments)
+
+            if not has_params:
+                continue  # Skip paths without parameters
+
+            # We process path segments
+            for segment in path_segments:
+                if segment.startswith("{") and segment.endswith("}"):
+                    path_without_params.append("")
+                    param_name = segment[1:-1]
+                    snake_case_param = camel_to_snake(param_name)
+                    path_params.add(snake_case_param)
+                    params_mapping[param_name] = snake_case_param
+                else:
+                    path_without_params.append(segment)
+
+            normalized_path = "/".join(path_without_params)
+            if normalized_path:
+                path_mappings[normalized_path] = {
+                    "original_path": path,
+                    "params": params_mapping
+                }
+
+            # We process path item parameters
             if isinstance(path_item, Reference):
                 try:
                     path_item = path_item.resolve(openapi_spec)
@@ -446,18 +478,19 @@ class HandlerScaffolder:
                 if param.param_in == "path":
                     snake_case_param = camel_to_snake(param.name)
                     path_params.add(snake_case_param)
-                    path_params_mapping[param.name] = snake_case_param
+                    if normalized_path:
+                        path_mappings[normalized_path]["params"][param.name] = snake_case_param
 
-            # Also check URL path for parameters
-            path_segments = path.split("/")
-            for segment in path_segments:
-                if segment.startswith("{") and segment.endswith("}"):
-                    param_name = segment[1:-1]  # Remove { and }
-                    snake_case_param = camel_to_snake(param_name)
-                    path_params.add(snake_case_param)
-                    path_params_mapping[param_name] = snake_case_param
+            # # Also check URL path for parameters
+            # path_segments = path.split("/")
+            # for segment in path_segments:
+            #     if segment.startswith("{") and segment.endswith("}"):
+            #         param_name = segment[1:-1]  # Remove { and }
+            #         snake_case_param = camel_to_snake(param_name)
+            #         path_params.add(snake_case_param)
+            #         path_params_mapping[param_name] = snake_case_param
 
-        return path_params, path_params_mapping
+        return path_params, path_mappings
 
     def generate_method_name(self, http_method: str, path: str) -> str:
         """Generate method name based on HTTP method and path."""
@@ -640,7 +673,6 @@ class HandlerScaffolder:
                 return
 
         for path, path_item in api_spec.paths.items():
-            # breakpoint()
             if isinstance(path_item, Reference):
                 try:
                     path_item = path_item.resolve(api_spec)
