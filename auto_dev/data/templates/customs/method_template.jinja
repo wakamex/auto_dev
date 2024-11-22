@@ -6,6 +6,7 @@
 {%- if method|lower in ['post', 'put', 'patch', 'delete'] %}
         self.context.logger.debug(f"Request body: {body}")
 {% endif %}
+{%- if use_daos %}
         try:
             {%- if method|lower == 'get' and not path_params %}
             result = {{ schema|lower|replace(' ', '_') }}_dao.get_all()
@@ -56,13 +57,16 @@
             )
 {% endfor %}
         except Exception as e:
-            self.context.logger.exception("Unhandled exception")
-            error_message = json.dumps({"error": str(e)})
+            self.context.logger.exception(f"Unhandled exception: {e!s}")
             return ApiHttpMessage(
                 performative=ApiHttpMessage.Performative.RESPONSE,
                 status_code=500,
+                status_text="Internal Server Error",
                 headers="",
                 version=message.version,
-                status_text="Internal Server Error",
-                body=error_message.encode(),
+                body=json.dumps({"error": "Internal server error"}).encode()
             )
+{%- else %}
+        # TODO: Implement {{ method|upper }} logic for {{ path }}
+        raise NotImplementedError
+{%- endif %}

@@ -19,19 +19,17 @@
 """This package contains a scaffold of a handler."""
 
 import re
+{%- if use_daos %}
 import json
-from dataclasses import dataclass
+{%- endif %}
 from urllib.parse import unquote, urlparse
 
 from aea.skills.base import Handler
 from packages.eightballer.protocols.http.message import HttpMessage as ApiHttpMessage
-
-{% if use_daos -%}
+{% if use_daos %}
 {% for schema, filename in zip(schemas, schema_filenames) -%}
 from .daos.{{ filename }} import {{ schema }}DAO
 {% endfor %}
-{% endif %}
-
 from .exceptions import (
     BadRequestError,
     UnauthorizedError,
@@ -42,13 +40,10 @@ from .exceptions import (
     InternalServerError,
     ServiceUnavailableError
 )
-
-{% if use_daos -%}
 {% for schema in schemas -%}
 {{ schema|lower|replace(' ', '_') }}_dao = {{ schema }}DAO()
 {% endfor %}
 {% endif %}
-
 class ApiHttpHandler(Handler):
     """Implements the API HTTP handler."""
 

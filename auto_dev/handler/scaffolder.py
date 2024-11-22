@@ -181,6 +181,24 @@ class HandlerScaffolder:
             self.logger.info(f"  - {schema}")
         return input("Use these schemas for augmenting? (y/n): ").lower().strip() == "y"
 
+    def _get_operation_details(self, operation, method, path, persistent_schemas):
+        """Extract operation details based on use_daos setting."""
+        details = {
+            "schema": None,
+            "operation_type": "other",
+            "response_info": {"status_code": 200, "status_text": "OK", "headers": {}},
+            "error_responses": {}
+        }
+
+        if self.config.use_daos:
+            details.update({
+                "schema": self.extract_schema(operation, persistent_schemas),
+                "operation_type": "other" if method.lower() != "post" else self.classify_post_operation(path, operation),
+                "response_info": self._extract_response_info(operation),
+                "error_responses": self._extract_error_responses(operation)
+            })
+        return details
+
     def _generate_handler_methods(self, openapi_spec, persistent_schemas):
         handler_methods = []
         for path, path_item in openapi_spec["paths"].items():
@@ -188,23 +206,22 @@ class HandlerScaffolder:
                 method_name = self.generate_method_name(method, path)
                 path_params = [param.strip("{}") for param in path.split("/") if param.startswith("{") and param.endswith("}")]
                 path_params_snake_case = [camel_to_snake(param) for param in path_params]
-                schema = self.extract_schema(operation, persistent_schemas)
-                operation_type = "other" if method.lower() != "post" else self.classify_post_operation(path, operation)
 
-                # Extract response information
-                response_info = self._extract_response_info(operation)
-                
-                # Extract error responses
-                error_responses = self._extract_error_responses(operation)
+                details = self._get_operation_details(operation, method, path, persistent_schemas)
 
                 method_code = self.jinja_env.get_template("method_template.jinja").render(
-                    method_name=method_name, method=method, path=path,
-                    path_params=path_params, path_params_snake_case=path_params_snake_case,
-                    schema=schema, operation_type=operation_type,
-                    status_code=response_info['status_code'],
-                    status_text=response_info['status_text'],
-                    headers=response_info['headers'],
-                    error_responses=error_responses,
+                    method_name=method_name,
+                    method=method,
+                    path=path,
+                    path_params=path_params,
+                    path_params_snake_case=path_params_snake_case,
+                    schema=details["schema"],
+                    operation_type=details["operation_type"],
+                    status_code=details["response_info"]["status_code"],
+                    status_text=details["response_info"]["status_text"],
+                    headers=details["response_info"]["headers"],
+                    error_responses=details["error_responses"],
+                    use_daos=self.config.use_daos
                 )
                 handler_methods.append(method_code)
         return handler_methods

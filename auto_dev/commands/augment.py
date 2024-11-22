@@ -348,7 +348,8 @@ def customs(ctx, component_type, auto_confirm, use_daos):
     logger.info(f"Handler code written to {handler_path}")
 
     scaffolder.create_dialogues()
-    scaffolder.create_exceptions()
+    if use_daos:
+        scaffolder.create_exceptions()
     logger.info("OpenAPI3 scaffolding completed successfully.")
 
 
