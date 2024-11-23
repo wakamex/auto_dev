@@ -356,42 +356,6 @@ class HandlerScaffolder:
             handler_methods.append(method_code)
         return handler_methods
 
-    # def _generate_handler_methods(self, openapi_spec: OpenAPI, persistent_schemas):
-    #     handler_methods = []
-    #     for path, path_item in openapi_spec.paths.items():
-    #         path_item_dict = path_item.model_dump()
-    #         for method in ["get", "post", "put", "delete", "patch"]:
-    #             if method not in path_item_dict:
-    #                 continue
-
-    #             operation = path_item_dict[method]
-    #             if not operation:
-    #                 continue
-    #             operation = Operation.model_validate(operation)
-    #             method_name = self.generate_method_name(method, str(path))
-    #             path_params = [param.strip("{}") for param in str(path).split("/") if param.startswith("{") and param.endswith("}")]
-    #             path_params_snake_case = [camel_to_snake(param) for param in path_params]
-    #             schema = self.extract_schema(operation, persistent_schemas)
-    #             operation_type = "other" if method.lower() != "post" else self.classify_post_operation(str(path), operation)
-
-    #             # Extract response information
-    #             response_info = self._extract_response_info(operation)
-
-    #             # Extract error responses
-    #             error_responses = self._extract_error_responses(operation)
-
-    #             method_code = self.jinja_env.get_template("method_template.jinja").render(
-    #                 method_name=method_name, method=method, path=path,
-    #                 path_params=path_params, path_params_snake_case=path_params_snake_case,
-    #                 schema=schema, operation_type=operation_type,
-    #                 status_code=response_info['status_code'],
-    #                 status_text=response_info['status_text'],
-    #                 headers=response_info['headers'],
-    #                 error_responses=error_responses,
-    #             )
-    #             handler_methods.append(method_code)
-    #     return handler_methods
-
     def _generate_handler_code(
         self,
         persistent_schemas: list[str],
@@ -399,7 +363,7 @@ class HandlerScaffolder:
         path_params: tuple[set[str], dict[str, str]]
     ):
         schema_filenames = [camel_to_snake(schema) + "_dao" for schema in persistent_schemas]
-        
+
         header = self.jinja_env.get_template("handler_header.jinja").render(
             author=self.config.public_id.author,
             skill_name=self.config.public_id.name,
@@ -412,11 +376,11 @@ class HandlerScaffolder:
             unexpected_message_handler=self.jinja_env.get_template("unexpected_message_handler.jinja").render(),
             path_params=path_params[0],
             path_mappings=path_params[1],
+            use_daos=self.config.use_daos
         )
         return header + main_handler
 
     def _get_path_params(self, openapi_spec: OpenAPI) -> tuple[set[str], dict[str, str]]:
-        # parameter_paths_without_params = set()
         path_params = set()
         path_mappings = {}
 
@@ -426,7 +390,7 @@ class HandlerScaffolder:
             params_mapping = {}
 
             # Check if path has any parameters
-            has_params = any(segment.startswith("{") and segment.endswith("}") 
+            has_params = any(segment.startswith("{") and segment.endswith("}")
                             for segment in path_segments)
 
             if not has_params:

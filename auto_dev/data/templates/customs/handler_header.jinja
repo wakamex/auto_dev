@@ -43,7 +43,26 @@ from .exceptions import (
 {% for schema in schemas -%}
 {{ schema|lower|replace(' ', '_') }}_dao = {{ schema }}DAO()
 {% endfor %}
+
+def handle_exception(handler_func):
+    """Handle exception in the handler."""
+    def wrapper(self, message, *args, **kwargs):
+        try:
+            return handler_func(self, message, *args, **kwargs)
+        except Exception as e:
+            self.context.logger.exception("Unhandled exception")
+            error_message = json.dumps({"error": str(e)})
+            return ApiHttpMessage(
+                performative=ApiHttpMessage.Performative.RESPONSE,
+                status_code=500,
+                headers="",
+                version=message.version,
+                status_text="Internal Server Error",
+                body=error_message.encode(),
+            )
+    return wrapper
 {% endif %}
+
 class ApiHttpHandler(Handler):
     """Implements the API HTTP handler."""
 

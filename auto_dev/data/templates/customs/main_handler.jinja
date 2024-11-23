@@ -7,7 +7,7 @@
         body = message.body
 
         self.context.logger.info(f"Received {method.upper()} request for {path}")
-{% if path_params_mapping %}
+{% if path_mappings %}
         normalized_path = self.normalize_path(path)
 {% else %}
         normalized_path = path.rstrip("/")
@@ -30,7 +30,7 @@
 
         substitutions = {
 {%- for normalized_path, mapping in path_mappings.items() %}
-            r"{{ normalized_path.rstrip('/') }}/(?P<{{ mapping.params.values()|first }}>[^/]+)(?=/|$)": "{{ mapping.original_path.replace('{', '').replace('}', '') }}",
+            r"^{{ normalized_path.rstrip('/') }}/(?P<{{ mapping.params.values()|first }}>[^/]+)$": "{{ mapping.original_path.replace('{', '').replace('}', '') }}",
 {%- endfor %}
         }
 
@@ -41,39 +41,54 @@
         return normalized_path
 {%- endif %}
 
-    def get_handler_name_and_kwargs(self, method: str, normalized_path: str, {% if path_params_mapping %}original_path: str, {% endif %}body: bytes) -> tuple[str, dict]:
+    def get_handler_name_and_kwargs(self, method: str, normalized_path: str, {% if path_mappings %}original_path: str, {% endif %}body: bytes) -> tuple[str, dict]:
         """Get the handler name and kwargs for the given method and path."""
         handler_name = f"handle_{method}_{normalized_path.lstrip('/').replace('/', '_')}"
 {% if path_mappings %}
         self.context.logger.debug(f"Initial handler name: {handler_name}")
 
-{%- for normalized_path, mapping in path_mappings.items() %}
-        {% for param_name, snake_case in mapping.params.items() -%}
-            handler_name = handler_name.replace("{{ param_name }}", "by_{{ snake_case }}")
+        {%- set replaced_params = [] %}
+        {%- for normalized_path, mapping in path_mappings.items() %}
+            {%- for param_name, snake_case in mapping.params.items() -%}
+                {%- if param_name not in replaced_params %}
+        handler_name = handler_name.replace("{{ param_name }}", "by_{{ snake_case }}")
+                    {%- set _ = replaced_params.append(param_name) %}
+                {%- endif %}
+            {%- endfor %}
         {%- endfor %}
-{%- endfor %}
         self.context.logger.debug(f"Final handler name: {handler_name}")
 {% endif %}
         kwargs = {"body": body} if method in {"post", "put", "patch", "delete"} else {}
 
-{%- if path_params_mapping %}
-        patterns = {
-{%- for original, snake_case in path_params_mapping.items() %}
-            r"{{ normalized_path.rstrip('/') }}/(?P<{{ snake_case }}>[^/]+)(?=/|$)": "{{ original }}",
+{%- if path_mappings %}
+        patterns = [
+{%- for normalized_path, mapping in path_mappings.items() %}
+            (r"^{{ normalized_path.rstrip('/') }}/(?P<{{ mapping.params.values()|first }}>[^/]+)$", ["{{ mapping.params.values()|first }}"]),
 {%- endfor %}
-        }
+        ]
 
-        for pattern, keys in patterns.items():
+        for pattern, param_names in patterns:
             match = re.search(pattern, original_path)
             if match:
-                for key in keys:
-                    kwargs[key[0]] = key[1]
-                else:
-                    kwargs[key] = match.group(key)
+                for param_name in param_names:
+                    kwargs[param_name] = match.group(param_name)
                 break
         self.context.logger.debug(f"Final kwargs: {kwargs}")
 {%- endif %}
         return handler_name, kwargs
+
+{% if use_daos %}
+    def create_response(self, message, status_code, status_text, body):
+        """Create an ApiHttpMessage response."""
+        return ApiHttpMessage(
+            performative=ApiHttpMessage.Performative.RESPONSE,
+            status_code=status_code,
+            status_text=status_text,
+            headers="",
+            version=message.version,
+            body=json.dumps(body).encode(),
+        )
+{%- endif %}
 
 {{ all_methods }}
 
