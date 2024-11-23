@@ -21,16 +21,16 @@
             return handler_method(message, **kwargs)
         self.context.logger.warning(f"No handler found for {method.upper()} request to {path}")
         return self.handle_unexpected_message(message)
+{%- if path_mappings %}
 
-{%- if path_params_mapping %}
     def normalize_path(self, path: str) -> str:
         """Normalize the path using regex substitution."""
         normalized_path = path.rstrip("/")
         self.context.logger.debug(f"Normalized path: {normalized_path}")
 
         substitutions = {
-{%- for original, snake_case in path_params_mapping.items() %}
-            r"/(?P<{{ snake_case }}>\d+?)(?=/|$)": "/{{ original }}",
+{%- for normalized_path, mapping in path_mappings.items() %}
+            r"{{ normalized_path.rstrip('/') }}/(?P<{{ mapping.params.values()|first }}>[^/]+)(?=/|$)": "{{ mapping.original_path.replace('{', '').replace('}', '') }}",
 {%- endfor %}
         }
 
@@ -44,11 +44,13 @@
     def get_handler_name_and_kwargs(self, method: str, normalized_path: str, {% if path_params_mapping %}original_path: str, {% endif %}body: bytes) -> tuple[str, dict]:
         """Get the handler name and kwargs for the given method and path."""
         handler_name = f"handle_{method}_{normalized_path.lstrip('/').replace('/', '_')}"
-{% if path_params_mapping %}
+{% if path_mappings %}
         self.context.logger.debug(f"Initial handler name: {handler_name}")
 
-{%- for original, snake_case in path_params_mapping.items() %}
-        handler_name = handler_name.replace("{{ original }}", "by_{{ snake_case }}")
+{%- for normalized_path, mapping in path_mappings.items() %}
+        {% for param_name, snake_case in mapping.params.items() -%}
+            handler_name = handler_name.replace("{{ param_name }}", "by_{{ snake_case }}")
+        {%- endfor %}
 {%- endfor %}
         self.context.logger.debug(f"Final handler name: {handler_name}")
 {% endif %}
@@ -57,7 +59,7 @@
 {%- if path_params_mapping %}
         patterns = {
 {%- for original, snake_case in path_params_mapping.items() %}
-            r"/(?P<{{ snake_case }}>\d+?)(?=/|$)": "/{{ original }}",
+            r"{{ normalized_path.rstrip('/') }}/(?P<{{ snake_case }}>[^/]+)(?=/|$)": "{{ original }}",
 {%- endfor %}
         }
 
