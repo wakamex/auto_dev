@@ -2,188 +2,28 @@
 # ruff: noqa: E501
 
 import re
-import enum
-from typing import Any, Union, Optional
+from typing import Any
 from pathlib import Path
 from collections import defaultdict
 
 import yaml
 from jinja2 import Environment, FileSystemLoader
-from pydantic import Field, BaseModel, ConfigDict, ValidationError
+from pydantic import BaseModel, ValidationError
 from aea.configurations.base import PublicId
 
 from auto_dev.enums import FileType
-from auto_dev.utils import change_dir, get_logger, write_to_file, camel_to_snake, validate_openapi_spec
+from auto_dev.utils import change_dir, get_logger, write_to_file, camel_to_snake
 from auto_dev.constants import DEFAULT_ENCODING, JINJA_TEMPLATE_FOLDER
 from auto_dev.cli_executor import CommandExecutor
 from auto_dev.commands.metadata import read_yaml_file
-
-
-class Reference(BaseModel):
-    """OpenAPI Reference Object."""
-    ref: str = Field(alias="$ref")
-
-    model_config = ConfigDict(
-            extra="allow",
-            populate_by_name=True,
-        )
-
-    def resolve(self, root_doc: Any) -> Any:
-        """Resolve the reference."""
-        parts = self.ref.split("/")[1:]
-        current = root_doc
-        for part in parts:
-            current = getattr(current, part, None) or current.get(part)
-        return current
-
-
-class DataType(enum.StrEnum):
-    """Data type."""
-    STRING = "string"
-    NUMBER = "number"
-    INTEGER = "integer"
-    BOOLEAN = "boolean"
-    ARRAY = "array"
-    OBJECT = "object"
-
-
-class Schema(BaseModel):
-    """OpenAPI Schema Object."""
-    title: Optional[str] = None
-    required: Optional[list[str]] = None
-    enum: Optional[list[Any]] = None
-    type: Optional[DataType] = None
-    items: Optional[Union[Reference, "Schema"]] = None
-    properties: Optional[dict[str, Union[Reference, "Schema"]]] = None
-    description: Optional[str] = None
-    example: Optional[Any] = None
-    x_persistent: Optional[bool] = Field(default=None, alias="x-persistent")
-
-    model_config = ConfigDict(
-            extra="allow",
-            populate_by_name=True,
-        )
-
-class Example(BaseModel):
-    """OpenAPI Example Object."""
-    summary: Optional[str] = None
-    description: Optional[str] = None
-    value: Optional[Any] = None 
-
-
-class Encoding(BaseModel):
-    """OpenAPI Encoding Object."""
-    contentType: Optional[str] = None
-    model_config = ConfigDict(
-            extra="allow",
-        )
-
-
-class MediaType(BaseModel):
-    """OpenAPI Media Type Object."""
-    media_type_schema: Optional[Union[Reference, Schema]] = Field(default=None, alias="schema")
-    example: Optional[Any] = None
-    examples: Optional[dict[str, Union[Example, Reference]]] = None
-    encoding: Optional[dict[str, Encoding]] = None
-
-    model_config = ConfigDict(
-            extra="allow",
-            populate_by_name=True,
-        )
-
-class Parameter(BaseModel):
-    """OpenAPI Parameter Object."""
-    description: Optional[str] = None
-    required: bool = False
-    param_schema: Optional[Union[Reference, Schema]] = Field(
-        default=None, alias="schema"
-    )
-    example: Optional[Any] = None
-    examples: Optional[dict[str, Union[Example, Reference]]] = None
-    content: Optional[dict[str, MediaType]] = None
-    name: str
-    param_in: str = Field(alias="in")
-    schema_: Optional[dict] = Field(default=None, alias="schema")
-
-
-
-
-
-
-
-
-
-
-
-class RequestBody(BaseModel):
-    """OpenAPI Request Body Object."""
-    description: Optional[str] = None
-    content: dict[str, MediaType]
-    required: bool = False
-
-
-class Response(BaseModel):
-    """OpenAPI Response Object."""
-    description: str
-    content: Optional[dict[str, MediaType]] = None
-    headers: Optional[dict[str, Any]] = None
-    model_config = ConfigDict(
-            extra="allow",
-        )
-
-
-Responses = dict[str, Union[Response, Reference]]
-
-
-class Operation(BaseModel):
-    """OpenAPI Operation Object."""
-    tags: Optional[list[str]] = None
-    summary: Optional[str] = None
-    description: Optional[str] = None
-    operationId: Optional[str] = None
-    parameters: Optional[list[Union[Parameter, Reference]]] = None
-    requestBody: Optional[Union[RequestBody, Reference]] = None
-    responses: Responses
-
-
-class PathItem(BaseModel):
-    """OpenAPI Path Item Object."""
-    ref: Optional[str] = Field(default=None, alias="$ref")
-    summary: Optional[str] = None
-    description: Optional[str] = None
-    get: Optional[Operation] = None
-    put: Optional[Operation] = None
-    post: Optional[Operation] = None
-    delete: Optional[Operation] = None
-    patch: Optional[Operation] = None
-    parameters: Optional[list[Union[Parameter, Reference]]] = None
-
-    model_config = ConfigDict(
-        extra="allow",
-        populate_by_name=True,
-    )
-
-
-class Components(BaseModel):
-    """OpenAPI Components Object."""
-    schemas: Optional[dict[str, Union[Schema, Reference]]] = None
-
-
-Paths = dict[str, PathItem]
-
-class OpenAPI(BaseModel):
-    """OpenAPI Object."""
-    openapi: str
-    info: dict[str, Any]
-    paths: Paths
-    components: Optional[Components] = None
-
-
-Schema.model_rebuild()
+from auto_dev.handler.exceptions import ScaffolderError
+from auto_dev.handler.openapi_utils import load_openapi_spec, parse_schema_like, get_crud_classification
+from auto_dev.handler.openapi_models import Schema, OpenAPI, PathItem, Operation, Reference
 
 
 class ScaffolderConfig(BaseModel):
     """Configuration for the Handler Scaffolder."""
+
     spec_file_path: str
     public_id: PublicId
     verbose: bool = True
@@ -192,23 +32,7 @@ class ScaffolderConfig(BaseModel):
     use_daos: bool = False
 
     # Allow arbitrary types for public_id
-    model_config = {
-        "arbitrary_types_allowed": True
-    }
-
-
-class CrudOperation:
-    """Crud operation."""
-    CREATE = "create"
-    READ = "read"
-    UPDATE = "update"
-    DELETE = "delete"
-    OTHER = "other"
-
-
-class ScaffolderError(Exception):
-    """Scaffolder error."""
-    pass
+    model_config = {"arbitrary_types_allowed": True}
 
 
 class HandlerScaffolder:
@@ -264,17 +88,13 @@ class HandlerScaffolder:
             msg = "Failed to scaffold skill."
             raise ScaffolderError(msg)
 
-    def extract_schema(self, operation: Operation, persistent_schemas: list[str]) -> Optional[str]:
+    def extract_schema(self, operation: Operation) -> str | None:
         """Extract the schema from the operation."""
         if not operation.responses:
             return None
 
         success_response = next(
-            (
-                resp
-                for code, resp in operation.responses.items()
-                if code in {"200", "201"}
-            ),
+            (resp for code, resp in operation.responses.items() if code in {"200", "201"}),
             None,
         )
         if not success_response or not success_response.content:
@@ -309,11 +129,6 @@ class HandlerScaffolder:
         """Generate handler."""
         openapi_spec = load_openapi_spec(self.config.spec_file_path, self.logger)
 
-        # TODO: Uncomment this when we have a way to validate the OpenAPI spec
-        # if not validate_openapi_spec(openapi_spec, self.logger):
-        #     msg = "OpenAPI specification validation failed"
-        #     raise ScaffolderError(msg)
-
         # Check if all paths in the OpenAPI spec start with '/api'
         if not all(path.startswith("/api") for path in openapi_spec.paths):
             self.logger.error("All paths in the OpenAPI spec must start with '/api'")
@@ -331,7 +146,6 @@ class HandlerScaffolder:
         handler_methods = self._generate_handler_methods_from_classifications(
             handler_methods_info,
             openapi_spec,
-            persistent_schemas
         )
         if not handler_methods:
             self.logger.error("Error: handler_methods is None. Unable to process.")
@@ -339,9 +153,7 @@ class HandlerScaffolder:
             raise ScaffolderError(msg)
 
         self.handler_code = self._generate_handler_code(
-            persistent_schemas,
-            "\n\n".join(handler_methods),
-            self._get_path_params(openapi_spec)
+            persistent_schemas, "\n\n".join(handler_methods), self._get_path_params(openapi_spec)
         )
 
         if not self.handler_code:
@@ -388,7 +200,6 @@ class HandlerScaffolder:
         self,
         classifications: list[dict],
         openapi_spec: OpenAPI,
-        persistent_schemas: list[str]
     ) -> list[str]:
         """Generate handler methods from classifications."""
         handler_methods = []
@@ -403,7 +214,7 @@ class HandlerScaffolder:
             method_name = self.generate_method_name(method, path)
             path_params = [param.name for param in operation.parameters or [] if param.param_in == "path"]
             path_params_snake_case = [camel_to_snake(param) for param in path_params]
-            schema = self.extract_schema(operation, persistent_schemas)
+            schema = self.extract_schema(operation)
 
             response_info = self._extract_response_info(operation)
 
@@ -427,10 +238,7 @@ class HandlerScaffolder:
         return handler_methods
 
     def _generate_handler_code(
-        self,
-        persistent_schemas: list[str],
-        all_methods: str,
-        path_params: tuple[set[str], dict[str, str]]
+        self, persistent_schemas: list[str], all_methods: str, path_params: tuple[set[str], dict[str, str]]
     ):
         schema_filenames = [camel_to_snake(schema) + "_dao" for schema in persistent_schemas]
 
@@ -439,14 +247,14 @@ class HandlerScaffolder:
             skill_name=self.config.public_id.name,
             schemas=persistent_schemas,
             schema_filenames=schema_filenames,
-            use_daos=self.config.use_daos
+            use_daos=self.config.use_daos,
         )
         main_handler = self.jinja_env.get_template("main_handler.jinja").render(
             all_methods=all_methods,
             unexpected_message_handler=self.jinja_env.get_template("unexpected_message_handler.jinja").render(),
             path_params=path_params[0],
             path_mappings=path_params[1],
-            use_daos=self.config.use_daos
+            use_daos=self.config.use_daos,
         )
         return header + main_handler
 
@@ -460,8 +268,7 @@ class HandlerScaffolder:
             params_mapping = {}
 
             # Check if path has any parameters
-            has_params = any(segment.startswith("{") and segment.endswith("}")
-                            for segment in path_segments)
+            has_params = any(segment.startswith("{") and segment.endswith("}") for segment in path_segments)
 
             if not has_params:
                 continue  # Skip paths without parameters
@@ -479,10 +286,7 @@ class HandlerScaffolder:
 
             normalized_path = "/".join(path_without_params)
             if normalized_path:
-                path_mappings[normalized_path] = {
-                    "original_path": path,
-                    "params": params_mapping
-                }
+                path_mappings[normalized_path] = {"original_path": path, "params": params_mapping}
 
             # We process path item parameters
             if isinstance(path_item, Reference):
@@ -498,15 +302,6 @@ class HandlerScaffolder:
                     path_params.add(snake_case_param)
                     if normalized_path:
                         path_mappings[normalized_path]["params"][param.name] = snake_case_param
-
-            # # Also check URL path for parameters
-            # path_segments = path.split("/")
-            # for segment in path_segments:
-            #     if segment.startswith("{") and segment.endswith("}"):
-            #         param_name = segment[1:-1]  # Remove { and }
-            #         snake_case_param = camel_to_snake(param_name)
-            #         path_params.add(snake_case_param)
-            #         path_params_mapping[param_name] = snake_case_param
 
         return path_params, path_mappings
 
@@ -664,66 +459,74 @@ class HandlerScaffolder:
         schemas = api_spec.components.schemas if api_spec.components else {}
         schema_usage = defaultdict(set)
 
-        def process_schema(schema: Any, usage_type: str) -> None:
-            try:
-                self.logger.debug(f"Processing schema: {schema}, type: {type(schema)}")
-                schema = parse_schema_like(schema)
-
-                if isinstance(schema, Reference):
-                    schema_name = schema.ref.split("/")[-1]
-                    self.logger.debug(f"Found reference to {schema_name}")
-                    schema_usage[schema_name].add(usage_type)
-                    referenced_schema = schemas.get(schema_name)
-                    if referenced_schema:
-                        referenced_schema = parse_schema_like(referenced_schema)
-                        self.logger.debug(f"Referenced schema: {referenced_schema}")
-                        if referenced_schema.properties:
-                            for prop in referenced_schema.properties.values():
-                                process_schema(prop, f"nested_{usage_type}")
-                elif isinstance(schema, Schema):
-                    if schema.properties:
-                        for prop in schema.properties.values():
-                            process_schema(prop, usage_type)
-                    if schema.items:
-                        process_schema(schema.items, usage_type)
-            except Exception as e:
-                self.logger.warning(f"Error processing schema: {e}")
-                return
-
         for path, path_item in api_spec.paths.items():
-            if isinstance(path_item, Reference):
-                try:
-                    path_item = path_item.resolve(api_spec)
-                except Exception as e:
-                    self.logger.error(f"Failed to resolve reference for path {path}: {e}")
+            path_item = self._resolve_path_item(path_item, api_spec, path)
+            if not path_item:
+                continue
+
+            for method in ["get", "post", "put", "delete"]:
+                operation = getattr(path_item, method, None)
+                if not operation:
                     continue
 
-            for method in ['get', 'post', 'put', 'delete', 'patch', 'options', 'head', 'trace']:
-                operation: Optional[Operation] = getattr(path_item, method, None)
-                if operation:
-                    if operation.requestBody:
-                        for content in operation.requestBody.content.values():
-                            try:
-                                schema = content.media_type_schema
-                                process_schema(schema, "request")
-                            except Exception as e:
-                                self.logger.warning(f"Error processing request schema: {e}")
-                                continue
+                self._process_operation_schemas(operation, schemas, schema_usage)
 
-                    for response in operation.responses.values():
-                        if response.content:
-                            for content in response.content.values():
-                                try:
-                                    schema = content.media_type_schema
-                                    process_schema(schema, "response")
-                                except Exception as e:
-                                    self.logger.warning(f"Error processing response schema: {e}")
-                                    continue
+        return [schema for schema, usage in schema_usage.items() if "response" in usage or "nested_request" in usage]
 
-        return [
-            schema for schema, usage in schema_usage.items()
-            if "response" in usage or "nested_request" in usage
-        ]
+    def _resolve_path_item(self, path_item: PathItem | Reference, api_spec: OpenAPI, path: str) -> PathItem | None:
+        """Resolve a path item it's a reference."""
+        if isinstance(path_item, Reference):
+            try:
+                path_item = path_item.resolve(api_spec)
+            except ScaffolderError as e:
+                self.logger.exception(f"Failed to resolve reference for path {path}: {e}")
+                return None
+        return path_item
+
+    def _process_operation_schemas(self, operation: Operation, schemas: dict, schema_usage: defaultdict):
+        if operation.requestBody:
+            self._process_content_schemas(operation.requestBody.content, schemas, schema_usage, "request")
+
+        for response in operation.responses.values():
+            if response.content:
+                self._process_content_schemas(response.content, schemas, schema_usage, "response")
+
+    def _process_content_schemas(self, content_dict: dict, schemas: dict, schema_usage: defaultdict, usage_type: str):
+        """Process the schemas in content."""
+        for content in content_dict.values():
+            schema = content.media_type_schema
+            if schema:
+                self._process_schema(schema, schemas, schema_usage, usage_type)
+
+    def _process_schema(self, schema: Any, schemas: dict, schema_usage: defaultdict, usage_type: str):
+        """Recursively process a schema and update usage."""
+        try:
+            self.logger.debug(f"Processing schema: {schema}, type: {type(schema)}")
+            schema = parse_schema_like(schema)
+
+            if isinstance(schema, Reference):
+                self._handle_reference_schema(schema, schemas, schema_usage, usage_type)
+            elif isinstance(schema, Schema):
+                self._handle_schema_properties(schema, schemas, schema_usage, usage_type)
+        except ScaffolderError as e:
+            self.logger.warning(f"Error processing schema: {e}")
+
+    def _handle_reference_schema(self, schema: Reference, schemas: dict, schema_usage: defaultdict, usage_type: str):
+        """Handle a schema that is a reference."""
+        schema_name = schema.ref.split("/")[-1]
+        self.logger.debug(f"Found reference to {schema_name}")
+        schema_usage[schema_name].add(usage_type)
+        referenced_schema = schemas.get(schema_name)
+        if referenced_schema:
+            self._process_schema(referenced_schema, schemas, schema_usage, f"nested_{usage_type}")
+
+    def _handle_schema_properties(self, schema: Schema, schemas: dict, schema_usage: defaultdict, usage_type: str):
+        """Handle properties and items in a schema."""
+        if schema.properties:
+            for prop in schema.properties.values():
+                self._process_schema(prop, schemas, schema_usage, usage_type)
+        if schema.items:
+            self._process_schema(schema.items, schemas, schema_usage, usage_type)
 
     def _extract_response_info(self, operation: Operation) -> dict[str, Any]:
         responses = operation.responses
@@ -774,7 +577,7 @@ class HandlerScaffoldBuilder:
 
     def __init__(self):
         """Initialize HandlerScaffoldBuilder."""
-        self.config: Optional[ScaffolderConfig] = None
+        self.config: ScaffolderConfig | None = None
         self.logger = None
 
     def create_scaffolder(
@@ -811,106 +614,3 @@ class HandlerScaffoldBuilder:
             self.logger.error(msg)
             raise ScaffolderError(msg)
         return HandlerScaffolder(self.config, self.logger)
-
-# HELPER FUNCTIONS
-
-
-def load_openapi_spec(spec_file_path: str, logger) -> OpenAPI:
-    """Load the OpenAPI spec."""
-    try:
-        openapi_spec_dict = read_yaml_file(spec_file_path)
-        return OpenAPI(**openapi_spec_dict)
-    except FileNotFoundError as e:
-        msg = f"OpenAPI specification file not found: {spec_file_path}"
-        logger.exception(msg)
-        raise ScaffolderError(msg) from e
-    except ValidationError as e:
-        msg = f"OpenAPI specification validation error: {e}"
-        logger.exception(msg)
-        raise ScaffolderError(msg) from e
-
-
-def get_crud_classification(openapi_spec: OpenAPI, logger) -> list[dict]:
-    """Get the CRUD classification."""
-    classifications = []
-    for path, path_item in openapi_spec.paths.items():
-        if isinstance(path_item, Reference):
-            try:
-                path_item = path_item.resolve(openapi_spec)
-            except Exception as e:
-                msg = f"Failed to resolve reference for path {path}: {e}"
-                logger.exception(msg)
-                continue
-
-        for method in ["get", "post", "put", "delete", "patch", "options", "head", "trace"]:
-            operation: Optional[Operation] = getattr(path_item, method.lower(), None)
-            if operation:
-                if method in {"patch", "options", "head", "trace"}:
-                    msg = f"Method {method.upper()} is not currently supported"
-                    raise ScaffolderError(msg)
-
-                crud_type = classify_post_operation(operation, path, logger) if method == "post" else "read"
-                classifications.append({
-                    "path": path,
-                    "method": method,
-                    "operationId": operation.operationId,
-                    "crud_type": crud_type,
-                })
-    logger.info(f"Classifications: {classifications}")
-    return classifications
-
-
-def classify_post_operation(operation: Operation, path: str, logger) -> str:
-    """Classify a POST operation as CRUD or other based on heuristics."""
-    keywords = (
-        (operation.operationId or "") + " " +
-        (operation.summary or "") + " " +
-        (operation.description or "")
-    ).lower()
-
-    # Define keyword sets for each CRUD operation
-    create_keywords = {"create", "new", "add", "post"}
-    read_keywords = {"read", "get", "fetch", "retrieve", "list"}
-    update_keywords = {"update", "modify", "change", "edit", "patch"}
-    delete_keywords = {"delete", "remove", "del"}
-
-    # Define regex to detect path parameters
-    has_path_param = bool(re.search(r"/\{[^}]+\}", path))
-
-    # Keyword-based classification
-    if any(word in keywords for word in create_keywords):
-        return CrudOperation.CREATE
-    elif any(word in keywords for word in read_keywords):
-        return CrudOperation.READ
-    elif any(word in keywords for word in update_keywords):
-        return CrudOperation.UPDATE
-    elif any(word in keywords for word in delete_keywords):
-        return CrudOperation.DELETE
-
-    # Heuristic based on presence of path parameters and response codes
-    if has_path_param:
-        # Analyze response status codes
-        success_responses = {code: resp for code, resp in operation.responses.items() if code in {"200", "201", "204"}}
-        if "201" in success_responses:
-            return CrudOperation.CREATE
-        elif "204" in success_responses:
-            # 204 No Content is often used for Delete operations
-            return CrudOperation.DELETE
-        elif "200" in success_responses:
-            # 200 OK could indicate Read or Update; prefer Update if path has parameters
-            return CrudOperation.UPDATE
-
-    # Default to OTHER if no heuristics match
-    logger.warning(f"Could not classify POST operation '{operation.operationId}' at path '{path}'.")
-    return CrudOperation.OTHER
-
-
-def parse_schema_like(data: Union[dict, Reference, Schema]) -> Union[Schema, Reference]:
-    """Parse a schema-like object into a Schema or Reference."""
-    if isinstance(data, (Schema, Reference)):
-        return data
-    if isinstance(data, dict):
-        if "$ref" in data:
-            return Reference(**data)
-        return Schema(**data)
-    return data
