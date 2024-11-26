@@ -212,13 +212,27 @@ class HandlerScaffolder:
             operation = getattr(path_item, method.lower())
 
             method_name = self.generate_method_name(method, path)
-            path_params = [param.name for param in operation.parameters or [] if param.param_in == "path"]
+
+            # Get parameters from both path-level and operation-level
+            path_params = []
+            # Add path-level parameters
+            if path_item.parameters:
+                path_params.extend([param.name for param in path_item.parameters if param.param_in == "path"])
+            # Add operation-level parameters
+            if operation.parameters:
+                path_params.extend([param.name for param in operation.parameters if param.param_in == "path"])
+
             path_params_snake_case = [camel_to_snake(param) for param in path_params]
+            self.logger.debug(f"Path params: {path_params}")
+            self.logger.debug(f"Snake case path params: {path_params_snake_case}")
             schema = self.extract_schema(operation)
 
             response_info = self._extract_response_info(operation)
 
             error_responses = self._extract_error_responses(operation)
+
+            self.logger.debug(f"Path item parameters: {[p.name for p in path_item.parameters or []]}")
+            self.logger.debug(f"Operation parameters: {[p.name for p in operation.parameters or []]}")
 
             method_code = self.jinja_env.get_template("method_template.jinja").render(
                 method_name=method_name,
