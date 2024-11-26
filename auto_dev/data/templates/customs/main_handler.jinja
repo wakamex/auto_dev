@@ -1,4 +1,6 @@
+{%- if use_daos %}
     @handle_exception
+{% endif %}
     def handle(self, message: ApiHttpMessage) -> None:
         """Handle incoming API HTTP messages."""
         method = message.method.lower()
