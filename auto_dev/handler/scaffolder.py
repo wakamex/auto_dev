@@ -137,7 +137,7 @@ class HandlerScaffolder:
 
         persistent_schemas = []
         if self.config.use_daos:
-            persistent_schemas = self._get_persistent_schemas(openapi_spec)
+            persistent_schemas = self.get_persistent_schemas(openapi_spec)
             if not self._confirm_schemas(persistent_schemas):
                 msg = "Schema confirmation failed."
                 raise ScaffolderError(msg)
@@ -163,7 +163,7 @@ class HandlerScaffolder:
 
         return self.handler_code
 
-    def _get_persistent_schemas(self, openapi_spec: OpenAPI) -> list[str]:
+    def get_persistent_schemas(self, openapi_spec: OpenAPI) -> list[str]:
         """Retrieve the persistent schemas from the OpenAPI spec."""
         if not self.config.use_daos:
             return []
@@ -484,8 +484,8 @@ class HandlerScaffolder:
         return path_item
 
     def _process_operation_schemas(self, operation: Operation, schemas: dict, schema_usage: defaultdict):
-        if operation.requestBody:
-            self._process_content_schemas(operation.requestBody.content, schemas, schema_usage, "request")
+        if operation.request_body:
+            self._process_content_schemas(operation.request_body.content, schemas, schema_usage, "request")
 
         for response in operation.responses.values():
             if response.content:
