@@ -105,6 +105,7 @@ def test_scaffold_protocol(cli_runner, dummy_agent_tim, caplog):
     readme_path = dummy_agent_tim / "protocols" / protocol.metadata["name"] / "README.md"
     assert original_content in readme_path.read_text(encoding=DEFAULT_ENCODING)
 
+
 @pytest.mark.skip(reason="Needs changes to scaffolder to handle directory structure")
 def test_scaffold_handler(dummy_agent_tim, openapi_test_case):
     """Test scaffold handler."""
@@ -309,8 +310,7 @@ class TestDAOScaffolder:
         mock_generator.generate_dao_classes.return_value = {"TestDAO": "class TestDAO:..."}
         mock_dao_generator.return_value = mock_generator
 
-        with patch("auto_dev.dao.scaffolder.Path.mkdir"), \
-             patch("auto_dev.dao.scaffolder.write_to_file") as mock_write:
+        with patch("auto_dev.dao.scaffolder.Path.mkdir"), patch("auto_dev.dao.scaffolder.write_to_file") as mock_write:
             scaffolder.scaffold()
 
             scaffolder.logger.info.assert_any_call("Starting DAO scaffolding process")
@@ -380,7 +380,7 @@ components:
 class TestHandlerScaffolder(TestCase):
     """Test suite for HandlerScaffolder."""
 
-    def setUp(self):
+    def setUp(self):  # noqa: N802
         """Set up test case."""
         self.logger = Mock()
         self.scaffolder = HandlerScaffolder(config=None, logger=self.logger)
@@ -392,10 +392,8 @@ class TestHandlerScaffolder(TestCase):
                 "200": Response(
                     description="OK",
                     content={
-                        "application/json": MediaType(
-                            media_type_schema=Reference(ref="#/components/schemas/Item")
-                        )
-                    }
+                        "application/json": MediaType(media_type_schema=Reference(ref="#/components/schemas/Item"))
+                    },
                 )
             }
         )
@@ -408,11 +406,7 @@ class TestHandlerScaffolder(TestCase):
             responses={
                 "200": Response(
                     description="OK",
-                    content={
-                        "application/json": MediaType(
-                            media_type_schema=Schema(type="object", properties={})
-                        )
-                    }
+                    content={"application/json": MediaType(media_type_schema=Schema(type="object", properties={}))},
                 )
             }
         )
@@ -427,11 +421,8 @@ class TestHandlerScaffolder(TestCase):
             info={"title": "Test API", "version": "1.0"},
             paths={},
             components=Components(
-                schemas={
-                    "Item": Schema(type="object", x_persistent=True),
-                    "NonPersistent": Schema(type="object")
-                }
-            )
+                schemas={"Item": Schema(type="object", x_persistent=True), "NonPersistent": Schema(type="object")}
+            ),
         )
         schemas = self.scaffolder.get_persistent_schemas(openapi_spec)
         assert schemas == ["Item"]
@@ -451,18 +442,13 @@ class TestHandlerScaffolder(TestCase):
                                     "application/json": MediaType(
                                         media_type_schema=Reference(ref="#/components/schemas/Item")
                                     )
-                                }
+                                },
                             )
                         }
                     )
                 )
             },
-            components=Components(
-                schemas={
-                    "Item": Schema(type="object"),
-                    "Ignored": Schema(type="object")
-                }
-            )
+            components=Components(schemas={"Item": Schema(type="object"), "Ignored": Schema(type="object")}),
         )
         schemas = self.scaffolder.identify_persistent_schemas(openapi_spec)
         assert schemas == ["Item"]
@@ -470,6 +456,7 @@ class TestHandlerScaffolder(TestCase):
 
 class TestHandlerScaffoldBuilder(TestCase):
     """Test suite for HandlerScaffoldBuilder."""
+
     def test_create_scaffolder(self):
         """Test creating a scaffolder."""
         builder = HandlerScaffoldBuilder()
@@ -481,13 +468,14 @@ class TestHandlerScaffoldBuilder(TestCase):
             verbose=True,
             new_skill=True,
             auto_confirm=False,
-            use_daos=False
+            use_daos=False,
         ).build()
         assert isinstance(scaffolder, HandlerScaffolder)
 
 
 class TestHandlerScaffolderIntegration(TestCase):
     """Test suite for HandlerScaffolderIntegration."""
+
     @patch("auto_dev.handler.scaffolder.CommandExecutor")
     @patch("auto_dev.handler.scaffolder.load_openapi_spec")
     @patch("auto_dev.handler.scaffolder.HandlerScaffolder.save_handler")
