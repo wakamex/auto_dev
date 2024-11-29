@@ -45,5 +45,14 @@
 {%- endfor %}
 {%- else %}
         # TODO: Implement {{ method|upper }} logic for {{ path }}
+        # TODO: Use this template to return a response with a status code and status text
+        # return ApiHttpMessage(
+        #     performative=ApiHttpMessage.Performative.RESPONSE,
+        #     status_code=status_code,
+        #     status_text=status_text,
+        #     headers="",
+        #     version=message.version,
+        #     body=b""
+        # )
         raise NotImplementedError
 {%- endif %}
