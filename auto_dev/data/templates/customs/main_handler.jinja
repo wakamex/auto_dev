@@ -60,7 +60,7 @@
         {%- endfor %}
         self.context.logger.debug(f"Final handler name: {handler_name}")
 {% endif %}
-        kwargs = {"body": body} if method in {"post", "put", "patch", "delete"} else {}
+        kwargs = {"body": body} if method in {"post", "put", "patch"} else {}
 
 {%- if path_mappings %}
         patterns = [
