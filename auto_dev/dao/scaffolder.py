@@ -7,6 +7,7 @@ from collections import defaultdict
 
 import yaml
 from jinja2 import Environment, FileSystemLoader
+from aea.configurations.base import PublicId
 
 from auto_dev.enums import FileType
 from auto_dev.utils import write_to_file, camel_to_snake, read_from_file, validate_openapi_spec
@@ -18,10 +19,11 @@ from auto_dev.dao.dummy_data import generate_dummy_data, generate_single_dummy_d
 class DAOScaffolder:
     """DAOScaffolder class is responsible for scaffolding DAO classes and test scripts."""
 
-    def __init__(self, logger: Any, verbose: bool, auto_confirm: bool):
+    def __init__(self, logger: Any, verbose: bool, auto_confirm: bool, public_id: PublicId):
         self.logger = logger
         self.verbose = verbose
         self.auto_confirm = auto_confirm
+        self.public_id = public_id
         self.env = Environment(
             loader=FileSystemLoader(Path(JINJA_TEMPLATE_FOLDER, "dao")),
             autoescape=True,
@@ -226,7 +228,13 @@ class DAOScaffolder:
         self, model_names: list[str], dao_file_names: list[str], test_dummy_data: dict[str, Any]
     ) -> str:
         template = self.env.get_template("test_dao.jinja")
-        return template.render(model_names=model_names, dao_file_names=dao_file_names, dummy_data=test_dummy_data)
+        return template.render(
+            model_names=model_names,
+            dao_file_names=dao_file_names,
+            dummy_data=test_dummy_data,
+            author=self.public_id.author,
+            custom_name=self.public_id.name
+        )
 
     def _save_test_script(self, test_script: str) -> None:
         test_script_path = Path("tests/test_dao.py")

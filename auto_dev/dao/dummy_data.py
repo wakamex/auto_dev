@@ -1,7 +1,6 @@
 """Generate dummy data for the given models."""
 
 import re
-import random
 from typing import TYPE_CHECKING, Any
 
 from faker import Faker
@@ -15,8 +14,8 @@ fake = Faker()
 
 
 def generate_ethereum_address() -> str:
-    """Generates a fake Ethereum address."""
-    return "0x" + "".join(random.choices("0123456789abcdef", k=40))  # noqa: S311
+    """Generates a deterministic Ethereum address."""
+    return "0xETHEREUM_ADDRESS" + "0" * 24
 
 
 def generate_email() -> str:
@@ -40,28 +39,28 @@ def generate_uuid() -> str:
 
 
 def generate_boolean() -> bool:
-    """Generates a random boolean value."""
-    return random.choice(["True", "False"])  # noqa: S311
+    """Generates a deterministic boolean value."""
+    return True
 
 
 def generate_string() -> str:
-    """Generates a generic fake string."""
-    return fake.word()
+    """Generates a deterministic string."""
+    return "STRING_VALUE"
 
 
 def generate_integer() -> int:
-    """Generates a random integer."""
-    return random.randint(1, 100)  # noqa: S311
+    """Generates a deterministic integer."""
+    return 42
 
 
 def generate_number() -> float:
-    """Generates a random float number."""
-    return round(random.uniform(1, 100), 2)  # noqa: S311
+    """Generates a deterministic float number."""
+    return 42.0
 
 
 def generate_chain_id() -> str:
-    """Generates a random chain ID."""
-    return random.choice(["1", "5", "10", "137", "84532", "42161", "10000"])  # noqa: S311
+    """Generates a deterministic chain ID."""
+    return "1"
 
 
 def generate_dummy_data(models: dict[str, Any], num_instances: int = 5) -> dict[str, list[dict[str, Any]]]:
@@ -130,10 +129,8 @@ def _generate_model_dummy_data(model_schema: dict[str, Any]) -> dict[str, Any]:
 
 
 def _generate_array_dummy_data(prop_schema: dict[str, Any]) -> list[Any]:
-    max_items = prop_schema.get("maxItems", 3)
-    num_items = random.randint(1, max_items)  # noqa: S311
     item_schema = prop_schema.get("items", {})
-    return [_generate_model_dummy_data(item_schema) for _ in range(num_items)]
+    return [_generate_model_dummy_data(item_schema) for _ in range(2)]
 
 
 def generate_single_dummy_data(model_schema: dict[str, Any]) -> dict[str, Any]:
