@@ -233,7 +233,7 @@ class DAOScaffolder:
             dao_file_names=dao_file_names,
             dummy_data=test_dummy_data,
             author=self.public_id.author,
-            custom_name=self.public_id.name
+            custom_name=self.public_id.name,
         )
 
     def _save_test_script(self, test_script: str) -> None:
@@ -248,9 +248,7 @@ class DAOScaffolder:
             file_names = [camel_to_snake(model) for model in model_names]
             model_file_pairs = list(zip(model_names, file_names, strict=False))
             init_template = self.env.get_template("__init__.jinja")
-            init_content = init_template.render(
-                model_file_pairs=model_file_pairs
-                )
+            init_content = init_template.render(model_file_pairs=model_file_pairs)
             dao_dir = Path("daos")
             init_file_path = dao_dir / "__init__.py"
             write_to_file(init_file_path, init_content, FileType.PYTHON)
@@ -266,11 +264,7 @@ class DAOScaffolder:
 
         self._analyze_paths(api_spec, schema_usage, schemas)
 
-        return [
-            schema
-            for schema, usage in schema_usage.items()
-            if "response" in usage or "nested_request" in usage
-        ]
+        return [schema for schema, usage in schema_usage.items() if "response" in usage or "nested_request" in usage]
 
     def _analyze_paths(self, api_spec: dict[str, Any], schema_usage: dict[str, set], schemas: dict[str, Any]) -> None:
         for path_details in api_spec.get("paths", {}).values():
@@ -278,10 +272,7 @@ class DAOScaffolder:
                 self._analyze_method(method_details, schema_usage, schemas)
 
     def _analyze_method(
-        self,
-        method_details: dict[str, Any],
-        schema_usage: dict[str, set],
-        schemas: dict[str, Any]
+        self, method_details: dict[str, Any], schema_usage: dict[str, set], schemas: dict[str, Any]
     ) -> None:
         if "requestBody" in method_details:
             self._analyze_content(method_details["requestBody"].get("content", {}), "request", schema_usage, schemas)
@@ -290,11 +281,7 @@ class DAOScaffolder:
             self._analyze_content(response_details.get("content", {}), "response", schema_usage, schemas)
 
     def _analyze_content(
-        self,
-        content: dict[str, Any],
-        usage_type: str,
-        schema_usage: dict[str, set],
-        schemas: dict[str, Any]
+        self, content: dict[str, Any], usage_type: str, schema_usage: dict[str, set], schemas: dict[str, Any]
     ) -> None:
         for media_details in content.values():
             schema = media_details.get("schema", {})
@@ -304,11 +291,7 @@ class DAOScaffolder:
                 self._analyze_schema(schema, usage_type, schema_usage, schemas)
 
     def _analyze_schema(
-        self,
-        schema: dict[str, Any],
-        usage_type: str,
-        schema_usage: dict[str, set],
-        schemas: dict[str, Any]
+        self, schema: dict[str, Any], usage_type: str, schema_usage: dict[str, set], schemas: dict[str, Any]
     ) -> None:
         schema_name = self._process_schema(schema)
         if schema_name:
@@ -316,11 +299,7 @@ class DAOScaffolder:
             self._analyze_nested_properties(schema_name, usage_type, schema_usage, schemas)
 
     def _analyze_nested_properties(
-        self,
-        schema_name: str,
-        usage_type: str,
-        schema_usage: dict[str, set],
-        schemas: dict[str, Any]
+        self, schema_name: str, usage_type: str, schema_usage: dict[str, set], schemas: dict[str, Any]
     ) -> None:
         if "properties" in schemas.get(schema_name, {}):
             for prop in schemas[schema_name].get("properties", {}).values():
