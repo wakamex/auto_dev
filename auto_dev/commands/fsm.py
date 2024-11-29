@@ -23,7 +23,8 @@ def fsm() -> None:
 @click.argument("fsm-spec", type=click.File("r", encoding=DEFAULT_ENCODING))
 @click.option("--in-type", type=click.Choice(["mermaid", "fsm-spec"], case_sensitive=False))
 @click.option("--output", type=click.Choice(["mermaid", "fsm-spec"], case_sensitive=False))
-def from_file(fsm_spec: str, in_type: str, output: str) -> None:
+@click.option("--fsm_label", type=str, required=True)
+def from_file(fsm_spec: str, in_type: str, output: str, fsm_label) -> None:
     """We template from a file."""
     # we need perform the following steps:
     # 1. load the yaml file
@@ -37,11 +38,15 @@ def from_file(fsm_spec: str, in_type: str, output: str) -> None:
 
     if in_type == "mermaid":
         _fsm_spec = fsm_spec.read()
-        FsmSpec.from_mermaid(_fsm_spec)
+        spec = FsmSpec.from_mermaid(_fsm_spec)
     else:
-        FsmSpec.from_yaml(fsm_spec)
+        spec = FsmSpec.from_yaml(fsm_spec)
+
+    spec.label = fsm_label
 
     if output == "mermaid":
-        pass
+        res = spec.to_mermaid()
     else:
-        pass
+        res = spec.to_string()
+
+    click.echo(res)

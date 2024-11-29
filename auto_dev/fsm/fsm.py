@@ -129,6 +129,8 @@ class FsmSpec:
         for transition, end_state in transitions:
             key = f"({transition[0]}, {transition[1].upper()})"
             transition_func[key] = end_state
+            if end_state not in states:
+                states.append(end_state)
         # we need to create the start_states
         # we can do this by using our transition_func to find the start states
         # we traverse the transition_func and find the start states
@@ -136,6 +138,8 @@ class FsmSpec:
         for start_state, _ in transitions:
             if start_state[0] not in transition_func.values():
                 start_states.append(start_state)
+            if start_state[0] not in states:
+                states.append(start_state[0])
         # we need to create the final_states
         # we can do this by using our transition_func to find the final states
         # we traverse the transition_func and find the final states
