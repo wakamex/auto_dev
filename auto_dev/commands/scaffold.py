@@ -94,12 +94,16 @@ def contract(  # pylint: disable=R0914
     contract_path = scaffolder.generate_openaea_contract(new_contract)
     logger.info("Writing abi to file, Updating contract.yaml with build path. Parsing functions.")
     new_contract.process()
-    logger.info("Read Functions:")
+    logger.info("Read Functions extracted:")
     for function in new_contract.read_functions:
         logger.info(f"    {function.name}")
-    logger.info("Write Functions:")
+    logger.info("Write Functions extracted:")
     for function in new_contract.write_functions:
         logger.info(f"    {function.name}")
+
+    logger.info("Events extracted:")
+    for event in new_contract.events:
+        logger.info(f"    {event.name}")
 
     logger.info(f"New contract scaffolded at {contract_path}")
 
