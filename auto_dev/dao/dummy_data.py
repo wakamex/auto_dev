@@ -4,14 +4,9 @@ import re
 import random
 from typing import TYPE_CHECKING, Any
 
-from faker import Faker
-
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-
-
-fake = Faker()
 
 
 def generate_ethereum_address() -> str:
@@ -19,39 +14,19 @@ def generate_ethereum_address() -> str:
     return "0x" + "".join(random.choices("0123456789abcdef", k=40))  # noqa: S311
 
 
-def generate_email() -> str:
-    """Generates a fake email address."""
-    return fake.email()
-
-
-def generate_phone_number() -> str:
-    """Generates a fake phone number."""
-    return fake.phone_number()
-
-
-def generate_url() -> str:
-    """Generates a fake URL."""
-    return fake.url()
-
-
-def generate_uuid() -> str:
-    """Generates a fake UUID."""
-    return fake.uuid4()
-
-
 def generate_boolean() -> bool:
     """Generates a random boolean value."""
     return random.choice(["True", "False"])  # noqa: S311
 
 
-def generate_string() -> str:
-    """Generates a generic fake string."""
-    return fake.word()
-
-
 def generate_integer() -> int:
     """Generates a random integer."""
     return random.randint(1, 100)  # noqa: S311
+
+
+def generate_string() -> str:
+    """Generates a random string."""
+    return "".join(random.choices("abcdefghijklmnopqrstuvwxyz", k=10))  # noqa: S311
 
 
 def generate_number() -> float:
@@ -94,10 +69,6 @@ def _generate_property_dummy_data(prop_schema: dict[str, Any], prop_name: str = 
     substring_property_generators: dict[str, Callable[[], Any]] = {
         "wallet_address": generate_ethereum_address,
         "token_id": generate_ethereum_address,
-        "email": generate_email,
-        "phone_number": generate_phone_number,
-        "url": generate_url,
-        "uuid": generate_uuid,
         "chain_id": generate_chain_id,
     }
 
