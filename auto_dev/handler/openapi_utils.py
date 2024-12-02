@@ -81,8 +81,11 @@ def classify_post_operation(operation: Operation, path: str, logger) -> str:
         (operation.operation_id or "") + " " + (operation.summary or "") + " " + (operation.description or "")
     ).lower()
 
+    logger.debug(f"Classifying POST operation '{operation.operation_id}' at path '{path}' with keywords '{keywords}'")
+
     # Check for 201 Created response
     if crud_type == CrudOperation.OTHER and any(code == "201" for code in operation.responses):
+        logger.debug("Found 201 response, classifying as CREATE")
         crud_type = CrudOperation.CREATE
 
     # Keyword-based classification
@@ -114,6 +117,7 @@ def classify_post_operation(operation: Operation, path: str, logger) -> str:
     else:
         logger.info(log_msg)
 
+    logger.debug(f"Final classification for {path}: {crud_type}")
     return crud_type
 
 

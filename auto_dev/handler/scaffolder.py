@@ -168,22 +168,34 @@ class HandlerScaffolder:
         if not self.config.use_daos:
             return []
         schemas = openapi_spec.components.schemas if openapi_spec.components else {}
+        self.logger.debug(f"Available schemas: {list(schemas.keys())}")
         persistent_schemas = []
 
         for schema_name, schema_data in schemas.items():
+            self.logger.debug(f"\nProcessing schema: {schema_name}")
+            self.logger.debug(f"Raw schema data: {schema_data}")
+
             schema = parse_schema_like(schema_data)
+            self.logger.debug(f"Parsed schema type: {type(schema)}")
+            self.logger.debug(f"Parsed schema: {schema}")
+
             is_persistent = False
 
             if isinstance(schema, dict):
                 is_persistent = schema.get("x-persistent", False)
+                self.logger.debug(f"Dict schema persistent: {is_persistent}")
             elif isinstance(schema, Schema):
                 is_persistent = schema.x_persistent
+                self.logger.debug(f"Schema persistent: {is_persistent}")
             elif hasattr(schema, "model_extra") and schema.model_extra:
                 is_persistent = schema.model_extra.get("x-persistent", False)
+                self.logger.debug(f"Schema extra persistent: {is_persistent}")
 
+            self.logger.debug(f"Final persistence for {schema_name}: {is_persistent}")
             if is_persistent:
                 persistent_schemas.append(schema_name)
 
+        self.logger.debug(f"Final persistent schemas: {persistent_schemas}")
         return persistent_schemas or self.identify_persistent_schemas(openapi_spec)
 
     def _confirm_schemas(self, persistent_schemas: list[str]) -> bool:
@@ -208,6 +220,8 @@ class HandlerScaffolder:
             method = classification["method"]
             crud_type = classification["crud_type"]
 
+            self.logger.debug(f"Processing {method} {path} with crud type {crud_type}")
+
             path_item = openapi_spec.paths[path]
             operation = getattr(path_item, method.lower())
 
@@ -226,6 +240,7 @@ class HandlerScaffolder:
             self.logger.debug(f"Path params: {path_params}")
             self.logger.debug(f"Snake case path params: {path_params_snake_case}")
             schema = self.extract_schema(operation)
+            self.logger.debug(f"Extracted schema: {schema}")
 
             response_info = self._extract_response_info(operation)
 
@@ -233,6 +248,11 @@ class HandlerScaffolder:
 
             self.logger.debug(f"Path item parameters: {[p.name for p in path_item.parameters or []]}")
             self.logger.debug(f"Operation parameters: {[p.name for p in operation.parameters or []]}")
+
+            if operation.request_body:
+                content = operation.request_body.content.get("application/json")
+                if content and content.media_type_schema:
+                    self.logger.debug(f"Request body schema: {content.media_type_schema}")
 
             method_code = self.jinja_env.get_template("method_template.jinja").render(
                 method_name=method_name,
