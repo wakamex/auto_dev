@@ -3,39 +3,14 @@
 import re
 from typing import TYPE_CHECKING, Any
 
-from faker import Faker
-
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
 
-fake = Faker()
-
-
 def generate_ethereum_address() -> str:
     """Generates a deterministic Ethereum address."""
     return "0xETHEREUM_ADDRESS" + "0" * 24
-
-
-def generate_email() -> str:
-    """Generates a fake email address."""
-    return fake.email()
-
-
-def generate_phone_number() -> str:
-    """Generates a fake phone number."""
-    return fake.phone_number()
-
-
-def generate_url() -> str:
-    """Generates a fake URL."""
-    return fake.url()
-
-
-def generate_uuid() -> str:
-    """Generates a fake UUID."""
-    return fake.uuid4()
 
 
 def generate_boolean() -> bool:
@@ -51,6 +26,11 @@ def generate_string() -> str:
 def generate_integer() -> int:
     """Generates a deterministic integer."""
     return 42
+
+
+def generate_string() -> str:
+    """Generates a random string."""
+    return "".join(random.choices("abcdefghijklmnopqrstuvwxyz", k=10))  # noqa: S311
 
 
 def generate_number() -> float:
@@ -90,10 +70,6 @@ def _generate_property_dummy_data(prop_schema: dict[str, Any], prop_name: str = 
     substring_property_generators: dict[str, Callable[[], Any]] = {
         "wallet_address": generate_ethereum_address,
         "token_id": generate_ethereum_address,
-        "email": generate_email,
-        "phone_number": generate_phone_number,
-        "url": generate_url,
-        "uuid": generate_uuid,
         "chain_id": generate_chain_id,
     }
 
