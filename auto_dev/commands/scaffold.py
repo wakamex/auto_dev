@@ -344,18 +344,18 @@ def dao(ctx, auto_confirm) -> None:
     verbose = ctx.obj["VERBOSE"]
 
     if not Path("component.yaml").exists():
-        logger.error("component.yaml not found in the current directory.")
-        return
+        msg = "component.yaml not found in the current directory."
+        raise ValueError(msg)
 
     customs_config = read_from_file(Path("component.yaml"), FileType.YAML)
     if customs_config is None:
-        logger.error("Error: customs_config is None. Unable to process.")
-        return
+        msg = "Error: customs_config is None. Unable to process."
+        raise ValueError(msg)
 
     api_spec_path = customs_config.get("api_spec")
     if not api_spec_path:
-        logger.error("api_spec key not found in component.yaml")
-        return
+        msg = "Error: api_spec key not found in component.yaml"
+        raise ValueError(msg)
 
     component_author = customs_config.get("author")
     component_name = customs_config.get("name")
