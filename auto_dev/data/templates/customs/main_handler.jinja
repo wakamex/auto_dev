@@ -78,7 +78,6 @@
         self.context.logger.debug(f"Final kwargs: {kwargs}")
 {%- endif %}
         return handler_name, kwargs
-
 {% if use_daos %}
     def create_response(self, message, status_code, status_text, body):
         """Create an ApiHttpMessage response."""

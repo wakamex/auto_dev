@@ -70,7 +70,7 @@ def get_crud_classification(openapi_spec: OpenAPI, logger) -> list[dict]:
                         "crud_type": crud_type,
                     }
                 )
-    logger.info(f"Classifications: {classifications}")
+    logger.debug(f"Classifications: {classifications}")
     return classifications
 
 
@@ -115,7 +115,7 @@ def classify_post_operation(operation: Operation, path: str, logger) -> str:
     if crud_type == CrudOperation.OTHER:
         logger.warning(log_msg)
     else:
-        logger.info(log_msg)
+        logger.debug(log_msg)
 
     logger.debug(f"Final classification for {path}: {crud_type}")
     return crud_type
