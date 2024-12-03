@@ -28,11 +28,6 @@ def generate_integer() -> int:
     return 42
 
 
-def generate_string() -> str:
-    """Generates a random string."""
-    return "".join(random.choices("abcdefghijklmnopqrstuvwxyz", k=10))  # noqa: S311
-
-
 def generate_number() -> float:
     """Generates a deterministic float number."""
     return 42.0
