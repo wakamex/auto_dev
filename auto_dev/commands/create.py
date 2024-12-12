@@ -1,6 +1,7 @@
 """This module contains the logic for the fmt command."""
 
 import os
+import re
 import shutil
 from pathlib import Path
 
@@ -83,6 +84,15 @@ def create(ctx, name: str, template: str, force: bool, publish: bool, clean_up: 
     :param name: the name of the agent.
     :param template: the template to use.
     """
+
+    name_pattern = re.compile(r'[a-z_][a-z0-9_]{0,127}')
+    if not name_pattern.match(name):
+        click.secho(
+            "Invalid agent name. Name must start with a lowercase letter or underscore, "
+            "followed by up to 127 lowercase letters, numbers, or underscores.",
+            fg="red",
+        )
+        return
 
     is_proposed_path_exists = Path(name).exists()
     if is_proposed_path_exists and not force:

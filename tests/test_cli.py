@@ -1,6 +1,10 @@
 """Tests for the click cli."""
 
 from pathlib import Path
+import re
+import rich_click as click
+
+NAME_PATTERN = re.compile(r"^[a-z_][a-z0-9_]{0,127}$")
 
 
 def test_lint_fails(cli_runner, test_filesystem):
@@ -30,3 +34,36 @@ def test_formats_self(cli_runner, test_filesystem):
     result = runner.execute()
     assert result, runner.output
     assert runner.return_code == 0, runner.output
+
+
+def test_create_invalid_name(cli_runner, test_filesystem):
+    """Test the create command fails with invalid agent name."""
+    assert str(Path.cwd()) == test_filesystem
+    cmd = ["adev", "-v", "create", "NEW_AGENT", "-t", "eightballer/base", "--publish", "--force"]
+    runner = cli_runner(cmd)
+    result = runner.execute()
+    expected_error = (
+        "Invalid agent name. Name must start with a lowercase letter or underscore, "
+        "followed by up to 127 lowercase letters, numbers, or underscores."
+    )
+    assert expected_error in runner.output, f"Expected error message not found in output: {runner.output}"
+    agent_path = Path(test_filesystem) / "NEW_AGENT"
+    assert not agent_path.exists(), "Agent directory should not have been created"
+
+
+def test_create_valid_names(cli_runner, test_filesystem):
+    """Test the create command succeeds with valid agent names."""
+    assert str(Path.cwd()) == test_filesystem
+    
+    valid_names = [
+        "my_agent",
+        "_test_agent",
+        "agent123",
+        "valid_agent_name_123"
+    ]
+    
+    for name in valid_names:
+        cmd = ["adev", "-v", "create", name, "-t", "eightballer/base", "--force"]
+        runner = cli_runner(cmd)
+        result = runner.execute()
+        assert runner.return_code == 0, f"Command failed for valid name '{name}': {runner.output}"
