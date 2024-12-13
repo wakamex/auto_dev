@@ -2,6 +2,8 @@
 
 from pathlib import Path
 
+from auto_dev.constants import DEFAULT_AUTHOR
+
 
 def test_lint_fails(cli_runner, test_filesystem):
     """Test the lint command fails with no packages."""
@@ -52,7 +54,8 @@ def test_create_valid_names(cli_runner, test_filesystem):
     valid_names = ["my_agent", "_test_agent", "agent123", "valid_agent_name_123"]
 
     for name in valid_names:
-        cmd = ["adev", "-v", "create", name, "-t", "eightballer/base", "--force"]
+        cmd = ["adev", "-v", "create", f"{DEFAULT_AUTHOR}/{name}", "-t", "eightballer/base", "--force"]
+
         runner = cli_runner(cmd)
         assert runner.execute()
         assert runner.return_code == 0, f"Command failed for valid name '{name}': {runner.output}"
