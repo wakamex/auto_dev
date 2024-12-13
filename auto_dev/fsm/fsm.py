@@ -59,11 +59,13 @@ class FsmSpec:
     transition_func: dict[tuple[str, str], str]
 
     @classmethod
-    def from_yaml(cls, yaml_str: str, label: str):
+    def from_yaml(cls, yaml_str: str, label: str = None):
         """We create a FsmSpec from a yaml string."""
         fsm_spec = yaml.safe_load(yaml_str)
+        if label:
+            fsm_spec["label"] = label
+        label = fsm_spec["label"]
         validate_name(label)
-        fsm_spec["label"] = label
         return cls(**fsm_spec)
 
     @classmethod
