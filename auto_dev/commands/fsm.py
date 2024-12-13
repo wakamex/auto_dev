@@ -1,5 +1,7 @@
 """Implement fsm tooling."""
 
+from enum import Enum
+
 import rich_click as click
 
 from auto_dev.base import build_cli
@@ -19,34 +21,35 @@ def fsm() -> None:
     """Implement fsm tooling."""
 
 
+class FsmType(Enum):
+    """Type of FSM output"""
+
+    MERMAID = "mermaid"
+    FSM_SPEC = "fsm_spec"
+
+
+INPUT_TO_FUNC = {FsmType.MERMAID.value: FsmSpec.from_mermaid_path, FsmType.FSM_SPEC.value: FsmSpec.from_yaml}
+
+
 @fsm.command()
-@click.argument("fsm-spec", type=click.File("r", encoding=DEFAULT_ENCODING))
-@click.option("--in-type", type=click.Choice(["mermaid", "fsm-spec"], case_sensitive=False))
-@click.option("--output", type=click.Choice(["mermaid", "fsm-spec"], case_sensitive=False))
-@click.option("--fsm_label", type=str, required=True)
-def from_file(fsm_spec: str, in_type: str, output: str, fsm_label) -> None:
-    """We template from a file."""
-    # we need perform the following steps:
-    # 1. load the yaml file
-    # 2. validate the yaml file using the open-autonomy fsm tooling
-    # 3. perform the generation command
-    # 4. write the generated files to disk
-    # 5. perform the cleanup commands
-    # 5a. clean the tests
-    # 5b. clean the payloads
-    # 6. perform updates of the generated files
+@click.argument("fsm_spec", type=click.File("r", encoding=DEFAULT_ENCODING))
+@click.argument("fsm_name", type=str)
+@click.option(
+    "--in-type", type=click.Choice([f.value for f in FsmType], case_sensitive=False), default=FsmType.FSM_SPEC.value
+)
+@click.option(
+    "--output", type=click.Choice([f.value for f in FsmType], case_sensitive=False), default=FsmType.MERMAID.value
+)
+def from_file(fsm_spec: str, fsm_name: str, in_type: str, output: str) -> None:
+    """
+    We parse an fsm file, in order to covnert between mermaid and fsm_spec.
 
-    if in_type == "mermaid":
-        _fsm_spec = fsm_spec.read()
-        spec = FsmSpec.from_mermaid(_fsm_spec)
-    else:
-        spec = FsmSpec.from_yaml(fsm_spec)
+    Example Usage:
+    `adev fsm from-file auto_dev/data/fsm/fsm_specification.yaml testAbciApp`
+    `adev fsm from-file auto_dev/data/fsm/fsm_specification.yaml testAbciApp --output fsm_spec`
+    """
 
-    spec.label = fsm_label
-
-    if output == "mermaid":
-        res = spec.to_mermaid()
-    else:
-        res = spec.to_string()
-
-    click.echo(res)
+    fsm = INPUT_TO_FUNC[in_type](fsm_spec, label=fsm_name)
+    output_to_func = {FsmType.MERMAID.value: fsm.to_mermaid, FsmType.FSM_SPEC.value: fsm.to_string}
+    output = output_to_func[output]()
+    click.echo(output)

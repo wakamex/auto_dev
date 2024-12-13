@@ -37,6 +37,15 @@ STATE_TEMPLATE = Template("""$state""")
 TRANSITION_TEMPLATE = Template("""$start_state -->|$transition| $end_state""")
 
 
+def validate_name(name: str) -> str:
+    """Validate an fsm name."""
+    if not name:
+        raise ValueError("Name must not be empty.")
+    if not name.endswith("AbciApp"):
+        raise ValueError("Name must end with AbciApp.")
+    return name
+
+
 @dataclass
 class FsmSpec:
     """We represent a fsm spec."""
@@ -50,9 +59,11 @@ class FsmSpec:
     transition_func: dict[tuple[str, str], str]
 
     @classmethod
-    def from_yaml(cls, yaml_str: str):
+    def from_yaml(cls, yaml_str: str, label: str):
         """We create a FsmSpec from a yaml string."""
         fsm_spec = yaml.safe_load(yaml_str)
+        validate_name(label)
+        fsm_spec["label"] = label
         return cls(**fsm_spec)
 
     @classmethod
@@ -62,10 +73,13 @@ class FsmSpec:
             return cls.from_yaml(file_pointer.read())
 
     @classmethod
-    def from_mermaid_path(cls, path: Path):
+    def from_mermaid_path(cls, path: Path, label: str):
         """We create a FsmSpec from a yaml file."""
+        validate_name(label)
         with open(path, encoding=DEFAULT_ENCODING) as file_pointer:
-            return cls.from_mermaid(file_pointer.read())
+            res = cls.from_mermaid(file_pointer.read())
+            res.label = label
+        return res
 
     def to_mermaid(self):
         """We convert the FsmSpec to a mermaid string."""
@@ -120,6 +134,8 @@ class FsmSpec:
                     msg = f"Invalid line {line}"
                     raise ValueError(msg)
                 start_state, _transition, end_state = items
+
+                states.extend((start_state, end_state))
                 transition = _transition.split("|")[1]
                 transitions.append(((start_state, transition), end_state))
         # we need to create the alphabet_in
@@ -129,8 +145,6 @@ class FsmSpec:
         for transition, end_state in transitions:
             key = f"({transition[0]}, {transition[1].upper()})"
             transition_func[key] = end_state
-            if end_state not in states:
-                states.append(end_state)
         # we need to create the start_states
         # we can do this by using our transition_func to find the start states
         # we traverse the transition_func and find the start states
@@ -138,8 +152,6 @@ class FsmSpec:
         for start_state, _ in transitions:
             if start_state[0] not in transition_func.values():
                 start_states.append(start_state)
-            if start_state[0] not in states:
-                states.append(start_state[0])
         # we need to create the final_states
         # we can do this by using our transition_func to find the final states
         # we traverse the transition_func and find the final states
