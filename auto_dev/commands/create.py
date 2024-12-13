@@ -94,7 +94,7 @@ def create(ctx, public_id: str, template: str, force: bool, publish: bool, clean
     """
     Create a new agent from a template.
 
-    :param public_id: the public_id of the agent.
+    :param public_id: the public_id of the agent in the open-autonmy format i.e. `author/agent`
     :flag  template: the template to use.
 
     example usage:
