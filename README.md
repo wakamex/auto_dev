@@ -87,6 +87,7 @@ adev release
 
 
 # Test Coverage
+```plaintext
 <!-- Pytest Coverage Comment:Begin -->
 Name                             Stmts   Miss  Cover   Missing
 --------------------------------------------------------------
@@ -106,3 +107,4 @@ auto_dev/utils.py                  251    153    39%   76-77, 81, 94-101, 106-15
 --------------------------------------------------------------
 TOTAL                              819    536    35%
 <!-- Pytest Coverage Comment:End -->
+```
