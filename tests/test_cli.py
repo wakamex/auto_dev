@@ -1,12 +1,6 @@
 """Tests for the click cli."""
 
-import re
 from pathlib import Path
-
-import rich_click as click
-
-
-NAME_PATTERN = re.compile(r"^[a-z_][a-z0-9_]{0,127}$")
 
 
 def test_lint_fails(cli_runner, test_filesystem):
@@ -60,5 +54,5 @@ def test_create_valid_names(cli_runner, test_filesystem):
     for name in valid_names:
         cmd = ["adev", "-v", "create", name, "-t", "eightballer/base", "--force"]
         runner = cli_runner(cmd)
-        result = runner.execute()
+        assert runner.execute()
         assert runner.return_code == 0, f"Command failed for valid name '{name}': {runner.output}"

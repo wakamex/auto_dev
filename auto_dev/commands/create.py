@@ -1,7 +1,5 @@
 """This module contains the logic for the fmt command."""
 
-import os
-import re
 import shutil
 from pathlib import Path
 
@@ -11,8 +9,8 @@ from aea.configurations.base import PublicId
 from auto_dev.base import build_cli
 from auto_dev.enums import FileType
 from auto_dev.utils import change_dir, get_packages, write_to_file, load_aea_config
-from auto_dev.constants import AUTO_DEV_FOLDER, AGENT_NAME_PATTERN, AUTONOMY_PACKAGES_FILE
-from auto_dev.exceptions import OperationError, UserInputError
+from auto_dev.constants import AUTO_DEV_FOLDER, AUTONOMY_PACKAGES_FILE
+from auto_dev.exceptions import OperationError
 from auto_dev.cli_executor import CommandExecutor
 
 
