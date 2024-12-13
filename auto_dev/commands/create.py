@@ -69,15 +69,20 @@ def publish_agent(public_id: PublicId, verbose: bool) -> None:
             click.secho(f"Executing command: {command.command}", fg="yellow")
             result = command.execute(verbose=verbose)
             if not result:
-                click.secho(f"Command failed: {command.command}", fg="red")
-                click.secho(f"Error: {command.stderr}", fg="red")
-                click.secho(f"stdout: {command.stdout}", fg="red")
-                return
+                msg = f"""
+                Command failed: {command.command}
+                Error: {command.stderr}
+                stdout: {command.stdout}"""
+                click.secho(msg, fg="red")
+                raise OperationError(msg)
             click.secho("Agent published successfully.", fg="yellow")
 
 
 @cli.command()
-@click.argument("public_id", type=PublicId.from_str)
+@click.argument(
+    "public_id",
+    type=PublicId.from_str,
+)
 @click.option("-t", "--template", type=click.Choice(available_agents), required=True)
 @click.option("-f", "--force", is_flag=True, help="Force the operation.")
 @click.option("-p", "--publish", is_flag=True, help="Force the operation.", default=False)
@@ -87,7 +92,7 @@ def create(ctx, public_id: str, template: str, force: bool, publish: bool, clean
     """
     Create a new agent from a template.
 
-    :param public_id: the public_id of the agent.
+    :param public_id: the public_id of the agent in the open-autonmy format i.e. `author/agent`
     :flag  template: the template to use.
 
     example usage:
@@ -161,8 +166,9 @@ def create(ctx, public_id: str, template: str, force: bool, publish: bool, clean
         )
         result = command.execute(verbose=verbose)
         if not result:
-            click.secho(f"Command failed: {command.command}", fg="red")
-            return
+            msg = f"Command failed: {command.command}"
+            click.secho(msg, fg="red")
+            return OperationError()
         click.secho(f"Agent {name} cleaned up successfully.", fg="green")
 
     click.secho(f"Agent {name} created successfully.", fg="green")
