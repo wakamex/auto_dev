@@ -1,14 +1,45 @@
+# Project Status Badges
+
+[![Code Quality](https://github.com/8ball030/auto_dev/actions/workflows/common_check.yaml/badge.svg)](https://github.com/8ball030/auto_dev/actions/workflows/common_check.yaml)
+
+
 # Autonomy Dev
 
-Tooling to speed up autonomy development.
+Tooling to speed up open-autonomy development.
+
+
+## TLDR
+
+```bash
+# install 
+pip install autonomy-dev[all]
+```
+
+```bash
+# create a repo & a simple webserver agent
+adev repo scaffold fun_new_hack && \
+cd fun_new_hack && \
+adev create author/cool_agent \
+    -t eightballer/frontend_agent # type of template to use.
+```
+
+```bash
+# run the agent and verify the endpoint
+
+```
+
 
 ## Usage
 
 There are a number of useful command tools available.
 
-- Dev Tooling: linting, formatting and dependency management.
+- Dev Tooling: 
+    A). linting `adev lint`
+    B). formatting `adev fmt`
+    C). dependency management `adev deps update`
 
 - Scaffolding: Tooling to auto generate repositories and components.
+
 
 ### Create
 
@@ -81,9 +112,6 @@ git pull
 adev release
 ```
 
-
-# Project Status Badges
-[![Code Quality](https://github.com/8ball030/auto_dev/actions/workflows/common_check.yaml/badge.svg)](https://github.com/8ball030/auto_dev/actions/workflows/common_check.yaml)
 
 
 # Test Coverage
