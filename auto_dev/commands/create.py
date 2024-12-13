@@ -78,10 +78,15 @@ def publish_agent(agent_name: str, verbose: bool) -> None:
 @click.option("-c", "--clean-up", is_flag=True, help="Clean up the agent after creation.", default=False)
 @click.pass_context
 def create(ctx, name: str, template: str, force: bool, publish: bool, clean_up: bool) -> None:
-    f"""
-    Create a new agent from a template.
+    """Create a new agent from a template.
+
+    Creates a new agent directory using a predefined template.
+
     :param name: the name of the agent.
     :param template: the template to use.
+
+    example usage: 
+        `adev create -t eightballer/frontend_agent new_agent`
     """
 
     is_proposed_path_exists = Path(name).exists()
