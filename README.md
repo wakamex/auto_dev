@@ -22,7 +22,7 @@ There are a number of useful command tools available.
 We provide tools to generate protocols components from specs.
 
 ```bash
-adev create tmp_agent_name -t eightballer/base --force
+adev create author/tmp_agent_name -t eightballer/base --force
 cd tmp_agent_name
 adev scaffold protocol ../specs/protocols/balances.yaml 
 aea -s publish --push-missing
