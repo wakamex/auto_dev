@@ -73,7 +73,14 @@ jobs:
       - name: Update Readme with Coverage Html
         if: ${{ github.ref == 'refs/heads/main' }}
         run: |
-          sed -i '/<!-- Pytest Coverage Comment:Begin -->/,/<!-- Pytest Coverage Comment:End -->/c\<!-- Pytest Coverage Comment:Begin -->\n\${{ steps.coverageComment.outputs.coverageHtml }}\n<!-- Pytest Coverage Comment:End -->' ./README.md
+          coverage_text=$(cat ./coverage-report.txt)
+          coverage_text_escaped=$(echo "$coverage_text" | sed 's/[&/\]/\\&/g')
+          awk -v new_content="$coverage_text_escaped" '
+          BEGIN { inside=0 }
+          /<!-- Pytest Coverage Comment:Begin -->/ { inside=1; print $0; print new_content; next }
+          /<!-- Pytest Coverage Comment:End -->/ { inside=0 }
+          { if (!inside) print $0 }
+          ' README.md > README.md.tmp && mv README.md.tmp README.md
 
       - name: Commit & Push changes to Readme
         if: ${{ github.ref == 'refs/heads/main' }}
