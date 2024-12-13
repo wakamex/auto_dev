@@ -83,8 +83,12 @@ def publish_agent(public_id: PublicId, verbose: bool) -> None:
 def create(ctx, public_id: str, template: str, force: bool, publish: bool, clean_up: bool) -> None:
     f"""
     Create a new agent from a template.
+
     :param public_id: the public_id of the agent.
-    :param template: the template to use.
+    :flag  template: the template to use.
+
+    example usage: 
+        `adev create -t eightballer/frontend_agent new_author/new_agent`
     """
     name = public_id.name
 
