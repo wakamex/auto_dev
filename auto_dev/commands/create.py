@@ -11,8 +11,8 @@ from aea.configurations.base import PublicId
 from auto_dev.base import build_cli
 from auto_dev.enums import FileType
 from auto_dev.utils import change_dir, get_packages, write_to_file, load_aea_config
-from auto_dev.constants import AUTO_DEV_FOLDER, AUTONOMY_PACKAGES_FILE
-from auto_dev.exceptions import OperationError
+from auto_dev.constants import AUTO_DEV_FOLDER, AGENT_NAME_PATTERN, AUTONOMY_PACKAGES_FILE
+from auto_dev.exceptions import OperationError, UserInputError
 from auto_dev.cli_executor import CommandExecutor
 
 
@@ -71,15 +71,20 @@ def publish_agent(public_id: PublicId, verbose: bool) -> None:
             click.secho(f"Executing command: {command.command}", fg="yellow")
             result = command.execute(verbose=verbose)
             if not result:
-                click.secho(f"Command failed: {command.command}", fg="red")
-                click.secho(f"Error: {command.stderr}", fg="red")
-                click.secho(f"stdout: {command.stdout}", fg="red")
-                return
+                msg = f"""
+                Command failed: {command.command}
+                Error: {command.stderr}
+                stdout: {command.stdout}"""
+                click.secho(msg, fg="red")
+                raise OperationError(msg)
             click.secho("Agent published successfully.", fg="yellow")
 
 
 @cli.command()
-@click.argument("public_id", type=PublicId.from_str)
+@click.argument(
+    "public_id",
+    type=PublicId.from_str,
+)
 @click.option("-t", "--template", type=click.Choice(available_agents), required=True)
 @click.option("-f", "--force", is_flag=True, help="Force the operation.")
 @click.option("-p", "--publish", is_flag=True, help="Force the operation.", default=False)
@@ -96,15 +101,6 @@ def create(ctx, public_id: str, template: str, force: bool, publish: bool, clean
         `adev create -t eightballer/frontend_agent new_author/new_agent`
     """
     name = public_id.name
-
-    name_pattern = re.compile(r'[a-z_][a-z0-9_]{0,127}')
-    if not name_pattern.match(name):
-        click.secho(
-            "Invalid agent name. Name must start with a lowercase letter or underscore, "
-            "followed by up to 127 lowercase letters, numbers, or underscores.",
-            fg="red",
-        )
-        return
 
     is_proposed_path_exists = Path(name).exists()
     if is_proposed_path_exists and not force:
@@ -172,8 +168,9 @@ def create(ctx, public_id: str, template: str, force: bool, publish: bool, clean
         )
         result = command.execute(verbose=verbose)
         if not result:
-            click.secho(f"Command failed: {command.command}", fg="red")
-            return
+            msg = f"Command failed: {command.command}"
+            click.secho(msg, fg="red")
+            return OperationError()
         click.secho(f"Agent {name} cleaned up successfully.", fg="green")
 
     click.secho(f"Agent {name} created successfully.", fg="green")

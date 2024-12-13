@@ -24,6 +24,7 @@ JINJA_TEMPLATE_FOLDER = os.path.join(
 )
 
 AEA_CONFIG = get_or_create_cli_config()
+AGENT_NAME_PATTERN = r"[a-z_][a-z0-9_]{0,127}"
 
 SAMPLE_PACKAGES_JSON = {
     "packages/packages.json": """
