@@ -1,17 +1,16 @@
 """This module contains the logic for the fmt command."""
 
-import os
 import shutil
 from pathlib import Path
 
 import rich_click as click
 from aea.configurations.base import PublicId
 
-from auto_dev.fmt import multi_thread_fmt, single_thread_fmt
 from auto_dev.base import build_cli
 from auto_dev.enums import FileType
-from auto_dev.utils import change_dir, get_packages, load_aea_ctx, write_to_file, load_aea_config, isolated_filesystem
+from auto_dev.utils import change_dir, get_packages, write_to_file, load_aea_config
 from auto_dev.constants import AUTO_DEV_FOLDER, AUTONOMY_PACKAGES_FILE
+from auto_dev.exceptions import OperationError
 from auto_dev.cli_executor import CommandExecutor
 
 
@@ -27,12 +26,10 @@ def get_available_agents() -> list[str]:
 available_agents = get_available_agents()
 
 
-def publish_agent(public_id: PublicId, verbose: bool) -> None:
-    """Publish an agent.
-    :param public_id: the public_id of the agent.
-    """
+def update_author(public_id: PublicId) -> None:
+    """Update the author in the recently created agent"""
+
     with change_dir(public_id.name):
-        # Update author in aea-config.yaml
         agent_config_yaml = load_aea_config()
         if agent_config_yaml["author"] != public_id.author:
             click.secho(
@@ -42,12 +39,18 @@ def publish_agent(public_id: PublicId, verbose: bool) -> None:
             agent_config_yaml["author"] = public_id.author
             write_to_file("aea-config.yaml", agent_config_yaml, FileType.YAML)
 
-        publish_commands = [
-            "aea publish --push-missing --local",
-        ]
 
+def publish_agent(public_id: PublicId, verbose: bool) -> None:
+    """Publish an agent.
+    :param public_id: the public_id of the agent.
+    """
+    publish_commands = [
+        "aea publish --push-missing --local",
+    ]
+    with change_dir(public_id.name):
         # we have to do a horrible hack here, regards to the customs as they are not being published.
         # please see issue.
+        agent_config_yaml = load_aea_config()
         for package in agent_config_yaml["customs"]:
             custom_id = PublicId.from_str(package)
             # We need to copy the customs to the parent now.
@@ -81,24 +84,26 @@ def publish_agent(public_id: PublicId, verbose: bool) -> None:
 @click.option("-c", "--clean-up", is_flag=True, help="Clean up the agent after creation.", default=False)
 @click.pass_context
 def create(ctx, public_id: str, template: str, force: bool, publish: bool, clean_up: bool) -> None:
-    f"""
+    """
     Create a new agent from a template.
 
     :param public_id: the public_id of the agent.
     :flag  template: the template to use.
 
-    example usage: 
+    example usage:
         `adev create -t eightballer/frontend_agent new_author/new_agent`
     """
     name = public_id.name
 
     is_proposed_path_exists = Path(name).exists()
     if is_proposed_path_exists and not force:
+        msg = (f"Directory {name} already exists. Please remove it or use the --force flag to overwrite it.",)
         click.secho(
-            f"Directory {name} already exists. Please remove it or use the --force flag to overwrite it.",
+            msg,
             fg="red",
         )
-        return
+        raise FileExistsError(msg)
+
     if is_proposed_path_exists and force:
         click.secho(
             f"Directory {name} already exists. Removing it.",
@@ -115,8 +120,9 @@ def create(ctx, public_id: str, template: str, force: bool, publish: bool, clean
         click.secho(f"Executing command: {command.command}", fg="yellow")
         result = command.execute(verbose=ctx.obj["VERBOSE"])
         if not result:
-            click.secho(f"Command failed: {command.command}", fg="red")
-            return
+            msg = f"Command failed: {command.command}"
+            click.secho(msg, fg="red")
+            raise OperationError(msg)
         click.secho("Command executed successfully.", fg="green")
 
     verbose = ctx.obj["VERBOSE"]
@@ -136,11 +142,12 @@ def create(ctx, public_id: str, template: str, force: bool, publish: bool, clean
         click.secho(f"Executing command: {command.command}", fg="yellow")
         result = command.execute(verbose=verbose)
         if not result:
-            click.secho(f"Command failed: {command.command}", fg="red")
-            click.secho(f"Failed to create agent {name}.", fg="red")
-            return
+            msg = f"Command failed: {command.command}  failed to create agent {public_id!s}"
+            click.secho(msg, fg="red")
+            return OperationError(msg)
         click.secho("Command executed successfully.", fg="yellow")
 
+    update_author(public_id=public_id)
     if publish:
         publish_agent(public_id, verbose)
 
