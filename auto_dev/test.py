@@ -7,8 +7,8 @@ import pytest
 
 
 COVERAGE_COMMAND = f"""coverage report \
-                    -m 
-                    --omit='{str(Path('**') / 'tests' / '*.py')} \
+                    -m \
+                    --omit='{str(Path('**') / 'tests' / '*.py')}' \
                     {str(Path() / '**' / '*.py')} > 'coverage-report.txt'
 """
 

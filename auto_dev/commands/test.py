@@ -8,6 +8,7 @@ from rich.progress import track
 from auto_dev.base import build_cli
 from auto_dev.test import COVERAGE_COMMAND, test_path
 from auto_dev.utils import get_packages
+from auto_dev.exceptions import OperationError
 from auto_dev.cli_executor import CommandExecutor
 
 
@@ -40,7 +41,10 @@ def test(ctx, path, watch, coverage_report) -> None:
 
     if coverage_report:
         cli_runner = CommandExecutor(COVERAGE_COMMAND)
-        cli_runner.execute(stream=True, shell=True)
+        if not cli_runner.execute(stream=True, shell=True):
+            msg = f"Unable to successfully execute coverage report"
+            raise OperationError(msg)
+
     try:
         packages = get_packages() if not path else [path]
     except FileNotFoundError as error:
