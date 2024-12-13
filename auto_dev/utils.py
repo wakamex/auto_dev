@@ -299,19 +299,19 @@ def write_to_file(file_path: str, content: Any, file_type: FileType = FileType.T
         with open(file_path, "w", encoding=DEFAULT_ENCODING) as f:
             if file_type in {FileType.TEXT, FileType.PYTHON}:
                 f.write(content)
-            elif file_type == FileType.YAML:
+            elif file_type is FileType.YAML:
                 if isinstance(content, list):
                     yaml.dump_all(content, f, default_flow_style=False, sort_keys=False)
                 else:
                     yaml.dump(content, f, default_flow_style=False, sort_keys=False)
-            elif file_type == FileType.JSON:
-                json_kwargs = {"separators": (",", ":")}
+            elif file_type is FileType.JSON:
+                json_kwargs = {"separators": (",", ": ")}
                 json_kwargs.update(kwargs)
                 json.dump(content, f, **json_kwargs)
-            elif file_type == FileType.PYTHON:
+            elif file_type is FileType.PYTHON:
                 f.write(content)
             else:
-                msg = f"Invalid file_type, must be one of {list(FileType)}."
+                msg = f"Invalid file_type {file_type}, must be one of {list(FileType)}."
                 raise ValueError(msg)
     except Exception as e:
         msg = f"Error writing to file {file_path}: {e}"

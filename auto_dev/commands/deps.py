@@ -6,7 +6,7 @@ The child repo is dependent on the parent repo.
 
 When there is a change in the parent repo, we want to update the child repo.
 
-The dependencies are depfined in a file called packages/packages.json
+The dependencies are defined in a file called packages/packages.json
 
 this is structures as follows:
 
@@ -45,8 +45,7 @@ from rich import print_json
 from rich.progress import track
 
 from auto_dev.base import build_cli
-from auto_dev.enums import FileType
-from auto_dev.utils import write_to_file
+from auto_dev.utils import FileLoader, write_to_file, FileType
 from auto_dev.constants import DEFAULT_TIMEOUT, DEFAULT_ENCODING
 from auto_dev.exceptions import AuthenticationError, NetworkTimeoutError
 
@@ -65,7 +64,7 @@ def get_package_json(repo: Path) -> dict[str, dict[str, str]]:
 def write_package_json(repo: Path, package_dict: dict[str, dict[str, str]]) -> None:
     """We write the package json."""
     package_json = repo / "packages" / "packages.json"
-    write_to_file(str(package_json), package_dict, FileType.JSON)
+    write_to_file(str(package_json), package_dict, FileType.JSON, indent=4)
 
 
 def get_package_hashes(repo: Path) -> dict[str, str]:
@@ -345,10 +344,45 @@ def generate_gitignore(
 
 
 @dataclass
-class AutonomyVersionSet:
+class AutonomyDependencies:
     """A set of autonomy versions."""
 
     upstream_dependency: List[GitDependency]
+
+    def to_dict(self):
+        """return a list of the upstream dependencies."""
+        return [
+            {
+                "name": dependency.name,
+                "version": dependency.version,
+                "location": dependency.location.value,
+                "url": dependency.url,
+                "plugins": dependency.plugins,
+                "extras": dependency.extras,
+            }
+            for dependency in self.upstream_dependency
+        ]
+
+
+@dataclass
+class PoetryDependencies:
+    """A set of poetry dependencies."""
+
+    poetry_dependencies: List[GitDependency]
+
+    def to_dict(self):
+        """return a list of the poetry dependencies."""
+        return [
+            {
+                "name": dependency.name,
+                "version": dependency.version,
+                "location": dependency.location.value,
+                "url": dependency.url,
+                "plugins": dependency.plugins,
+                "extras": dependency.extras,
+            }
+            for dependency in self.poetry_dependencies
+        ]
 
 
 open_autonomy_repo = GitDependency(
@@ -374,24 +408,119 @@ open_aea_repo = GitDependency(
 
 auto_dev_repo = GitDependency(
     name="autonomy-dev",
-    version="0.2.75",
+    version="0.2.78",
     location=DependencyLocation.REMOTE,
     url="https://api.github.com/repos/8ball030/auto_dev",
     extras=["all"],
 )
 
-autonomy_version_set = AutonomyVersionSet(
+autonomy_version_set = AutonomyDependencies(
     upstream_dependency=[
         open_autonomy_repo,
         open_aea_repo,
     ]
 )
 
-poetry_dependencies = [
-    auto_dev_repo,
-    open_autonomy_repo,
-    open_aea_repo,
-]
+poetry_dependencies = PoetryDependencies(
+    [
+        auto_dev_repo,
+        open_autonomy_repo,
+        open_aea_repo,
+    ]
+)
+
+
+# We then use this to construct a to_yaml function such that we can read in from a configfile.
+
+
+DEFAULT_ADEV_CONFIG_FILE = Path("adev_config.yaml")
+# yaml
+
+"""
+autonomy_dependencies:
+  - name: open-autonomy
+    version: 0.15.2
+    location: remote
+    url: https://api.github.com/repos/valory-xyz/open-autonomy
+  - name: open-aea
+    version: 1.55.0
+    location: remote
+    url: https://api.github.com/repos/valory-xyz/open-aea
+
+
+poetry_dependencies:
+  - name: autonomy-dev
+    version: 0.2.73
+    location: remote
+    url: https://api.github.com/repos/8ball030/auto_dev
+    extras:
+      - all
+  - name: open-autonomy
+    version: 0.15.2
+    location: remote
+    url: https://api.github.com/repos/valory-xyz/open-autonomy
+  - name: open-aea
+    version: 1.55.0
+    location: remote
+    url: https://api.github.com/repos/valory-xyz/open-aea
+    plugins:
+      - open-aea-ledger-ethereum
+      - open-aea-ledger-solana
+      - open-aea-ledger-cosmos
+      - open-aea-cli-ipfs   
+"""
+
+
+class VersionSetLoader:
+    """We load the version set."""
+
+    autonomy_dependencies: AutonomyDependencies
+    poetry_dependencies: PoetryDependencies
+
+    def __init__(self, config_file: Path = DEFAULT_ADEV_CONFIG_FILE):
+        self.config_file = config_file
+
+    def write_config(
+        self,
+    ):
+        """Write the config file."""
+        data = {
+            "autonomy_dependencies": self.autonomy_dependencies.to_dict(),
+            "poetry_dependencies": self.poetry_dependencies.to_dict(),
+        }
+        FileLoader(self.config_file, FileType.YAML).write(data)
+
+    def load_config(self):
+        """Load the config file."""
+        with open(self.config_file, "r") as file_pointer:
+            data = yaml.safe_load(file_pointer)
+        self.autonomy_dependencies = AutonomyDependencies(
+            upstream_dependency=[
+                GitDependency(
+                    name=dependency["name"],
+                    version=dependency["version"],
+                    location=DependencyLocation(dependency["location"]),
+                    url=dependency["url"],
+                    plugins=dependency.get("plugins"),
+                    extras=dependency.get("extras"),
+                )
+                for dependency in data["autonomy_dependencies"]
+            ]
+        )
+
+        self.poetry_dependencies = PoetryDependencies(
+            poetry_dependencies=[
+                GitDependency(
+                    name=dependency["name"],
+                    version=dependency["version"],
+                    location=DependencyLocation(dependency["location"]),
+                    url=dependency["url"],
+                    plugins=dependency.get("plugins"),
+                    extras=dependency.get("extras"),
+                )
+                for dependency in data["poetry_dependencies"]
+            ]
+        )
 
 
 def handle_output(issues, changes) -> None:
@@ -418,7 +547,7 @@ def get_update_command(poetry_dependencies: Dependency) -> str:
         raw = toml.load("pyproject.toml")["tool"]["poetry"]["dependencies"]
 
         current_version = str(raw[dependency.name])
-        expected_version = f"{dependency.get_latest_version()[1:]}"
+        expected_version = f"=={dependency.get_latest_version()[1:]}"
         if current_version.find(expected_version) == -1:
             issues.append(
                 f"Update the poetry version of {dependency.name} from `{current_version}` to `{expected_version}`\n"
@@ -427,17 +556,24 @@ def get_update_command(poetry_dependencies: Dependency) -> str:
                 extras = ",".join(dependency.extras)
                 cmd += f"{dependency.name}[{extras}]@=={expected_version} "
             else:
-                cmd += f"{dependency.name}@=={expected_version} "
+                cmd += f"{dependency.name}@{expected_version} "
             if dependency.plugins:
                 for plugin in dependency.plugins:
-                    cmd += f"{plugin}@=={expected_version} "
+                    cmd += f"{plugin}@{expected_version} "
     return cmd, issues
 
 
 @deps.command()
+@click.option(
+    "--auto-approve",
+    default=False,
+    help="Auto approve the changes.",
+    is_flag=True,
+)
 @click.pass_context
 def verify(
     ctx: click.Context,
+    auto_approve: bool = False,
 ) -> None:
     """
     We verify the packages.json file.
@@ -448,44 +584,41 @@ def verify(
     issues = []
     changes = []
     click.echo("Verifying autonomy dependencies... 📝")
-    for dependency in track(autonomy_version_set.upstream_dependency):
-        click.echo(f"   Verifying:   {dependency.name}")
-        remote_packages = dependency.get_all_autonomy_packages()
-        local_packages = get_package_json(Path())["third_party"]
-        diffs = {}
-        for package_name, package_hash in remote_packages.items():
-            if package_name in local_packages:
-                if package_hash != local_packages[package_name]:
-                    diffs[package_name] = package_hash
 
-        if diffs:
-            print_json(data=diffs)
-            click.confirm("Do you want to update the package?\n", abort=True)
-            update_package_json(repo=Path(), proposed_dependency_updates=diffs)
-            remove_old_package(repo=Path(), proposed_dependency_updates=diffs)
-            changes.append(dependency.name)
+    version_set_loader = VersionSetLoader()
+    version_set_loader.load_config()
+    if (Path("packages") / "packages.json").exists():
+        version_set_loader.load_config()
+        for dependency in track(version_set_loader.autonomy_dependencies.upstream_dependency):
+            click.echo(f"   Verifying:   {dependency.name}")
+            remote_packages = dependency.get_all_autonomy_packages()
+            local_packages = get_package_json(Path())["third_party"]
+            diffs = {}
+            for package_name, package_hash in remote_packages.items():
+                if package_name in local_packages:
+                    if package_hash != local_packages[package_name]:
+                        diffs[package_name] = package_hash
 
-        pyproject = toml.load("pyproject.toml")["tool"]["poetry"]["dependencies"]
-        if dependency.name in pyproject:
-            current_version = pyproject[dependency.name]
-            expected_version = f"=={dependency.get_latest_version()[1:]}"
-            if current_version != expected_version:
-                issues.append(
-                    f"Please update the version of {dependency.name} from `{current_version}` to `{expected_version}`\n"
-                )
+            if diffs:
+                print_json(data=diffs)
+                if not auto_approve:
+                    click.confirm("Do you want to update the package?\n", abort=True)
+                update_package_json(repo=Path(), proposed_dependency_updates=diffs)
+                remove_old_package(repo=Path(), proposed_dependency_updates=diffs)
+                changes.append(dependency.name)
 
     click.echo("Verifying poetry dependencies... 📝")
-    cmd, poetry_issues = get_update_command(poetry_dependencies)
-    issues += [poetry_issues]
+    cmd, poetry_issues = get_update_command(version_set_loader.poetry_dependencies.poetry_dependencies)
+    issues.extend(poetry_issues)
 
     if issues:
         click.echo(f"Please run the following command to update the poetry dependencies.")
         click.echo(f"{cmd}\n")
-        confirm = click.confirm("Do you want to update the poetry dependencies now?", abort=True)
-        if confirm:
-            os.system(cmd)  # noqa
-            click.echo("Done. 😎")
-            sys.exit(0)
+        if not auto_approve:
+            click.confirm("Do you want to update the poetry dependencies now?", abort=True)
+        os.system(cmd)  # noqa
+        changes.append("poetry dependencies")
+
     handle_output(issues, changes)
 
 

@@ -5,7 +5,7 @@ from enum import Enum
 import rich_click as click
 
 from auto_dev.base import build_cli
-from auto_dev.utils import get_logger
+from auto_dev.utils import get_logger, snake_to_camel
 from auto_dev.fsm.fsm import FsmSpec
 from auto_dev.constants import DEFAULT_ENCODING
 

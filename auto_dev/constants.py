@@ -99,15 +99,6 @@ BASE_FSM_SKILLS = {
 }
 
 
-class FileType(Enum):
-    """File type enum."""
-
-    TEXT = "text"
-    YAML = "yaml"
-    JSON = "json"
-    PYTHON = "python"
-
-
 class CheckResult(Enum):
     """Check result enum."""
 

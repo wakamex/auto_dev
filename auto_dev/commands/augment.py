@@ -9,12 +9,10 @@ import rich_click as click
 from aea.configurations.base import PublicId
 
 from auto_dev.base import build_cli
-from auto_dev.utils import get_logger, write_to_file, read_from_file
-from auto_dev.constants import DEFAULT_ENCODING, FileType
-from auto_dev.handler.scaffolder import HandlerScaffoldBuilder
 from auto_dev.enums import FileType
-from auto_dev.utils import get_logger, write_to_file
+from auto_dev.utils import get_logger, write_to_file, read_from_file
 from auto_dev.constants import DEFAULT_ENCODING
+from auto_dev.handler.scaffolder import HandlerScaffoldBuilder
 
 
 logger = get_logger()
@@ -296,6 +294,9 @@ def customs(ctx, component_type, auto_confirm):
         return
 
     customs_config = read_from_file(Path("component.yaml"), FileType.YAML)
+    if customs_config is None:
+        logger.error("Error: customs_config is None. Unable to process.")
+        return
 
     api_spec_path = customs_config.get("api_spec")
     if not api_spec_path:
@@ -345,7 +346,7 @@ def customs(ctx, component_type, auto_confirm):
     logger.info(f"Handler code written to {handler_path}")
 
     scaffolder.create_dialogues()
-
+    scaffolder.create_exceptions()
     logger.info("OpenAPI3 scaffolding completed successfully.")
 
 
