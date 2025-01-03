@@ -4,10 +4,10 @@ Class to represent and parse contract events.
 
 from dataclasses import dataclass
 
-from auto_dev.contracts.utils import SOLIDITY_TO_PYTHON_TYPES, keyword_to_safe_name
+from auto_dev.contracts.utils import SOLIDITY_TO_PYTHON_TYPES
 from auto_dev.contracts.contract_templates import EVENT_TEMPLATE
 from auto_dev.contracts.variable import Variable
-from auto_dev.utils import camel_to_snake, snake_to_camel
+from auto_dev.utils import camel_to_snake
 
 
 
