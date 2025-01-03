@@ -36,5 +36,6 @@ class ContractEvent:
             name=camel_to_snake(self.name),
             params=self.inputs_with_types(),
             args=self.args(),
+            names=[f"{camel_to_snake(i['name'])}" for i in self.inputs],
             camel_name=self.name,
         )

@@ -30,9 +30,8 @@ class FsmType(Enum):
 
 INPUT_TO_FUNC = {FsmType.MERMAID.value: FsmSpec.from_mermaid_path, FsmType.FSM_SPEC.value: FsmSpec.from_yaml}
 
-
 @fsm.command()
-@click.argument("fsm_spec", type=click.File("r", encoding=DEFAULT_ENCODING))
+@click.argument("fsm_spec", type=click.Path("r", ))
 @click.argument("fsm_name", type=str)
 @click.option(
     "--in-type", type=click.Choice([f.value for f in FsmType], case_sensitive=False), default=FsmType.FSM_SPEC.value

@@ -96,3 +96,4 @@ def test_scaffolder_extracts_events(scaffolder, test_filesystem):
     path = Path() / "tests" / "data" / "dummy_abi.json"
     new_contract = scaffolder.from_abi(str(path), KNOWN_ADDRESS, "new_contract")
     new_contract.parse_events()
+    assert new_contract.events
