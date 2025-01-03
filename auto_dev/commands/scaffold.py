@@ -219,13 +219,19 @@ def handler(ctx, spec_file, public_id, new_skill, auto_confirm) -> int:
 @click.option("--auto-confirm", is_flag=True, default=False, help="Auto confirm all actions")
 @click.option(
     "--behaviour-type",
-    type=click.Choice([BehaviourTypes.metrics]),
+    type=click.Choice([f.value for f in (BehaviourTypes.metrics, BehaviourTypes.simple_fsm)]),
     required=True,
     help="The type of behaviour to generate.",
     default=BehaviourTypes.metrics,
 )
 @click.pass_context
-def behaviour(ctx, spec_file, behaviour_type, auto_confirm, target_speech_acts) -> None:
+def behaviour(
+    ctx,
+    spec_file,
+    behaviour_type,
+    auto_confirm,
+    target_speech_acts,
+) -> None:
     """
     Generate an AEA handler from an OpenAPI 3 specification.
 
@@ -239,7 +245,11 @@ def behaviour(ctx, spec_file, behaviour_type, auto_confirm, target_speech_acts) 
     verbose = ctx.obj["VERBOSE"]
 
     scaffolder = BehaviourScaffolder(
-        spec_file, behaviour_type=behaviour_type, logger=logger, verbose=verbose, auto_confirm=auto_confirm
+        spec_file,
+        behaviour_type=BehaviourTypes[behaviour_type],
+        logger=logger,
+        verbose=verbose,
+        auto_confirm=auto_confirm,
     )
     scaffolder.scaffold(
         target_speech_acts=target_speech_acts,
@@ -332,14 +342,15 @@ def tests(
 
 
 @scaffold.command()
+@click.option("--auto-confirm", is_flag=True, default=False, help="Auto confirm all actions")
 @click.pass_context
-def dao(ctx) -> None:
+def dao(ctx, auto_confirm) -> None:
     """Scaffold Data Access Objects (DAOs) and generate test script based on an OpenAPI 3 specification."""
     logger = ctx.obj["LOGGER"]
     verbose = ctx.obj["VERBOSE"]
 
     try:
-        scaffolder = DAOScaffolder(logger, verbose)
+        scaffolder = DAOScaffolder(logger, verbose, auto_confirm)
         scaffolder.scaffold()
     except Exception as e:
         logger.exception(f"Error during DAO scaffolding and test generation: {e}")

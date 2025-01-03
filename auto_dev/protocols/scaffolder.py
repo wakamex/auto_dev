@@ -16,7 +16,7 @@ from jinja2 import Environment, FileSystemLoader
 from aea.protocols.generator.base import ProtocolGenerator
 
 from auto_dev.fmt import Formatter
-from auto_dev.utils import currenttz, get_logger, remove_prefix, camel_to_snake
+from auto_dev.utils import currenttz, get_logger, remove_prefix, camel_to_snake, snake_to_camel
 from auto_dev.constants import DEFAULT_TZ, DEFAULT_ENCODING, JINJA_TEMPLATE_FOLDER
 from auto_dev.data.connections.template import HEADER
 
@@ -73,6 +73,9 @@ def get_dummy_data(field):
         res = []
     if field["type"].startswith("Dict"):
         res = {}
+    if field["type"].startswith("Optional"):
+        # We recursively call this function to get the dummy data
+        res = get_dummy_data({"type": field["type"].split("Optional[")[1].split("]")[0], "name": field["name"]})
     return res
 
 
@@ -297,9 +300,19 @@ def parse_protobuf_type(protobuf_type, required_type_imports=[]):
         output["name"] = attr_name
         output["type"] = f"Dict[{PROTOBUF_TO_PYTHON[key_type]}, {PROTOBUF_TO_PYTHON[val_type]}] = {{}}"
         required_type_imports.append("Dict")
+    elif protobuf_type.startswith("optional"):
+        attr_name = protobuf_type.split()[2]
+
+        output["name"] = attr_name
+        output["type"] = f"Optional[{PROTOBUF_TO_PYTHON[protobuf_type.split()[1]]}] = None"
+        required_type_imports.append("Optional")
     else:
         _type = protobuf_type.split()[0]
-        attr_name = protobuf_type.split()[1]
+        try:
+            attr_name = protobuf_type.split()[1]
+        except IndexError as err:
+            raise ValueError(f"Error parsing attribute name from: {protobuf_type}") from err
+
         output["name"] = attr_name
         if _type in PROTOBUF_TO_PYTHON:
             output["type"] = PROTOBUF_TO_PYTHON[_type]
@@ -347,10 +360,21 @@ class ProtocolScaffolder:
 
         self.cleanup_protocol(protocol_path, protocol_author, protocol_definition, protocol_name)
         self.generate_pydantic_models(protocol_path, protocol_name, protocol)
+        self.generate_base_models(protocol_path, protocol_name, protocol)
         self.clean_tests(
             protocol_path,
             protocol,
         )
+
+        # We now update the protocol.yaml dependencies key to include 'pydantic'
+
+        protocol_yaml = protocol_path / "protocol.yaml"
+        # We keey the order of the yaml file
+        content = yaml.safe_load(
+            protocol_yaml.read_text(encoding=DEFAULT_ENCODING),
+        )
+        content["dependencies"]["pydantic"] = {}
+        protocol_yaml.write_text(yaml.dump(content, sort_keys=False), encoding=DEFAULT_ENCODING)
 
         command = f"aea fingerprint protocol {protocol_author}/{protocol_name}:{protocol_version}"
         result = subprocess.run(command, shell=True, capture_output=True, check=False)
@@ -401,6 +425,89 @@ class ProtocolScaffolder:
         updated_content = split_long_comment_lines(content)
         custom_types.write_text(updated_content, encoding=DEFAULT_ENCODING)
 
+    def generate_base_models(self, protocol_path, protocol_name, protocol):
+        """Generate base models."""
+        raw_classes, all_dummy_data, enums = self._get_definition_of_custom_types(protocol)
+        custom_types = protocol_path / "dialogues.py"
+        content = custom_types.read_text(encoding=DEFAULT_ENCODING)
+        # We want to add to the imports
+
+        new_imports = [
+            "from aea.skills.base import Model",
+        ]
+
+        content = content.replace(
+            f"class {snake_to_camel(protocol_name.capitalize())}Dialogues(Dialogues, ABC):",
+            f"class Base{snake_to_camel(protocol_name.capitalize())}Dialogues(Dialogues, ABC):",
+        )
+
+        if len(protocol.speech_acts["roles"]) > 1:
+            self.logger.error("We do not fully generate all dilogiues classes only support one role in the protocol.")
+        role = list(protocol.speech_acts["roles"].keys())[0]
+
+        content = content.replace(
+            "role_from_first_message: Callable[[Message, Address], Dialogue.Role],",
+            f"role_from_first_message: Callable[[Message, Address], Dialogue.Role] = _role_from_first_message,",
+        )
+
+        content_lines = content.split("\n")
+        import_end_line = 0
+        for i, line in enumerate(content_lines):
+            if line.startswith("from"):
+                new_imports.append(line)
+            if line.startswith("class"):
+                break
+            import_end_line = i
+
+        # We also want to replace the base class with the correct one.
+
+        dialogues_class_str = textwrap.dedent(f"""
+        def _role_from_first_message(message: Message, sender: Address) -> Dialogue.Role:
+            '''Infer the role of the agent from an incoming/outgoing first message'''
+            del sender, message
+            return {snake_to_camel(protocol_name.capitalize())}Dialogue.Role.{role.upper()}
+        """)
+        dialogues_class_ast = ast.parse(dialogues_class_str)
+        dialogues_class_str = ast.unparse(dialogues_class_ast)
+
+        content_lines = (
+            content_lines[:import_end_line]
+            + new_imports
+            + dialogues_class_str.split("\n")
+            + content_lines[import_end_line:]
+        )
+
+        # noqa
+        base_cls_name = f"Base{snake_to_camel(protocol_name.capitalize())}"
+
+        dialogues_class_str = textwrap.dedent(f"""
+        class {snake_to_camel(protocol_name.capitalize())}Dialogues({base_cls_name}Dialogues, Model):
+            '''This class defines the dialogues used in {protocol_name.capitalize()}.'''
+            def __init__(self, **kwargs):
+                '''Initialize dialogues.'''
+                Model.__init__(self, keep_terminal_state_dialogues=False, **kwargs)
+                Base{snake_to_camel(protocol_name.capitalize())}Dialogues.__init__(self, 
+                self_address=str(self.context.skill_id))
+
+        """)
+        # noqa
+
+        dialogues_class_ast = ast.parse(dialogues_class_str)
+        dialogues_class_str = ast.unparse(dialogues_class_ast)
+
+        updated_content = content_lines + dialogues_class_str.split("\n")
+        custom_types.write_text("\n".join(updated_content), encoding=DEFAULT_ENCODING)
+
+        # We also need to update the dialogues tests
+        dialogues_tests = protocol_path / "tests" / f"test_{protocol_name}_dialogues.py"
+        content = dialogues_tests.read_text(encoding=DEFAULT_ENCODING)
+        dialogues_tests.write_text(content, encoding=DEFAULT_ENCODING)
+
+        # We just need to perform a simple updating of the dialogues.
+
+        Formatter(verbose=False, remote=False).format(dialogues_tests)
+        Formatter(verbose=False, remote=False).format(custom_types)
+
     def _get_definition_of_custom_types(self, protocol, required_type_imports=["Any"]):
         """Get the definition of data types."""
         raw_classes = []
@@ -446,20 +553,37 @@ class ProtocolScaffolder:
         dummy_data_path = protocol_path / "tests" / "dummy_data.yaml"
         dummy_data_path.write_text(yaml.dump(all_dummy_data), encoding=DEFAULT_ENCODING)
 
-        self.output_pydantic_models(pydantic_output, protocol_path, required_type_imports)
+        self.output_pydantic_models(
+            pydantic_output,
+            protocol_path,
+            required_type_imports,
+        )
 
-    def output_pydantic_models(self, pydantic_output, protocol_path, required_type_imports):
+    def output_pydantic_models(
+        self,
+        pydantic_output,
+        protocol_path,
+        required_type_imports,
+    ):
         """
         Ouput the pydantic models to the custom_types.py file.
         """
         new_ast = ast.parse(pydantic_output)
-        imports = []
-        classes = []
+        new_imports = {}
+        new_classes = {}
+        new_assignments = {}
 
         for node in new_ast.body:
             if isinstance(node, ast.Import):
-                imports.append(node)
-            classes.append(node)
+                new_imports[node.names[0].name] = node
+                continue
+            if isinstance(node, ast.Assign):
+                new_assignments[node.targets[0].id] = node
+                continue
+            if isinstance(node, ast.ClassDef):
+                new_classes[node.name] = node
+                continue
+            raise ValueError(f"Unknown node type: {node}")
 
         # We now read in the custom_types.py file
         custom_types_path = protocol_path / "custom_types.py"
@@ -467,23 +591,44 @@ class ProtocolScaffolder:
         root = ast.parse(content)
 
         # We now update the classes
-        base_model_class = classes.pop(0)
-        for node in classes:
-            for i, existing_node in enumerate(root.body):
-                if isinstance(node, ast.Assign):
-                    continue
-                if isinstance(existing_node, ast.ClassDef):
-                    if existing_node.name == node.name:
-                        root.body[i] = node
-                        break
-            else:
-                root.body.append(node)
+
+        classes = {}
+        assignments = {}
+        imports = {}
+
+        for node in root.body:
+            if isinstance(node, ast.ImportFrom):
+                imports[node.names[0].name] = node
+                continue
+            if isinstance(node, ast.ClassDef):
+                classes[node.name] = node
+                continue
+            if isinstance(node, ast.Assign):
+                assignments[node.targets[0].id] = node
+                continue
+            if isinstance(node, ast.Expr):
+                continue
+
+        # We now create a set of new  data, such that the new data is added to the custom_types.py file
+
+        new_body = (
+            [i for i in imports.values() if i.names[0].name not in new_imports]
+            + list(new_imports.values())
+            + [i for i in classes.values() if i.name not in new_classes]
+            + list(new_classes.values())
+            + [i for i in assignments.values() if i.targets[0].id not in new_assignments]
+            + list(new_assignments.values())
+        )
+
+        root.body = new_body
 
         # We now write the updated content to the custom_types.py file
         updated_content = ast.unparse(root)
         # We add in the imports
         typing_import_line = textwrap.dedent(
             """
+        '''Custom types for the protocol.'''
+        from enum import Enum
         from pydantic import BaseModel
         """
         )
@@ -492,16 +637,22 @@ class ProtocolScaffolder:
             typing_import_line += f"\nfrom typing import {', '.join(set(required_type_imports))}"
 
         updated_content_lines = updated_content.split("\n")
-        updated_content_lines.insert(2, typing_import_line)
+        updated_content_lines.insert(0, typing_import_line)
 
-        base_model_code = ast.unparse(base_model_class)
-        base_model_code_lines = base_model_code.split("\n")
-        updated_content_lines = updated_content_lines[:4] + base_model_code_lines + updated_content_lines[4:]
         updated_content = "\n".join(updated_content_lines)
         custom_types_path.write_text(updated_content)
         Formatter(verbose=False, remote=False).format(custom_types_path)
 
     def clean_tests(
+        self,
+        protocol_path,
+        protocol,
+    ) -> None:
+        """Clean tests."""
+        self.clean_tests_messages(protocol_path, protocol)
+        self.clean_tests_dialogues(protocol_path, protocol)
+
+    def clean_tests_messages(
         self,
         protocol_path,
         protocol,
@@ -546,7 +697,7 @@ class ProtocolScaffolder:
             start_line = ix
 
         import_defs = textwrap.dedent(
-            f"""
+            """
             from typing import Any
             """
         )
@@ -555,7 +706,25 @@ class ProtocolScaffolder:
         new_content.extend([import_defs])
         new_content.extend(function_defs)
         new_content.extend(original_content[start_line:])
+
+        # We drop everyuthing from the start of the line begining `build_inconsistent(self)` to the end of the file
+
         content = "\n".join(new_content)
+
+        drop_from = content.find("    def build_inconsistent(self)")
+
+        content = content[:drop_from]
+        # We then add a single function to the class
+        content += textwrap.dedent(
+            """
+            ----def build_inconsistent(self):
+            ----    '''Build inconsistent message.'''
+            ----    return []
+            """
+        )
+
+        content = content.replace("----", "    ")
+
         # We also make a dummy init file in the tests folder
         tests_init = protocol_path / "tests" / "__init__.py"
         tests_init.touch()
@@ -568,4 +737,80 @@ class ProtocolScaffolder:
         )
 
         tests_path.write_text(content, encoding=DEFAULT_ENCODING)
+        Formatter(verbose=False, remote=False).format(tests_path)
+
+    def clean_tests_dialogues(
+        self,
+        protocol_path,
+        protocol,
+    ) -> None:
+        """Clean tests."""
+        # We need to remove the test files
+        tests_path = protocol_path / "tests" / f"test_{protocol_path.name}_dialogues.py"
+
+        content = tests_path.read_text()
+
+        # We just need to find the custom types, and make sure that we use the new data loader function
+
+        enum_imports = []
+
+        for custom_type in protocol.custom_types:
+            if protocol.custom_types[custom_type].startswith("enum"):
+                ct_name = custom_type.split(":")[1]
+                content = content.replace(f"{ct_name}()", f"{ct_name}(0)")
+                msg = (
+                    f"from packages.{protocol.metadata['author']}"
+                    + f".protocols.{protocol_path.name}.custom_types import {ct_name}"
+                )
+                enum_imports.append(msg)
+                continue
+            # We build the line to load the data types;
+            ct_name = custom_type[3:]
+            replace_line = f"{ct_name}(**load_data('{ct_name}'))"
+            search_line = f"{ct_name}()"
+            content = content.replace(search_line, replace_line)
+
+        # We update the import to import the BaseDialogues class
+
+        for string, replace_line in [
+            (
+                f"{snake_to_camel(protocol_path.name.capitalize())}Dialogues",
+                f"Base{snake_to_camel(protocol_path.name.capitalize())}Dialogues",
+            ),
+        ]:
+            content = content.replace(
+                string,
+                replace_line,
+            )
+
+        # We update the imports
+        original_content = content.split("\n")
+        new_content = []
+        start_line = 0
+        for ix, line in enumerate(original_content):
+            if line.startswith("class"):
+                break
+            start_line = ix
+
+        test_data_loader = textwrap.dedent(
+            """
+            import os
+            import yaml
+            def load_data(custom_type):
+                '''Load test data.'''
+                with open(f"{os.path.dirname(__file__)}/dummy_data.yaml", "r", encoding="utf-8") as f:
+                    return yaml.safe_load(f)[custom_type]
+            
+            """
+        )
+
+        new_content.extend(original_content[:start_line])
+        new_content.extend(enum_imports)
+        new_content.extend(test_data_loader.split("\n"))
+        new_content.extend(original_content[start_line:])
+        content = "\n".join(new_content)
+
+        # We write the updated content to the file
+        tests_path.write_text(content, encoding=DEFAULT_ENCODING)
+
         Formatter(verbose=False, remote=False).format(tests_path)

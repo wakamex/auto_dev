@@ -6,11 +6,11 @@ from pathlib import Path
 import yaml
 from web3 import Web3
 
-from auto_dev.contracts.contract_events import ContractEvent
 from auto_dev.enums import FileType
 from auto_dev.utils import write_to_file, snake_to_camel
 from auto_dev.constants import DEFAULT_ENCODING
 from auto_dev.contracts.function import Function
+from auto_dev.contracts.contract_events import ContractEvent
 from auto_dev.contracts.contract_functions import FunctionType, ContractFunction
 
 
@@ -149,4 +149,3 @@ class Contract:
         We need to parse the events from the abi.
         """
         self.events = [ContractEvent(**event) for event in self.abi if event["type"] == "event"]
-

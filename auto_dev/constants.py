@@ -10,6 +10,7 @@ from aea.cli.utils.config import get_or_create_cli_config
 DEFAULT_ENCODING = "utf-8"
 DEFAULT_TZ = "UTC"
 DEFAULT_TIMEOUT = 10
+DEFAULT_AUTHOR = "eighballer"
 # package directory
 PACKAGE_DIR = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_RUFF_CONFIG = Path(PACKAGE_DIR) / "data" / "ruff.toml"
@@ -24,6 +25,7 @@ JINJA_TEMPLATE_FOLDER = os.path.join(
 )
 
 AEA_CONFIG = get_or_create_cli_config()
+NAME_PATTERN = r"[a-z_][a-z0-9_]{0,127}"
 
 SAMPLE_PACKAGES_JSON = {
     "packages/packages.json": """
@@ -38,14 +40,14 @@ SAMPLE_PACKAGES_JSON = {
 }
 
 SAMPLE_PACKAGE_FILE = {
-    "packages/eightballer/agents/tmp/aea-config.yaml": """
+    "packages/eightballer/agents/tmp/aea-config.yaml": f"""
 agent_name: tmp
-author: eightballer
+author: {DEFAULT_AUTHOR}
 version: 0.1.0
 license: Apache-2.0
 description: ''
 aea_version: '>=1.35.0, <2.0.0'
-fingerprint: {}
+fingerprint: {{}}
 fingerprint_ignore_patterns: []
 connections: []
 contracts: []
@@ -56,14 +58,14 @@ default_connection: null
 default_ledger: ethereum
 required_ledgers:
 - ethereum
-default_routing: {}
-connection_private_key_paths: {}
-private_key_paths: {}
+default_routing: {{}}
+connection_private_key_paths: {{}}
+private_key_paths: {{}}
 logging_config:
   disable_existing_loggers: false
   version: 1
 dependencies:
-  open-aea-ledger-ethereum: {}
+  open-aea-ledger-ethereum: {{}}
 """
 }
 
@@ -97,15 +99,6 @@ BASE_FSM_SKILLS = {
     "reset_pause_abci": "bafybeibqz7y3i4aepuprhijwdydkcsbqjtpeea6gdzpp5fgc6abrvjz25a",
     "termination_abci": "bafybeieb3gnvjxxsh73g67m7rivzknwb63xu4qeagpkv7f4mqz33ecikem",
 }
-
-
-class FileType(Enum):
-    """File type enum."""
-
-    TEXT = "text"
-    YAML = "yaml"
-    JSON = "json"
-    PYTHON = "python"
 
 
 class CheckResult(Enum):

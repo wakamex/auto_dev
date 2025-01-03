@@ -26,7 +26,7 @@ class CommandExecutor:
         self.return_code = None
         self.exception = None
 
-    def execute(self, stream=False, verbose: bool = True, shell: bool = False):
+    def execute(self, stream=False, verbose: bool = True, shell: bool = False) -> bool:
         """Execute the command."""
         if stream:
             return self._execute_stream(verbose, shell)
@@ -71,6 +71,7 @@ class CommandExecutor:
                 cwd=self.cwd,
                 universal_newlines=True,
                 shell=shell,
+                env=os.environ,
             ) as process:
                 for stdout_line in iter(process.stdout.readline, ""):  # type: ignore
                     self.stdout.append(stdout_line.strip())

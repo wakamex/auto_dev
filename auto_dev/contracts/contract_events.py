@@ -1,6 +1,7 @@
 """
 Class to represent and parse contract events.
 """
+
 from dataclasses import dataclass
 
 from auto_dev.contracts.utils import SOLIDITY_TO_PYTHON_TYPES, keyword_to_safe_name
@@ -12,6 +13,8 @@ from auto_dev.utils import camel_to_snake, snake_to_camel
 
 @dataclass
 class ContractEvent:
+    """Data class to represent a solidity event"""
+
     anonymous: bool
     inputs: list
     name: str
@@ -20,6 +23,18 @@ class ContractEvent:
     def vars(self):
         """return variable instances for the inputs."""
         return [Variable(**input) for input in self.inputs]
+
+    def inputs_list(self):
+        """Return the inputs as a string."""
+        return ", ".join([i["type"] for i in self.inputs])
+
+    def args(self):
+        """Return the inputs as a string."""
+        return ", ".join([i["name"] for i in self.inputs])
+
+    def inputs_with_types(self):
+        """Return the inputs with names."""
+        return ", ".join([f"{i['name']}: {SOLIDITY_TO_PYTHON_TYPES[i['type']]} = None" for i in self.inputs])
 
     def to_string(self):
         """Return the event as a string."""
@@ -31,4 +46,3 @@ class ContractEvent:
             keywords=", ".join(v.to_key_value() for v in self.vars()),
             camel_name=self.name,
         )
-
