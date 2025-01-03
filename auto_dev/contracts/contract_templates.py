@@ -88,10 +88,15 @@ EVENT_TEMPLATE: Template = Template(
         to_block: str="latest"
         ) -> JSONLike:
         \"\"\"Handler method for the '$camel_name' events .\"\"\"
+
+        filter = {
+            k: v for k, v in [$keywords] if v is not None
+        }
         instance = cls.get_instance(ledger_api, contract_address)
         result = instance.events.$camel_name().get_logs(
             fromBlock=ledger_api.api.eth.block_number - look_back,
             toBlock=to_block,
+            argument_filters=filter
         )
         return {
             "events": result

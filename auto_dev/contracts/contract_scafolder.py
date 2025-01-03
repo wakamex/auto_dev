@@ -55,7 +55,7 @@ class ContractScaffolder:
             raise ValueError(msg)
 
         with isolated_filesystem():
-            if not CommandExecutor("aea create myagent".split(" ")).execute(verbose=verbose):
+            if not (output:= CommandExecutor("aea create myagent".split(" "))).execute(verbose=verbose):
                 msg = "Failed to create agent."
                 raise ValueError(msg)
             os.chdir("myagent")
