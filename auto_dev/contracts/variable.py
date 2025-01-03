@@ -27,7 +27,7 @@ class Variable:
         """Parse the variable to string to be passed as an argument to a function."""
         if self.name == "":
             return f"{self._name}"
-        return f"{self._name}={keyword_to_safe_name(camel_to_snake(self._name))}"
+        return f"{keyword_to_safe_name(self._name)}={keyword_to_safe_name(camel_to_snake(self._name))}"
 
     def to_str_return(self) -> str:
         """Parse the variable to string to be returned by a function."""
