@@ -125,16 +125,6 @@ adev scaffold contract my_contract \
     --network polygon-mainnet
 ```
 
-Supported networks include:
-- ethereum-mainnet
-- arbitrum-mainnet
-- arbitrum-goerli
-- polygon-mainnet
-- polygon-mumbai
-- base-mainnet
-- base-goerli
-
-
 ## Installation
 
 ```bash
