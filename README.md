@@ -1,6 +1,7 @@
 # Project Status Badges
 
 [![Code Quality](https://github.com/8ball030/auto_dev/actions/workflows/common_check.yaml/badge.svg)](https://github.com/8ball030/auto_dev/actions/workflows/common_check.yaml)
+[![Documentation](https://github.com/8ball030/auto_dev/actions/workflows/github_action.yml/badge.svg)](https://github.com/8ball030/auto_dev/actions/workflows/github_action.yml)
 
 
 # Autonomy Dev
@@ -139,3 +140,19 @@ auto_dev/utils.py                  251    153    39%   76-77, 81, 94-101, 106-15
 TOTAL                              819    536    35%
 <!-- Pytest Coverage Comment:End -->
 ```
+
+## Documentation
+
+### Running Docs Locally
+
+To run and preview the documentation locally:
+
+```bash
+# Install mkdocs and required dependencies
+pip install mkdocs-material mkdocstrings[python] mkdocs-include-markdown-plugin mkdocs-mermaid2-plugin
+
+# Serve the documentation (available at http://127.0.0.1:8000)
+mkdocs serve
+```
+
+This will start a local server and automatically reload when you make changes to the documentation.
