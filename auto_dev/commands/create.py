@@ -154,6 +154,15 @@ def create(ctx, public_id: str, template: str, force: bool, publish: bool, clean
 
     update_author(public_id=public_id)
     if publish:
+        # We check if there is a local registry.
+
+        if not Path("packages").exists():
+            command = CommandExecutor("autonomy package init")
+            result = command.execute(verbose=verbose)
+            if not result:
+                msg = f"Command failed: {command.command}"
+                click.secho(msg, fg="red")
+                return OperationError()
         publish_agent(public_id, verbose)
 
     if clean_up:
