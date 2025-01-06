@@ -54,7 +54,7 @@ def test_create_valid_names(cli_runner, test_packages_filesystem):
     valid_names = ["my_agent", "_test_agent", "agent123", "valid_agent_name_123"]
 
     for name in valid_names:
-        cmd = ["adev", "-v", "create", f"{DEFAULT_AUTHOR}/{name}", "-t", "eightballer/base", "--force"]
+        cmd = ["adev", "-v", "create", f"{DEFAULT_AUTHOR}/{name}", "-t", "eightballer/base", "--no-clean-up",]
 
         runner = cli_runner(cmd)
         assert runner.execute()
