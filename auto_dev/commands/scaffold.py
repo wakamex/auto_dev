@@ -31,6 +31,7 @@ from auto_dev.behaviours.scaffolder import BehaviourScaffolder
 from auto_dev.connections.scaffolder import ConnectionScaffolder
 from auto_dev.contracts.block_explorer import BlockExplorer
 from auto_dev.contracts.contract_scafolder import ContractScaffolder
+from web3 import Web3
 
 
 cli = build_cli()
@@ -47,49 +48,60 @@ def scaffold() -> None:
 @click.option("--address", default=DEFAULT_NULL_ADDRESS, required=False, help="The address of the contract.")
 @click.option("--from-file", default=None, help="Ingest a file containing a list of addresses and names.")
 @click.option("--from-abi", default=None, help="Ingest an ABI file to scaffold a contract.")
-@click.option("--block-explorer-url", default="https://api.etherscan.io/api")
-@click.option("--block-explorer-api-key", default=None)
+@click.option("--network", default="ethereum", help="The network to fetch the ABI from (e.g., ethereum, polygon)")
 @click.option("--read-functions", default=None, help="Comma separated list of read functions to scaffold.")
 @click.option("--write-functions", default=None, help="Comma separated list of write functions to scaffold.")
 @click.pass_context
 def contract(  # pylint: disable=R0914
-    ctx, address, name, block_explorer_url, block_explorer_api_key, read_functions, write_functions, from_abi, from_file
+    ctx, address, name, network, read_functions, write_functions, from_abi, from_file
 ) -> None:
     """Scaffold a contract."""
     logger = ctx.obj["LOGGER"]
     if address is None and name is None and from_file is None:
         logger.error("Must provide either an address and name or a file containing a list of addresses and names.")
         return
+
+    # Convert address to checksum format
+    if address and address != DEFAULT_NULL_ADDRESS:
+        try:
+            address = Web3.to_checksum_address(address)
+        except ValueError as e:
+            logger.error(f"Invalid address format: {e}")
+            return
+
     if from_file is not None:
         with open(from_file, encoding=DEFAULT_ENCODING) as file_pointer:
             yaml_dict = yaml.safe_load(file_pointer)
         for contract_name, contract_address in yaml_dict["contracts"].items():
+            # Convert each address in the file to checksum format
+            try:
+                checksum_address = Web3.to_checksum_address(str(contract_address))
+            except ValueError as e:
+                logger.error(f"Invalid address format for {contract_name}: {e}")
+                continue
             ctx.invoke(
                 contract,
-                address=str(contract_address),
+                address=checksum_address,
                 name=camel_to_snake(contract_name),
-                block_explorer_url=yaml_dict["block_explorer_url"],
-                block_explorer_api_key=block_explorer_api_key,
+                network=yaml_dict.get("network", network),
                 read_functions=read_functions,
                 write_functions=write_functions,
             )
-
         return
+
     if from_abi is not None:
         logger.info(f"Using ABI file: {from_abi}")
         scaffolder = ContractScaffolder(block_explorer=None)
         new_contract = scaffolder.from_abi(from_abi, address, name)
-
         logger.info(f"New contract scaffolded at {new_contract.path}")
 
-    if block_explorer_api_key:
-        logger.info(f"Using block explorer url: {block_explorer_url}")
-        logger.info(f"Scaffolding contract at address: {address} with name: {name}")
-
-        block_explorer = BlockExplorer(block_explorer_url, block_explorer_api_key)
+    else:
+        logger.info(f"Fetching ABI for contract at address: {address} on network: {network}")
+        block_explorer = BlockExplorer(f"https://abidata.net", network=network)
         scaffolder = ContractScaffolder(block_explorer=block_explorer)
-        logger.info("Getting abi from block explorer.")
+        logger.info("Getting ABI from abidata.net")
         new_contract = scaffolder.from_block_explorer(address, name)
+
     logger.info("Generating openaea contract with aea scaffolder.")
     contract_path = scaffolder.generate_openaea_contract(new_contract)
     logger.info("Writing abi to file, Updating contract.yaml with build path. Parsing functions.")

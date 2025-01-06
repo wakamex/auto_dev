@@ -89,18 +89,50 @@ Testing completed successfully! ✅
 
 #### Contracts
 
-We can scaffold a new contract using the `adev scaffold contract` command. This will create a new directory with;
-- open-aea contract component
-    - open-aea contract component class 🎉
-    - open-aea contract component function generation 🚧
-    - open-aea contract component test generation 🚧
+We provide tools to scaffold smart contract components from existing deployed contracts. The scaffolding process includes:
 
+- Complete open-aea contract component
+- Contract class with auto-generated methods
+- Test suite scaffolding
+- Type hints and documentation
 
+Basic usage:
 ```bash
-adev scaffold contract 0xc939df369C0Fc240C975A6dEEEE77d87bCFaC259 beyond_pricer \
-      --block-explorer-api-key $BLOCK_EXPLORER_API_KEY \
-      --block-explorer-url "https://api-goerli.arbiscan.io"
+adev scaffold contract <NAME> --address <CONTRACT_ADDRESS> --network <NETWORK_NAME>
 ```
+
+Example using Base:
+```bash
+# Scaffold USDC contract from Base
+adev scaffold contract usdc \
+    --address 0x833589fcd6edb6e08f4c7c32d4f71b54bda02913 \
+    --network base
+```
+
+Additional options:
+```bash
+# Scaffold from local ABI file
+adev scaffold contract my_contract \
+    --address 0xContract_Address \
+    --from-abi ./path/to/abi.json \
+    --network ethereum-mainnet
+
+# Specify read/write functions
+adev scaffold contract my_contract \
+    --address 0xContract_Address \
+    --read-functions "balanceOf,totalSupply" \
+    --write-functions "transfer,approve" \
+    --network polygon-mainnet
+```
+
+Supported networks include:
+- ethereum-mainnet
+- arbitrum-mainnet
+- arbitrum-goerli
+- polygon-mainnet
+- polygon-mumbai
+- base-mainnet
+- base-goerli
 
 
 ## Installation
