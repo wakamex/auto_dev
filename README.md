@@ -8,7 +8,7 @@
 
 Tooling to speed up open-autonomy development.
 
-For detailed instructions (Docs)[https://8ball030.github.io/auto_dev/]
+For detailed instructions please see the [Docs.](https://8ball030.github.io/auto_dev/)
 
 ## TLDR
 
