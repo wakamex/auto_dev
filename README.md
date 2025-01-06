@@ -12,18 +12,17 @@ For detailed instructions please see the [Docs.](https://8ball030.github.io/auto
 
 ## TLDR
 
-```bash
-# install 
-pip install autonomy-dev[all]
-```
+    ```
+    # install 
+    pip install autonomy-dev[all]
+    ```
 
 ```bash
 # create a repo & a simple webserver agent
-adev repo scaffold fun_new_hack && \
-cd fun_new_hack && \
-adev create author/cool_agent \
-    -t eightballer/frontend_agent # type of template to use.
-# sync to the local registry.
+adev repo scaffold fun_new_hack
+cd fun_new_hack
+adev create author/cool_agent --template eightballer/frontend_agent
+# sync to the local registry. [Optional]
 yes 'third_party' | autonomy packages lock
 
 ```

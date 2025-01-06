@@ -166,6 +166,7 @@ class BehaviourScaffolder(ProtocolScaffolder):
         target_speech_acts=None,
     ) -> None:
         """Scaffold the simple fsm behaviour from a fsm class."""
+        del target_speech_acts
 
         fsm_spec = FsmSpec.from_yaml(Path(self.protocol_specification_path).read_text())
 
