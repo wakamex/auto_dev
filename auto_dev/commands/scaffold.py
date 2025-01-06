@@ -43,6 +43,18 @@ def scaffold() -> None:
     """Scaffold a (set of) components."""
 
 
+def validate_address(address: str, logger, contract_name: str = None) -> str | None:
+    """Convert address to checksum format and validate it."""
+    if address == DEFAULT_NULL_ADDRESS:
+        return address
+    try:
+        return Web3.to_checksum_address(str(address))
+    except ValueError as e:
+        name_info = f" for {contract_name}" if contract_name else ""
+        logger.error(f"Invalid address format{name_info}: {e}")
+        return None
+
+
 @scaffold.command()
 @click.argument("name", default=None, required=False)
 @click.option("--address", default=DEFAULT_NULL_ADDRESS, required=False, help="The address of the contract.")
@@ -61,27 +73,16 @@ def contract(  # pylint: disable=R0914
         logger.error("Must provide either an address and name or a file containing a list of addresses and names.")
         return
 
-    # Convert address to checksum format
-    if address and address != DEFAULT_NULL_ADDRESS:
-        try:
-            address = Web3.to_checksum_address(address)
-        except ValueError as e:
-            logger.error(f"Invalid address format: {e}")
-            return
-
     if from_file is not None:
         with open(from_file, encoding=DEFAULT_ENCODING) as file_pointer:
             yaml_dict = yaml.safe_load(file_pointer)
         for contract_name, contract_address in yaml_dict["contracts"].items():
-            # Convert each address in the file to checksum format
-            try:
-                checksum_address = Web3.to_checksum_address(str(contract_address))
-            except ValueError as e:
-                logger.error(f"Invalid address format for {contract_name}: {e}")
+            validated_address = validate_address(contract_address, logger, contract_name)
+            if validated_address is None:
                 continue
             ctx.invoke(
                 contract,
-                address=checksum_address,
+                address=validated_address,
                 name=camel_to_snake(contract_name),
                 network=yaml_dict.get("network", network),
                 read_functions=read_functions,
@@ -89,18 +90,22 @@ def contract(  # pylint: disable=R0914
             )
         return
 
+    validated_address = validate_address(address, logger)
+    if validated_address is None:
+        return
+
     if from_abi is not None:
         logger.info(f"Using ABI file: {from_abi}")
         scaffolder = ContractScaffolder(block_explorer=None)
-        new_contract = scaffolder.from_abi(from_abi, address, name)
+        new_contract = scaffolder.from_abi(from_abi, validated_address, name)
         logger.info(f"New contract scaffolded at {new_contract.path}")
 
     else:
-        logger.info(f"Fetching ABI for contract at address: {address} on network: {network}")
+        logger.info(f"Fetching ABI for contract at address: {validated_address} on network: {network}")
         block_explorer = BlockExplorer(f"https://abidata.net", network=network)
         scaffolder = ContractScaffolder(block_explorer=block_explorer)
         logger.info("Getting ABI from abidata.net")
-        new_contract = scaffolder.from_block_explorer(address, name)
+        new_contract = scaffolder.from_block_explorer(validated_address, name)
 
     logger.info("Generating openaea contract with aea scaffolder.")
     contract_path = scaffolder.generate_openaea_contract(new_contract)
