@@ -32,7 +32,7 @@ def _generate_model_dummy_data(model_schema: dict[str, Any]) -> dict[str, Any]:
     return dummy_instance
 
 
-def _generate_property_dummy_data(prop_schema: dict[str, Any], prop_name: str = "") -> Any:
+def _generate_property_dummy_data(prop_schema: dict[str, Any]) -> Any:
     prop_type = prop_schema.get("type", "string")
 
     match prop_type:
