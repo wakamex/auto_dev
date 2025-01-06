@@ -90,12 +90,9 @@ EVENT_TEMPLATE: Template = Template(
         ) -> JSONLike:
         \"\"\"Handler method for the '$camel_name' events .\"\"\"
 
-        filter = {
-            k: v for k, v in [$keywords] if v is not None
-        }
         instance = cls.get_instance(ledger_api, contract_address)
         arg_filters = {
-            key: value for key, value in zip($names, ($args))
+            key: value for key, value in ($keywords)
             if value is not None
         }
         to_block = to_block or "latest"
