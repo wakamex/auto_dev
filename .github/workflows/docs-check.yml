@@ -27,6 +27,7 @@ jobs:
           pip install mkdocstrings[python]
           pip install mkdocs-include-markdown-plugin
           pip install mkdocs-mermaid2-plugin
+          pip install -e .
 
       - name: Build MkDocs
         run: mkdocs build --strict

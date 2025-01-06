@@ -28,6 +28,7 @@ jobs:
           pip install mkdocstrings[python]
           pip install mkdocs-include-markdown-plugin
           pip install mkdocs-mermaid2-plugin
+          pip install -e .
 
       - name: Deploy MkDocs
         run: mkdocs gh-deploy --force
