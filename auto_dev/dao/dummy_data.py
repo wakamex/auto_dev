@@ -21,7 +21,18 @@ def generate_dummy_data(models: dict[str, Any], num_instances: int = 5) -> dict[
     return dummy_data
 
 
-def _generate_property_dummy_data(prop_schema: dict[str, Any]) -> Any:
+def _generate_model_dummy_data(model_schema: dict[str, Any]) -> dict[str, Any]:
+    properties = model_schema.get("properties", {})
+    dummy_instance = {}
+    for prop_name, prop_schema in properties.items():
+        if prop_schema.get("type") == "array":
+            dummy_instance[prop_name] = [_generate_property_dummy_data(prop_schema["items"]) for _ in range(3)]
+        else:
+            dummy_instance[prop_name] = _generate_property_dummy_data(prop_schema)
+    return dummy_instance
+
+
+def _generate_property_dummy_data(prop_schema: dict[str, Any], prop_name: str = "") -> Any:
     prop_type = prop_schema.get("type", "string")
 
     match prop_type:

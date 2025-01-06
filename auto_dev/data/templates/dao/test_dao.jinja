@@ -13,7 +13,11 @@ from packages.{{author}}.customs.{{custom_name}}.daos.{{ dao_file_names[i] }} im
 
 
 DAOS_PATH = Path(__file__).parent.parent / "daos"
-sys.path.append(str(DAOS_PATH))
+sys.path.append(str(DAOS_PATH.parent))
+
+{% for i in range(model_names|length) %}
+from daos.{{ dao_file_names[i] }} import {{ model_names[i] }}DAO
+{% endfor %}
 
 
 @pytest.fixture(scope="module")

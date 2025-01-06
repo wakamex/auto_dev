@@ -31,13 +31,19 @@ class DAOScaffolder:
             trim_blocks=True,
         )
         self.component_yaml = Path.cwd() / "component.yaml"
+        self.component_data = None
+        self.public_id = None
 
     def scaffold(self) -> None:
         """Scaffold DAO classes and test scripts."""
         try:
             self.logger.info("Starting DAO scaffolding process")
-            component_data = self._load_component_yaml()
-            api_spec_path = self._get_api_spec_path(component_data)
+            self.component_data = self._load_component_yaml()
+            if not self.component_data:
+                msg = "Failed to load component data"
+                raise ValueError(msg)
+
+            api_spec_path = self._get_api_spec_path(self.component_data)
             api_spec = self._load_and_validate_api_spec(api_spec_path)
 
             schemas = api_spec.get("components", {}).get("schemas", {})
@@ -147,7 +153,13 @@ class DAOScaffolder:
 
     def _generate_dao_classes(self, models: dict[str, Any], paths: dict[str, Any]) -> dict[str, str]:
         try:
-            dao_generator = DAOGenerator(models, paths)
+            dao_generator = DAOGenerator(
+                models,
+                paths,
+                self.component_data,
+                author_name=self.component_data.get("author"),
+                package_name=self.component_data.get("name"),
+            )
             return dao_generator.generate_dao_classes()
         except Exception as e:
             self.logger.exception(f"Error generating DAO classes: {e!s}")
@@ -232,8 +244,8 @@ class DAOScaffolder:
             model_names=model_names,
             dao_file_names=dao_file_names,
             dummy_data=test_dummy_data,
-            author=self.public_id.author,
-            custom_name=self.public_id.name,
+            author_name=self.component_data.get("author"),
+            package_name=self.component_data.get("name"),
         )
 
     def _save_test_script(self, test_script: str) -> None:
