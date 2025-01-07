@@ -157,7 +157,7 @@ def create(ctx, public_id: str, template: str, force: bool, publish: bool, clean
         # We check if there is a local registry.
 
         if not Path("packages").exists():
-            command = CommandExecutor("autonomy package init")
+            command = CommandExecutor(["poetry", "run", "autonomy", "packages", "init"])
             result = command.execute(verbose=verbose)
             if not result:
                 msg = f"Command failed: {command.command}"
