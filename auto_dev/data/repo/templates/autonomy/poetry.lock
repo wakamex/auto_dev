@@ -255,13 +255,13 @@ tests-mypy = ["mypy (>=1.11.1)", "pytest-mypy-plugins"]
 
 [[package]]
 name = "autonomy-dev"
-version = "0.2.79"
+version = "0.2.80"
 description = "A collection of tooling to enable open source development of autonomy tools"
 optional = false
 python-versions = "<3.12,>=3.9"
 files = [
-    {file = "autonomy_dev-0.2.79-py3-none-any.whl", hash = "sha256:1c23bb70538f5a4e9a1cce3e85e20b93bf1d8cbcbd6dd26fb103ac2156872c05"},
-    {file = "autonomy_dev-0.2.79.tar.gz", hash = "sha256:5e4705273db7087000dcd82f12910d247d5a3e4f0fe6a1b1f962b072f8776dac"},
+    {file = "autonomy_dev-0.2.80-py3-none-any.whl", hash = "sha256:da75dfcaf9382ee1582395e290104acf1b1333a38100c7c675abc3df84600d9d"},
+    {file = "autonomy_dev-0.2.80.tar.gz", hash = "sha256:1d6ba3de6d77de77d4ba9ecd85e44b0c0bc8076ca41b3c82073efe8d4fe51ab9"},
 ]
 
 [package.dependencies]
@@ -3056,13 +3056,13 @@ typing-extensions = ">=4.6.0,<4.7.0 || >4.7.0"
 
 [[package]]
 name = "pygments"
-version = "2.19.0"
+version = "2.19.1"
 description = "Pygments is a syntax highlighting package written in Python."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "pygments-2.19.0-py3-none-any.whl", hash = "sha256:4755e6e64d22161d5b61432c0600c923c5927214e7c956e31c23923c89251a9b"},
-    {file = "pygments-2.19.0.tar.gz", hash = "sha256:afc4146269910d4bdfabcd27c24923137a74d562a23a320a41a55ad303e19783"},
+    {file = "pygments-2.19.1-py3-none-any.whl", hash = "sha256:9ea1544ad55cecf4b8242fab6dd35a93bbce657034b0611ee383099054ab6d8c"},
+    {file = "pygments-2.19.1.tar.gz", hash = "sha256:61c16d2a8576dc0649d9f39e089b5f02bcd27fba10d8fb4dcc28173f7a45151f"},
 ]
 
 [package.extras]
@@ -4438,4 +4438,4 @@ doc = []
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.12"
-content-hash = "d8491c27949b58042417b5fa30a51dcb25377d360dcd43ca1d808ec5bef5fc19"
+content-hash = "f04300c9e9fbd4231c93f466d3d75704f1330144b8f1a2469fe30fe42f4994ab"
