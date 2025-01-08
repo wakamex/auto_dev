@@ -85,7 +85,9 @@ def publish_agent(public_id: PublicId, verbose: bool) -> None:
 )
 @click.option("-t", "--template", type=click.Choice(available_agents), required=True)
 @click.option("-f", "--force", is_flag=True, help="Force the operation.", default=False)
-@click.option("-p", "--publish", is_flag=True, help="Publish the agent to the local registry.", default=True)
+@click.option(
+    "-p", "--publish/--no-publish", is_flag=True, help="Publish the agent to the local registry.", default=True
+)
 @click.option("-c", "--clean-up/--no-clean-up", is_flag=True, help="Clean up the agent after creation.", default=True)
 @click.pass_context
 def create(ctx, public_id: str, template: str, force: bool, publish: bool, clean_up: bool) -> None:
