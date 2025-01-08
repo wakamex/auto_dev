@@ -25,7 +25,7 @@ class Reference(BaseModel):
         return current
 
 
-class DataType(enum.Enum):
+class DataType(enum.StrEnum):
     """Data type."""
 
     STRING = "string"
@@ -34,9 +34,6 @@ class DataType(enum.Enum):
     BOOLEAN = "boolean"
     ARRAY = "array"
     OBJECT = "object"
-
-    def __str__(self):
-        return self.value
 
 
 class Schema(BaseModel):
