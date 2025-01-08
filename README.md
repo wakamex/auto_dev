@@ -17,6 +17,16 @@ For detailed instructions please see the [Docs.](https://8ball030.github.io/auto
     pip install autonomy-dev[all]
     ```
 
+## Requirements
+
+- Python >= 3.11
+
+## Installation
+
+```bash
+pip install autonomy-dev[all]
+```
+
 ```bash
 # create a repo & a simple webserver agent
 adev repo scaffold fun_new_hack
@@ -125,11 +135,6 @@ adev scaffold contract my_contract \
     --network polygon-mainnet
 ```
 
-## Installation
-
-```bash
-pip install autonomy-dev[all]
-```
 ## Release
 
 ```bash
