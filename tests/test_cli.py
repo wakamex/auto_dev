@@ -59,3 +59,14 @@ def test_create_valid_names(cli_runner, test_packages_filesystem):
         runner = cli_runner(cmd)
         assert runner.execute()
         assert runner.return_code == 0, f"Command failed for valid name '{name}': {runner.output}"
+
+
+def test_create_with_publish_no_packages(cli_runner, test_filesystem):
+    """Test the create command succeeds when there is no local packages directory."""
+    assert str(Path.cwd()) == test_filesystem
+    cmd = ["adev", "-v", "create", f"{DEFAULT_AUTHOR}/test_agent", "-t", "eightballer/base"]
+
+    runner = cli_runner(cmd)
+    assert runner.execute()
+    assert "No such file or directory" not in runner.output
+    assert runner.return_code == 0, f"Command failed': {runner.output}"
