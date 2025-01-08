@@ -2,6 +2,8 @@
 
 ## Installation
 
+> **Note:** Python version 3.11 or higher is required.
+
 To use auto_dev in a project, first install it via pip:
 
 ```bash
