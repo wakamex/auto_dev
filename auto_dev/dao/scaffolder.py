@@ -1,7 +1,7 @@
 """DAOScaffolder class is responsible for scaffolding DAO classes and test scripts."""
 
 import json
-from typing import Any
+from typing import Any, Optional
 from pathlib import Path
 from collections import defaultdict
 
@@ -319,7 +319,7 @@ class DAOScaffolder:
                 if nested_schema_name:
                     schema_usage[nested_schema_name].add(f"nested_{usage_type}")
 
-    def _process_schema(self, schema: dict[str, Any]) -> str | None:
+    def _process_schema(self, schema: dict[str, Any]) -> Optional[str]:
         if "$ref" in schema:
             return schema["$ref"].split("/")[-1]
         return None
