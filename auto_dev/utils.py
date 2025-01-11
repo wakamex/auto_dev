@@ -76,6 +76,7 @@ def get_logger(name: str = __name__, log_level: str = "INFO") -> logging.Logger:
         markup=True,
         show_path=False,
         tracebacks_show_locals=True,
+        enable_link_path=True,
     )
 
     datefmt = "%H:%M:%S"
