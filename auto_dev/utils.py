@@ -54,7 +54,7 @@ def get_logger(name: str = __name__, log_level: str = "INFO") -> logging.Logger:
         level=getattr(logging, log_level.upper(), "INFO"),
         datefmt=datefmt,
         format="%(levelname)s - %(message)s",
-        handlers=[handler],
+        handlers=[],
     )
     log = logging.getLogger(name)
     log.setLevel(getattr(logging, log_level.upper(), "INFO"))
@@ -301,9 +301,7 @@ def write_to_file(file_path: str, content: Any, file_type: FileType = FileType.T
                 f.write(content)
             elif file_type is FileType.YAML:
                 if isinstance(content, list):
-                    yaml.dump_all(content, f, 
-                    default_flow_style=False, 
-                    sort_keys=False)
+                    yaml.dump_all(content, f, default_flow_style=False, sort_keys=False)
                 else:
                     yaml.dump(content, f, default_flow_style=False, sort_keys=False)
             elif file_type is FileType.JSON:
