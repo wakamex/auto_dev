@@ -7,6 +7,7 @@ It is used by the lint and test functions.
 
 import os
 import subprocess
+from typing import Union, List, Optional
 
 from .utils import get_logger
 
@@ -17,7 +18,7 @@ logger = get_logger()
 class CommandExecutor:
     """A simple command executor."""
 
-    def __init__(self, command: str | list[str], cwd: str | None = None):
+    def __init__(self, command: Union[str, List[str]], cwd: Optional[str] = None):
         """Initialize the command executor."""
         self.command = command
         self.cwd = str(cwd) if cwd else "."
@@ -60,7 +61,7 @@ class CommandExecutor:
             self.exception = error
             return False
 
-    def _execute_stream(self, verbose: bool = True, shell: bool = False) -> bool | None:
+    def _execute_stream(self, verbose: bool = True, shell: bool = False) -> Optional[bool]:
         """Stream the command output. Especially useful for long running commands."""
         logger.debug(f"Executing command:\n\"\"\n{' '.join(self.command)}\n\"\"")
         try:

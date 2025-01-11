@@ -35,17 +35,16 @@ def _generate_model_dummy_data(model_schema: dict[str, Any]) -> dict[str, Any]:
 def _generate_property_dummy_data(prop_schema: dict[str, Any]) -> Any:
     prop_type = prop_schema.get("type", "string")
 
-    match prop_type:
-        case "array":
-            return [_generate_property_dummy_data(prop_schema["items"])]
-        case "object":
-            return _generate_model_dummy_data(prop_schema)
-        case _:
-            generator = TYPE_TO_GENERATORS.get(prop_type)
-            if generator is None:
-                msg = f"Unsupported type: {prop_type}"
-                raise ValueError(msg)
-            return generator()
+    if prop_type == "array":
+        return [_generate_property_dummy_data(prop_schema["items"])]
+    elif prop_type == "object":
+        return _generate_model_dummy_data(prop_schema)
+    else:
+        generator = TYPE_TO_GENERATORS.get(prop_type)
+        if generator is None:
+            msg = f"Unsupported type: {prop_type}"
+            raise ValueError(msg)
+        return generator()
 
 
 def _generate_model_dummy_data(model_schema: dict[str, Any]) -> dict[str, Any]:

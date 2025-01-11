@@ -9,6 +9,7 @@ Also contains a Contract, which we will use to allow the user to;
 """
 
 from pathlib import Path
+from typing import Optional
 
 import yaml
 import rich_click as click
@@ -43,7 +44,7 @@ def scaffold() -> None:
     """Scaffold a (set of) components."""
 
 
-def validate_address(address: str, logger, contract_name: str = None) -> str | None:
+def validate_address(address: str, logger, contract_name: str = None) -> Optional[str]:
     """Convert address to checksum format and validate it."""
     if address == DEFAULT_NULL_ADDRESS:
         return address

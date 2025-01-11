@@ -2,6 +2,7 @@
 
 import json
 from pathlib import Path
+from typing import Optional
 
 import yaml
 from web3 import Web3
@@ -49,7 +50,7 @@ class Contract:
                 raise ValueError(msg)
 
     def __init__(
-        self, author: str, name: str, abi: dict, address: str = DEFAULT_NULL_ADDRESS, web3: Web3 | None = None
+        self, author: str, name: str, abi: dict, address: str = DEFAULT_NULL_ADDRESS, web3: Optional[Web3] = None
     ):
         """Initialise the contract."""
         self.author = author

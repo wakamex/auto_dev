@@ -9,7 +9,7 @@ import operator
 import tempfile
 import subprocess
 from glob import glob
-from typing import Any
+from typing import Any, Optional, Union
 from pathlib import Path
 from datetime import timezone, timedelta
 from functools import reduce
@@ -101,7 +101,7 @@ def has_package_code_changed(package_path: Path):
     return [f.replace("?? ", "") for f in changed_files]
 
 
-def get_paths(path: str | None = None, changed_only: bool = False):
+def get_paths(path: Optional[str] = None, changed_only: bool = False):
     """Get the paths."""
     if not path and not Path(AUTONOMY_PACKAGES_FILE).exists():
         msg = "No path was provided and no default packages file found"
@@ -196,7 +196,7 @@ def restore_directory():
 
 
 @contextmanager
-def folder_swapper(dir_a: str | Path, dir_b: str | Path):
+def folder_swapper(dir_a: Union[str, Path], dir_b: Union[str, Path]):
     """A custom context manager that swaps the contents of two folders, allows the execution of logic
     within the context, and ensures the original folder contents are restored on exit, whether due
     to success or failure.
