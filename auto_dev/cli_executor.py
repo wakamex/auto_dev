@@ -89,6 +89,10 @@ class CommandExecutor:
                         logger.error("Command failed with return code: %s", self.return_code)
                     return False
                 return True
+        except KeyboardInterrupt:
+            logger.info("Command execution interrupted by user.")
+            process.terminate()
+            return None
         except Exception as error:  # pylint: disable=broad-except
             logger.exception("Command failed: %s", error)
             self.exception = error

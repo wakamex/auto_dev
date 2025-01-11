@@ -1,18 +1,22 @@
 """Command to run an agent."""
 
+import os
 import sys
 import subprocess
+from typing import Any
 from pathlib import Path
 from dataclasses import dataclass
-from typing import Any
-import os
 
+import docker
 import rich_click as click
+from aea.skills.base import PublicId
 
 from auto_dev.base import build_cli
 from auto_dev.cli_executor import CommandExecutor
 
+
 cli = build_cli()
+
 
 @dataclass
 class AgentRunner:
@@ -27,62 +31,58 @@ class AgentRunner:
         """Run the agent."""
         self.logger.info(f"Fetching agent {self.agent_name} from the local package registry...")
         self.check_tendermint()
-        self.check_agent_exists()
+        if self.check_agent_exists():
+            sys.exit(1)
         self.fetch_agent()
         self.setup_agent()
         self.execute_agent()
 
     def check_tendermint(self) -> None:
         """Check if Tendermint is running."""
+        docker_engine = docker.from_env()
+        container_name = "tm_0"
         try:
-            result = subprocess.run(
-                ["docker", "ps", "--filter", "name=tendermint", "--format", "{{.Names}}"],
-                capture_output=True,
-                text=True,
-                check=True
-            )
-            if "tendermint" not in result.stdout:
-                raise RuntimeError("Tendermint is not running.")
+            res = docker_engine.containers.get(container_name)
         except (subprocess.CalledProcessError, RuntimeError) as e:
             self.logger.error("Tendermint is not running. Please install and run Tendermint using Docker.")
             self.logger.error("You can start Tendermint with the following command:")
             self.logger.error("docker run -d --name tendermint tendermint/tendermint")
             sys.exit(1)
+        if res.status != "running":
+            self.logger.error("Tendermint is not healthy. Please check the logs.")
+            sys.exit(1)
 
     def check_agent_exists(self) -> None:
         """Check if the agent already exists."""
-        agent_name = self.agent_name.split('/')[1]
-        if Path(agent_name).exists() and not self.force:
-            self.logger.error(f"Agent `{agent_name}` already exists. Use --force to overwrite.")
-            sys.exit(1)
+        if Path(self.agent_name.name).exists() and not self.force:
+            self.logger.error(f"Agent `{self.agent_name}` already exists. Use --force to overwrite.")
+            return True
+        if Path(self.agent_name.name).exists() and self.force:
+            self.logger.info(f"Removing existing agent `{self.agent_name}` due to --force option.")
+            self.execute_command(f"rm -rf {self.agent_name.name}")
+        return False
 
     def fetch_agent(self) -> None:
         """Fetch the agent."""
-        agent_name = self.agent_name.split('/')[1]
-        if Path(agent_name).exists():
-            if self.force:
-                self.logger.info(f"Removing existing agent `{agent_name}` due to --force option.")
-                self.execute_command(f"rm -rf {agent_name}")
-            else:
-                self.logger.error(f"Agent `{agent_name}` already exists. Use --force to overwrite.")
+
+        if not self.check_agent_exists():
+            command = f"aea -s fetch {self.agent_name} --local"
+            if not self.execute_command(command):
+                self.logger.error(f"Failed to fetch agent {self.agent_name}.")
                 sys.exit(1)
-        
-        command = f"aea -s fetch {self.agent_name} --local"
-        self.execute_command(command)
+        return True
 
     def setup_agent(self) -> None:
         """Setup the agent."""
-        agent_name = self.agent_name.split('/')[1]
-        agent_author = self.agent_name.split('/')[0]
 
-        self.logger.info(f"Agent author: {agent_author}")
-        self.logger.info(f"Agent name: {agent_name}")
+        self.logger.info(f"Agent author: {self.agent_name.author}")
+        self.logger.info(f"Agent name: {self.agent_name.author}")
 
-        Path(agent_name).mkdir(exist_ok=True)
-        self.change_directory(agent_name)
+        self.change_directory(self.agent_name.name)
         self.manage_keys()
         self.install_dependencies()
         self.issue_certificates()
+        self.logger.info("Agent setup complete. 🎉")
 
     def manage_keys(self) -> None:
         """Manage Ethereum keys."""
@@ -113,24 +113,35 @@ class AgentRunner:
         result = cli_executor.execute(stream=True, verbose=self.verbose)
         if not result:
             self.logger.error(f"Command failed: {command}")
+            self.logger.error(f"Error: {cli_executor.stderr}")
             sys.exit(1)
+        return result
 
     def change_directory(self, directory: str) -> None:
         """Change the current working directory."""
         os.chdir(directory)
 
+
 @cli.command()
-@click.argument("agent_name", type=str, required=True)
+@click.argument(
+    "agent_public_id",
+    type=PublicId.from_str,
+    required=True,
+)
 @click.option("-v", "--verbose", is_flag=True, help="Verbose mode.", default=False)
 @click.option("--force", is_flag=True, help="Force overwrite of existing agent", default=False)
 @click.pass_context
-def run(ctx, agent_name: str, verbose: bool, force: bool) -> None:
-    """Run an agent."""
+def run(ctx, agent_public_id: str, verbose: bool, force: bool) -> None:
+    """Run an agent.
+    Example:
+        adev run eightballer/my_agent
+    """
     logger = ctx.obj["LOGGER"]
-    logger.info(f"Running agent {agent_name}... 🚀")
-    runner = AgentRunner(agent_name=agent_name, verbose=verbose, force=force, logger=logger)
+    logger.info(f"Running agent {agent_public_id}... 🚀")
+    runner = AgentRunner(agent_name=agent_public_id, verbose=verbose, force=force, logger=logger)
     runner.run()
     logger.info("Agent run complete. 😎")
+
 
 if __name__ == "__main__":
     cli()  # pylint: disable=no-value-for-parameter
