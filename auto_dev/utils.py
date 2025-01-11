@@ -88,8 +88,6 @@ def get_logger(name: str = __name__, log_level: str = "INFO") -> logging.Logger:
     )
     log = logging.getLogger(name)
     log.setLevel(getattr(logging, log_level.upper(), "INFO"))
-    log.info(f"Logger {name} configured with log level {log_level}")
-
     LOGGER = log
     return log
 
