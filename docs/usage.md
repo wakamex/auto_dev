@@ -28,6 +28,8 @@ adev create author/cool_agent --template eightballer/frontend_agent
 
 # Optional: Sync to local registry
 yes 'third_party' | autonomy packages lock
+
+adev run author/cool_agent
 ```
 
 ### Development Tools
