@@ -36,6 +36,7 @@ class DataType(enum.Enum):
     OBJECT = "object"
 
     def __str__(self):
+        """Return the string representation of the data type."""
         return self.value
 
 
