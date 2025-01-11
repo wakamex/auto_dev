@@ -12,6 +12,6 @@ auto_dev/fmt.py                     59     59     0%   3-112
 auto_dev/lint.py                     7      7     0%   3-27
 auto_dev/local_fork.py              52     52     0%   3-95
 auto_dev/test.py                    16     16     0%   3-39
-auto_dev/utils.py                  251    251     0%   3-416
+auto_dev/utils.py                  264    264     0%   3-448
 --------------------------------------------------------------
-TOTAL                              826    826     0%
+TOTAL                              839    839     0%

@@ -31,6 +31,24 @@ from auto_dev.constants import DEFAULT_ENCODING, AUTONOMY_PACKAGES_FILE
 from auto_dev.exceptions import NotFound, OperationError
 
 
+def reset_logging():
+    """
+    Forcefully remove any existing logging configuration.
+    """
+    # Clear all handlers from the root logger
+    for handler in logging.root.handlers[:]:
+        logging.root.removeHandler(handler)
+
+    # Optionally, reset the root logger's level
+    logging.root.setLevel(logging.NOTSET)
+
+
+# Call reset_logging before applying your new configuration
+
+
+LOGGER = None
+
+
 def get_logger(name: str = __name__, log_level: str = "INFO") -> logging.Logger:
     """Get the configured logger.
 
@@ -44,20 +62,34 @@ def get_logger(name: str = __name__, log_level: str = "INFO") -> logging.Logger:
         logging.Logger: Configured logger instance.
 
     """
+    global LOGGER  # noqa
+    if LOGGER:
+        return LOGGER
+    reset_logging()
+    # Reset any existing logging configuration
+    for handler in logging.root.handlers[:]:
+        logging.root.removeHandler(handler)
+    logging.root.setLevel(logging.NOTSET)  # Reset root logger level
+
     handler = RichHandler(
         rich_tracebacks=True,
         markup=True,
+        show_path=False,
+        tracebacks_show_locals=True,
     )
 
     datefmt = "%H:%M:%S"
     logging.basicConfig(
         level=getattr(logging, log_level.upper(), "INFO"),
         datefmt=datefmt,
-        format="%(levelname)s - %(message)s",
-        handlers=[],
+        format="%(message)s",
+        handlers=[handler],
     )
     log = logging.getLogger(name)
     log.setLevel(getattr(logging, log_level.upper(), "INFO"))
+    log.info(f"Logger {name} configured with log level {log_level}")
+
+    LOGGER = log
     return log
 
 
