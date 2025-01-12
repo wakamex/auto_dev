@@ -86,7 +86,9 @@ def publish_agent(public_id: PublicId, verbose: bool) -> None:
     "public_id",
     type=PublicId.from_str,
 )
-@click.option("-t", "--template", type=click.Choice(available_agents), required=True)
+@click.option(
+    "-t", "--template", type=click.Choice(available_agents), required=True, default=list(available_agents.keys())[1]
+)
 @click.option("-f", "--force", is_flag=True, help="Force the operation.", default=False)
 @click.option(
     "-p", "--publish/--no-publish", is_flag=True, help="Publish the agent to the local registry.", default=True
