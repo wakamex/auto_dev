@@ -295,9 +295,10 @@ def load_aea_config():
     # We have to load all the documents in the yaml file, however, later on, we run into issues
     # with the agent config loader not being able to load the yaml file.
     # I propose we we raise an issue to address ALL instances of agent loading
-    agent_config_yaml = list(yaml.safe_load_all(aea_config.read_text(encoding=DEFAULT_ENCODING)))[0]
-    agent_config_json = json.loads(json.dumps(agent_config_yaml))
-    return agent_config_json
+    agent_config_yaml = list(yaml.safe_load_all(aea_config.read_text(encoding=DEFAULT_ENCODING)))
+    # agent_config_json = json.loads(json.dumps(agent_config_yaml))
+    return agent_config_yaml
+    # return agent_config_json
 
 
 def load_aea_ctx(func: Callable[[click.Context, Any, Any], Any]) -> Callable[[click.Context, Any, Any], Any]:

@@ -30,14 +30,18 @@ def update_author(public_id: PublicId) -> None:
     """Update the author in the recently created agent"""
 
     with change_dir(public_id.name):
-        agent_config_yaml = load_aea_config()
-        if agent_config_yaml["author"] != public_id.author:
+        complete_agent_config = load_aea_config()
+
+        agent_config = complete_agent_config[0]
+        if agent_config["author"] != public_id.author:
             click.secho(
-                f"Updating author in aea-config.yaml from {agent_config_yaml['author']} to {public_id.author}",
+                f"Updating author in aea-config.yaml from {agent_config['author']} to {public_id.author}",
                 fg="yellow",
             )
-            agent_config_yaml["author"] = public_id.author
-            write_to_file("aea-config.yaml", agent_config_yaml, FileType.YAML)
+            agent_config["author"] = public_id.author
+            complete_agent_config[0] = agent_config
+            write_to_file("aea-config.yaml", complete_agent_config, FileType.YAML)
+            
 
 
 def publish_agent(public_id: PublicId, verbose: bool) -> None:
@@ -51,7 +55,7 @@ def publish_agent(public_id: PublicId, verbose: bool) -> None:
         # we have to do a horrible hack here, regards to the customs as they are not being published.
         # please see issue.
         agent_config_yaml = load_aea_config()
-        for package in agent_config_yaml["customs"]:
+        for package in agent_config_yaml[0]["customs"]:
             custom_id = PublicId.from_str(package)
             # We need to copy the customs to the parent now.
             customs_path = Path("vendor") / custom_id.author / "customs" / custom_id.name
