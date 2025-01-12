@@ -124,8 +124,12 @@ class SupportedOS(Enum):
     DARWIN = "Darwin" 
 
 OS_ENV_MAP = {
-    SupportedOS.LINUX.value: {"HOST_NAME": "localhost:26658"},
+    SupportedOS.LINUX.value: {
+        "NETWORK_MODE": "host",
+        "HOST_NAME": "localhost:26658",
+    },
     SupportedOS.DARWIN.value: {
+        "NETWORK_MODE": "bridge",
         "HOST_NAME": "host.docker.internal:26658",
     }
 }

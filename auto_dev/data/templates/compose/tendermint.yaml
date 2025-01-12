@@ -9,7 +9,7 @@ services:
     hostname: tm_0
     image: "valory/open-autonomy-tendermint:0.15.2"
     restart: always
-    # network_mode: "host"
+    network_mode: ${NETWORK_MODE}
     environment:
       - ID=0
       - PROXY_APP=tcp://${HOST_NAME}
