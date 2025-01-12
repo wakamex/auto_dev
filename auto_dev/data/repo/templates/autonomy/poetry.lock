@@ -255,13 +255,13 @@ tests-mypy = ["mypy (>=1.11.1)", "pytest-mypy-plugins"]
 
 [[package]]
 name = "autonomy-dev"
-version = "0.2.81"
+version = "0.2.84"
 description = "A collection of tooling to enable open source development of autonomy tools"
 optional = false
 python-versions = "<3.12,>=3.9"
 files = [
-    {file = "autonomy_dev-0.2.81-py3-none-any.whl", hash = "sha256:bd3345c42e0b5f7de2df8b33ee70deec25a567208883ec8b9000cf7205eb4292"},
-    {file = "autonomy_dev-0.2.81.tar.gz", hash = "sha256:55c1cbcb248a8c7722678ff2642a248c5dae337710b16d3a1489aec4a01c30f2"},
+    {file = "autonomy_dev-0.2.84-py3-none-any.whl", hash = "sha256:9ae39ab7c917bef8b3693aa98fd60b9005273da78edbdfe5d97bd0de09b9037d"},
+    {file = "autonomy_dev-0.2.84.tar.gz", hash = "sha256:a84a3f24ec56e4b287ee2fc385dffb5bc1d797407195fa806054f002701104c2"},
 ]
 
 [package.dependencies]
@@ -280,7 +280,7 @@ open-aea-ledger-solana = {version = "1.57.0", optional = true, markers = "extra 
 open-aea-test-autonomy = "0.16.1"
 open-autonomy = {version = "0.16.1", optional = true, markers = "extra == \"all\""}
 openapi-spec-validator = "0.2.8"
-protobuf = ">=4.21.6,<4.25.0"
+protobuf = ">=3.19.1,<4.25.0"
 py-eth-sig-utils = "*"
 py-multibase = "1.0.3"
 py-multicodec = "0.2.1"
@@ -293,7 +293,7 @@ ruff = {version = ">=0.5.7,<0.6.0", optional = true, markers = "extra == \"all\"
 tbump = {version = ">=6.11.0,<7.0.0", optional = true, markers = "extra == \"all\" or extra == \"dev\""}
 tomte = {version = "0.2.17", extras = ["black", "cli", "ledgers", "tests"]}
 typing_extensions = ">=3.10.0.2"
-web3 = ">=6.0.0,<7"
+web3 = ">=6.0.0,<7.0.0"
 
 [package.extras]
 all = ["isort (>=5.13.2,<6.0.0)", "open-aea (==1.57.0)", "open-aea-ledger-cosmos (==1.57.0)", "open-aea-ledger-ethereum (==1.57.0)", "open-aea-ledger-solana (==1.57.0)", "open-autonomy (==0.16.1)", "pydantic (>=2.8.2,<3.0.0)", "ruff (>=0.5.7,<0.6.0)", "tbump (>=6.11.0,<7.0.0)"]
