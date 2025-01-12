@@ -12,19 +12,30 @@ For detailed instructions please see the [Docs.](https://8ball030.github.io/auto
 
 ## TLDR
 
-    ```
-    # install 
     pip install autonomy-dev[all]
-    ```
 
 ## Requirements
 
-- Python >= 3.11
+- Python >= 3.10
+- Poetry <= 2.0.0
+
+## Features
+
+- Scaffolding of new repositories
+- Scaffolding of new agents
+- Scaffolding of new protocols
+- Scaffolding of new contracts
+- Linting and formatting tools
+- Dependency management tools
+- Test suite scaffolding
 
 ## Installation
 
+Please verify the existance of the `poetry` command before proceeding.
+
+
 ```bash
-pip install autonomy-dev[all]
+pip install "autonomy-dev[all]"
 ```
 
 ### Creating New Github Projects
