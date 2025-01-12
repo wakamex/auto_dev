@@ -1,5 +1,5 @@
 """Utilities for auto_dev."""
-
+import platform
 import os
 import json
 import time
@@ -17,6 +17,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from collections.abc import Callable
 
+
 import yaml
 import rich_click as click
 from rich.logging import RichHandler
@@ -27,7 +28,7 @@ from aea.configurations.base import AgentConfig
 from openapi_spec_validator.exceptions import OpenAPIValidationError
 
 from auto_dev.enums import FileType, FileOperation
-from auto_dev.constants import DEFAULT_ENCODING, AUTONOMY_PACKAGES_FILE
+from auto_dev.constants import DEFAULT_ENCODING, AUTONOMY_PACKAGES_FILE, OS_ENV_MAP,SupportedOS
 from auto_dev.exceptions import NotFound, OperationError
 
 
@@ -446,3 +447,18 @@ class FileLoader:
             return self.file_path.write_text(loader_func(*args, **kwargs), encoding=DEFAULT_ENCODING)
         msg = f"Operation {func} not supported"
         raise OperationError(msg)
+    
+def log_operating_system(self) -> None:
+        """Log the current operating system."""
+        os_name = platform.system()
+        if os_name not in SupportedOS:
+            self.logger.error(f"Operating System {os_name} is not supported.")
+            raise RuntimeError(f"Operating System {os_name} is not supported.")
+
+        self.logger.info(f"Operating System: {os_name}")
+        self.map_os_to_env_vars(os_name)
+
+def map_os_to_env_vars(self, os_name: str) -> None:
+        """Map operating system to environment variables."""
+        env_vars = OS_ENV_MAP.get(os_name, {})
+        self.logger.info(f"Environment Variables for {os_name}: {env_vars}")
