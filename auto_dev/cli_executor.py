@@ -7,7 +7,7 @@ It is used by the lint and test functions.
 
 import os
 import subprocess
-from typing import List, Union, Optional
+from typing import Union, List, Optional
 
 from .utils import get_logger
 
@@ -27,10 +27,10 @@ class CommandExecutor:
         self.return_code = None
         self.exception = None
 
-    def execute(self, stream=False, verbose: bool = True, shell: bool = False) -> bool:
+    def execute(self, stream=False, verbose: bool = True, shell: bool = False, env_vars: Optional[dict] = None) -> bool:
         """Execute the command."""
         if stream:
-            return self._execute_stream(verbose, shell)
+            return self._execute_stream(verbose, shell, env_vars)
         if verbose:
             logger.debug(f"Executing command:\n\"\"\n{' '.join(self.command)}\n\"\"")
         try:
@@ -39,7 +39,7 @@ class CommandExecutor:
                 capture_output=True,
                 cwd=self.cwd,
                 check=False,
-                env=os.environ,
+                env=env_vars,
                 shell=shell,
             )
             if verbose:
@@ -61,7 +61,7 @@ class CommandExecutor:
             self.exception = error
             return False
 
-    def _execute_stream(self, verbose: bool = True, shell: bool = False) -> Optional[bool]:
+    def _execute_stream(self, verbose: bool = True, shell: bool = False, env_vars: Optional[dict] = None) -> Optional[bool]:
         """Stream the command output. Especially useful for long running commands."""
         logger.debug(f"Executing command:\n\"\"\n{' '.join(self.command)}\n\"\"")
         try:
@@ -72,7 +72,7 @@ class CommandExecutor:
                 cwd=self.cwd,
                 universal_newlines=True,
                 shell=shell,
-                env=os.environ,
+                env=env_vars,
             ) as process:
                 for stdout_line in iter(process.stdout.readline, ""):  # type: ignore
                     self.stdout.append(stdout_line.strip())

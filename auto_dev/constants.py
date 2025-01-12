@@ -126,6 +126,6 @@ class SupportedOS(Enum):
 OS_ENV_MAP = {
     SupportedOS.LINUX.value: {"HOST_NAME": "localhost:26658"},
     SupportedOS.DARWIN.value: {
-        "HOST_NAME": "localhost:26658",
+        "HOST_NAME": "host.docker.internal:26658",
     }
 }

@@ -9,10 +9,10 @@ services:
     hostname: tm_0
     image: "valory/open-autonomy-tendermint:0.15.2"
     restart: always
-    network_mode: "host"
+    # network_mode: "host"
     environment:
       - ID=0
-      - PROXY_APP=tcp://${HOST_NAME}:26658
+      - PROXY_APP=tcp://${HOST_NAME}
       - TMHOME=/tendermint/node0
       - CREATE_EMPTY_BLOCKS=true
       - DEV_MODE=0
@@ -25,7 +25,6 @@ services:
       - 8080:8080
       - 26656:26656
       - 26657:26657
-    network_mode: "host"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:

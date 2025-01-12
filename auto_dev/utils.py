@@ -458,7 +458,7 @@ def log_operating_system(self) -> None:
         self.logger.info(f"Operating System: {os_name}")
         self.map_os_to_env_vars(os_name)
 
-def map_os_to_env_vars(self, os_name: str) -> None:
+def map_os_to_env_vars(os_name: str) -> None:
         """Map operating system to environment variables."""
         env_vars = OS_ENV_MAP.get(os_name, {})
-        self.logger.info(f"Environment Variables for {os_name}: {env_vars}")
+        return env_vars
