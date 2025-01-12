@@ -63,7 +63,7 @@ class AgentRunner:
             if retries > 3:
                 self.logger.error(f"Tendermint is not running. Please install and run Tendermint using Docker. {e}")
                 sys.exit(1)
-            self.logger.error("Starting Tendermint... 🚀")
+            self.logger.info("Starting Tendermint... 🚀")
             os_name = platform.system()
             tm_overrides = map_os_to_env_vars(os_name)
             self.start_tendermint(tm_overrides)
