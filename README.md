@@ -27,7 +27,7 @@ For detailed instructions please see the [Docs.](https://8ball030.github.io/auto
 pip install autonomy-dev[all]
 ```
 
-### Creating New Github Projectsj
+### Creating New Github Projects
 We can make an autonomy repo
 ```bash
 adev repo scaffold fun_new_hack
