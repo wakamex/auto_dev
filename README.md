@@ -28,16 +28,16 @@ pip install autonomy-dev[all]
 ```
 
 ### Creating New Github Projectsj
-
-
+We can make an autonomy repo
 ```bash
-# create a repo & a simple webserver agent
 adev repo scaffold fun_new_hack
 cd fun_new_hack
 ```
+
 Which gives us a new repository fully setup to develop an autonomy project.
 We also install dependencies
 The expected output is as below.
+
 ```output
 INFO     Starting Auto Dev v0.2.84 ...                                                                                                                                           
 INFO     Creating a new autonomy repo.                                                                                                                                           
@@ -49,14 +49,13 @@ INFO     Autonomy successfully setup.
 
 ### Creating a new Agent
 
-Once we have a new project, we can build new agents from tenmplates.
-
-By default, we provide a simple server with ping pong via websockets available at localhost:5555
+Once we have a new project, we can build new agents from templates (The `--help` command will display the available templates.
 
 ```
 adev create author/cool_agent
 ```
 
+By default, we provide a simple server with ping pong via websockets available at localhost:5555
 
 ```bash
 # run the agent and verify the endpoint
