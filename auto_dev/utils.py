@@ -1,11 +1,12 @@
 """Utilities for auto_dev."""
-import platform
+
 import os
 import json
 import time
 import shutil
 import logging
 import operator
+import platform
 import tempfile
 import subprocess
 from glob import glob
@@ -17,7 +18,6 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from collections.abc import Callable
 
-
 import yaml
 import rich_click as click
 from rich.logging import RichHandler
@@ -28,7 +28,7 @@ from aea.configurations.base import AgentConfig
 from openapi_spec_validator.exceptions import OpenAPIValidationError
 
 from auto_dev.enums import FileType, FileOperation
-from auto_dev.constants import DEFAULT_ENCODING, AUTONOMY_PACKAGES_FILE, OS_ENV_MAP,SupportedOS
+from auto_dev.constants import OS_ENV_MAP, DEFAULT_ENCODING, AUTONOMY_PACKAGES_FILE, SupportedOS
 from auto_dev.exceptions import NotFound, OperationError
 
 
@@ -304,11 +304,11 @@ def load_aea_ctx(func: Callable[[click.Context, Any, Any], Any]) -> Callable[[cl
     """Load aea Context and AgentConfig if aea-config.yaml exists."""
 
     def wrapper(ctx: click.Context, *args, **kwargs):
-        agent_config_json = load_aea_config()
+        agent_config_json = load_aea_config()[0]
         registry_path = get_registry_path_from_cli_config()
         ctx.aea_ctx = Context(cwd=".", verbosity="INFO", registry_path=registry_path)
         ctx.aea_ctx.agent_config = AgentConfig.from_json(agent_config_json)
-
+        # we need a way to ensure we are also loading the overrides...
         return func(ctx, *args, **kwargs)
 
     wrapper.__name__ = func.__name__
@@ -445,18 +445,20 @@ class FileLoader:
             return self.file_path.write_text(loader_func(*args, **kwargs), encoding=DEFAULT_ENCODING)
         msg = f"Operation {func} not supported"
         raise OperationError(msg)
-    
-def log_operating_system(self) -> None:
-        """Log the current operating system."""
-        os_name = platform.system()
-        if os_name not in SupportedOS:
-            self.logger.error(f"Operating System {os_name} is not supported.")
-            raise RuntimeError(f"Operating System {os_name} is not supported.")
 
-        self.logger.info(f"Operating System: {os_name}")
-        self.map_os_to_env_vars(os_name)
+
+def log_operating_system(self) -> None:
+    """Log the current operating system."""
+    os_name = platform.system()
+    if os_name not in SupportedOS:
+        self.logger.error(f"Operating System {os_name} is not supported.")
+        raise RuntimeError(f"Operating System {os_name} is not supported.")
+
+    self.logger.info(f"Operating System: {os_name}")
+    self.map_os_to_env_vars(os_name)
+
 
 def map_os_to_env_vars(os_name: str) -> None:
-        """Map operating system to environment variables."""
-        env_vars = OS_ENV_MAP.get(os_name, {})
-        return env_vars
+    """Map operating system to environment variables."""
+    env_vars = OS_ENV_MAP.get(os_name, {})
+    return env_vars

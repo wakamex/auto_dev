@@ -41,7 +41,6 @@ def update_author(public_id: PublicId) -> None:
             agent_config["author"] = public_id.author
             complete_agent_config[0] = agent_config
             write_to_file("aea-config.yaml", complete_agent_config, FileType.YAML)
-            
 
 
 def publish_agent(public_id: PublicId, verbose: bool) -> None:
@@ -104,37 +103,43 @@ def create(ctx, public_id: str, template: str, force: bool, publish: bool, clean
     example usage:
         `adev create -t eightballer/frontend_agent new_author/new_agent`
     """
-    name = public_id.name
+    agent_name = public_id.name
 
-    is_proposed_path_exists = Path(name).exists()
-    if is_proposed_path_exists and not force:
-        msg = (f"Directory {name} already exists. Please remove it or use the --force flag to overwrite it.",)
-        click.secho(
-            msg,
-            fg="red",
-        )
-        raise FileExistsError(msg)
+    package_path = str(Path("packages") / public_id.author / "agents" / public_id.name)
 
-    if is_proposed_path_exists and force:
-        click.secho(
-            f"Directory {name} already exists. Removing it.",
-            fg="yellow",
-        )
+    for name in [
+        agent_name,
+        package_path,
+    ]:
+        is_proposed_path_exists = Path(name).exists()
+        if is_proposed_path_exists and not force:
+            msg = (f"Directory {name} already exists. Please remove it or use the --force flag to overwrite it.",)
+            click.secho(
+                msg,
+                fg="red",
+            )
+            raise FileExistsError(msg)
 
-        command = CommandExecutor(
-            [
-                "rm",
-                "-rf",
-                name,
-            ]
-        )
-        click.secho(f"Executing command: {command.command}", fg="yellow")
-        result = command.execute(verbose=ctx.obj["VERBOSE"])
-        if not result:
-            msg = f"Command failed: {command.command}"
-            click.secho(msg, fg="red")
-            raise OperationError(msg)
-        click.secho("Command executed successfully.", fg="green")
+        if is_proposed_path_exists and force:
+            click.secho(
+                f"Directory {name} already exists. Removing it.",
+                fg="yellow",
+            )
+
+            command = CommandExecutor(
+                [
+                    "rm",
+                    "-rf",
+                    name,
+                ]
+            )
+            click.secho(f"Executing command: {command.command}", fg="yellow")
+            result = command.execute(verbose=ctx.obj["VERBOSE"])
+            if not result:
+                msg = f"Command failed: {command.command}"
+                click.secho(msg, fg="red")
+                raise OperationError(msg)
+            click.secho("Command executed successfully.", fg="green")
 
     verbose = ctx.obj["VERBOSE"]
     logger = ctx.obj["LOGGER"]
@@ -143,7 +148,7 @@ def create(ctx, public_id: str, template: str, force: bool, publish: bool, clean
     ipfs_hash = available_agents[template]
 
     create_commands = [
-        f"poetry run autonomy fetch {ipfs_hash} --alias {name}",
+        f"poetry run autonomy fetch {ipfs_hash} --alias {agent_name}",
     ]
 
     for command in create_commands:
@@ -176,7 +181,7 @@ def create(ctx, public_id: str, template: str, force: bool, publish: bool, clean
             [
                 "rm",
                 "-rf",
-                name,
+                agent_name,
             ]
         )
         result = command.execute(verbose=verbose)
