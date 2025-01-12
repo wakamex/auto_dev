@@ -8,11 +8,12 @@ Also contains a Contract, which we will use to allow the user to;
 
 """
 
-from pathlib import Path
 from typing import Optional
+from pathlib import Path
 
 import yaml
 import rich_click as click
+from web3 import Web3
 from jinja2 import Environment, FileSystemLoader
 from aea.configurations.constants import DEFAULT_AEA_CONFIG_FILE, PROTOCOL_LANGUAGE_PYTHON, SUPPORTED_PROTOCOL_LANGUAGES
 from aea.configurations.data_types import PublicId
@@ -32,7 +33,6 @@ from auto_dev.behaviours.scaffolder import BehaviourScaffolder
 from auto_dev.connections.scaffolder import ConnectionScaffolder
 from auto_dev.contracts.block_explorer import BlockExplorer
 from auto_dev.contracts.contract_scafolder import ContractScaffolder
-from web3 import Web3
 
 
 cli = build_cli()

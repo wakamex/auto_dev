@@ -1,7 +1,7 @@
 """OpenAPI Utilities."""
 
 import re
-from typing import Union, Optional, Dict, Any, List
+from typing import Any, Dict, List, Union, Optional
 
 from pydantic import ValidationError
 

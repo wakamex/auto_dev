@@ -1,8 +1,8 @@
 """Module to represent a contract."""
 
 import json
-from pathlib import Path
 from typing import Optional
+from pathlib import Path
 
 import yaml
 from web3 import Web3

@@ -1,7 +1,7 @@
 """OpenAPI Models."""
 
 import enum
-from typing import Any, Union, Optional, List, Dict
+from typing import Any, Dict, List, Union, Optional
 
 from pydantic import Field, BaseModel, ConfigDict
 

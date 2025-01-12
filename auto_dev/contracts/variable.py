@@ -3,9 +3,9 @@
 from typing import Any, Optional
 from dataclasses import dataclass
 
+from auto_dev.utils import camel_to_snake
 from auto_dev.contracts.utils import PARAM_TO_STR_MAPPING, keyword_to_safe_name
 from auto_dev.contracts.param_type import ParamType
-from auto_dev.utils import camel_to_snake
 
 
 @dataclass
