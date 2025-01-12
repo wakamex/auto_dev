@@ -389,7 +389,7 @@ class ProtocolScaffolder:
 
         self.logger.info(f"New protocol scaffolded at {protocol_path}")
 
-    def cleanup_protocol(self, protocol_path, protocol_author, protocol_definition, protocol_name,protocol) -> None:
+    def cleanup_protocol(self, protocol_path, protocol_author, protocol_definition, protocol_name, protocol) -> None:
         """Cleanup protocol."""
         # We add in some files. that are necessary for the protocol to pass linting...
         test_init = protocol_path / "tests" / "__init__.py"
@@ -423,8 +423,6 @@ class ProtocolScaffolder:
         pb2_file.write_text(new_content, encoding=DEFAULT_ENCODING)
 
         # We split long lines in the protocol_spec.yaml file
-
-
 
         if protocol.custom_types:
             custom_types = protocol_path / "custom_types.py"

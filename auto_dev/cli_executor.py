@@ -7,7 +7,7 @@ It is used by the lint and test functions.
 
 import os
 import subprocess
-from typing import Union, List, Optional
+from typing import List, Union, Optional
 
 from .utils import get_logger
 

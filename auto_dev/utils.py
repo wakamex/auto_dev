@@ -9,7 +9,7 @@ import operator
 import tempfile
 import subprocess
 from glob import glob
-from typing import Any, Optional, Union
+from typing import Any, Union, Optional
 from pathlib import Path
 from datetime import timezone, timedelta
 from functools import reduce

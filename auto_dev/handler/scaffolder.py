@@ -2,7 +2,7 @@
 # ruff: noqa: E501
 
 import re
-from typing import Any, Optional, Union
+from typing import Any, Union, Optional
 from pathlib import Path
 from collections import defaultdict
 
