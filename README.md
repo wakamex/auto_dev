@@ -27,21 +27,39 @@ For detailed instructions please see the [Docs.](https://8ball030.github.io/auto
 pip install autonomy-dev[all]
 ```
 
+### Creating New Github Projects
+We can make an autonomy repo
 ```bash
-# create a repo & a simple webserver agent
 adev repo scaffold fun_new_hack
 cd fun_new_hack
-adev create author/cool_agent --template eightballer/frontend_agent
-# sync to the local registry. [Optional]
-yes 'third_party' | autonomy packages lock
+```
 
-adev run author/cool_agent
+Which gives us a new repository fully setup to develop an autonomy project.
+We also install dependencies
+The expected output is as below.
+
+```output
+INFO     Starting Auto Dev v0.2.84 ...                                                                                                                                           
+INFO     Creating a new autonomy repo.                                                                                                                                           
+Scaffolding autonomy repo ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00
+INFO     Installing host deps. This may take a while!                                                                                                                            
+INFO     Initialising autonomy packages.                                                                                                                                         
+INFO     Autonomy successfully setup. 
+```
+
+### Creating a new Agent
+
+Once we have a new project, we can build new agents from templates (The `--help` command will display the available templates.
 
 ```
+adev create author/cool_agent
+```
+
+By default, we provide a simple server with ping pong via websockets available at localhost:5555
 
 ```bash
 # run the agent and verify the endpoint
-
+adev run author/cool_agent
 ```
 
 
