@@ -46,7 +46,6 @@ class AgentRunner:
         except (subprocess.CalledProcessError, RuntimeError) as e:
             self.logger.error("Tendermint is not running. Please install and run Tendermint using Docker.")
             self.logger.error("You can start Tendermint with the following command:")
-            self.logger.error("docker run -d --name tendermint tendermint/tendermint")
             sys.exit(1)
         if res.status != "running":
             self.logger.error("Tendermint is not healthy. Please check the logs.")
@@ -87,7 +86,8 @@ class AgentRunner:
     def manage_keys(self) -> None:
         """Manage Ethereum keys."""
         if not Path("../ethereum_private_key.txt").exists():
-            self.execute_command("aea -s generate-key ethereum && aea -s add-key ethereum")
+            self.execute_command("aea generate-key ethereum")
+            self.execute_command("aea -s add-key ethereum")
         else:
             self.execute_command("cp ../ethereum_private_key.txt ./ethereum_private_key.txt")
             self.execute_command("aea -s add-key ethereum")
@@ -105,12 +105,14 @@ class AgentRunner:
 
     def execute_agent(self) -> None:
         """Execute the agent."""
-        self.execute_command("aea -s run")
+        # we run the agent in the os such that we can get the sterr and stdout
+        # without having to use the subprocess module.
+        os.system("aea -s run")  # noqa
 
-    def execute_command(self, command: str) -> None:
+    def execute_command(self, command: str, verbose=None) -> None:
         """Execute a shell command."""
         cli_executor = CommandExecutor(command=command.split(" "))
-        result = cli_executor.execute(stream=True, verbose=self.verbose)
+        result = cli_executor.execute(stream=True, verbose=verbose)
         if not result:
             self.logger.error(f"Command failed: {command}")
             self.logger.error(f"Error: {cli_executor.stderr}")
@@ -132,8 +134,10 @@ class AgentRunner:
 @click.option("--force", is_flag=True, help="Force overwrite of existing agent", default=False)
 @click.pass_context
 def run(ctx, agent_public_id: str, verbose: bool, force: bool) -> None:
-    """Run an agent.
-    Example:
+    """
+    Run an agent from the local packages registry.
+
+    Example usage:
         adev run eightballer/my_agent
     """
     logger = ctx.obj["LOGGER"]
