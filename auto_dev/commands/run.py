@@ -2,22 +2,24 @@
 
 import os
 import sys
+import time
+import platform
 import subprocess
+from copy import deepcopy
+from enum import Enum
 from typing import Any
 from pathlib import Path
 from dataclasses import dataclass
-from enum import Enum
-import time
+
 import docker
-import platform
 import rich_click as click
-from aea.skills.base import PublicId
-from auto_dev.constants import DOCKERCOMPOSE_TEMPLATE_FOLDER
-from copy import deepcopy
-from auto_dev.base import build_cli
-from auto_dev.cli_executor import CommandExecutor
-from auto_dev.utils import map_os_to_env_vars
 from docker.errors import NotFound
+from aea.skills.base import PublicId
+
+from auto_dev.base import build_cli
+from auto_dev.utils import map_os_to_env_vars
+from auto_dev.constants import DOCKERCOMPOSE_TEMPLATE_FOLDER
+from auto_dev.cli_executor import CommandExecutor
 
 
 cli = build_cli()
@@ -34,7 +36,7 @@ class AgentRunner:
 
     def run(self) -> None:
         """Run the agent."""
- 
+
         self.logger.info(f"Fetching agent {self.agent_name} from the local package registry...")
         self.check_tendermint()
         if self.check_agent_exists():
@@ -43,7 +45,7 @@ class AgentRunner:
         self.setup_agent()
         self.execute_agent()
         self.stop_tendermint()
-    
+
     def stop_tendermint(self) -> None:
         """Stop Tendermint."""
         self.execute_command(f"docker compose -f {DOCKERCOMPOSE_TEMPLATE_FOLDER}/tendermint.yaml kill")
@@ -56,19 +58,17 @@ class AgentRunner:
         container_name = "tm_0"
         try:
             res = docker_engine.containers.get(container_name)
-            
-        except (subprocess.CalledProcessError, RuntimeError,NotFound) as e:
-            self.logger.error(f"Tendermint is not running. Please install and run Tendermint using Docker. ${e}",)
-            self.logger.error("You can start Tendermint with the following command:")
+
+        except (subprocess.CalledProcessError, RuntimeError, NotFound) as e:
             if retries > 3:
-                self.logger.error("Tendermint is not running. Please install and run Tendermint using Docker.")
+                self.logger.error(f"Tendermint is not running. Please install and run Tendermint using Docker. {e}")
                 sys.exit(1)
+            self.logger.error("Starting Tendermint... 🚀")
             os_name = platform.system()
-            
             tm_overrides = map_os_to_env_vars(os_name)
             self.start_tendermint(tm_overrides)
             return self.check_tendermint(retries + 1)
-            
+
         if res.status != "running":
             self.logger.error("Tendermint is not healthy. Please check the logs.")
             sys.exit(1)
@@ -124,10 +124,13 @@ class AgentRunner:
             self.execute_command("aea -s issue-certificates")
         else:
             self.execute_command("cp -r ../certs ./")
-    
-    def start_tendermint(self, env_vars = None) -> None:
+
+    def start_tendermint(self, env_vars=None) -> None:
         """Start Tendermint."""
-        self.execute_command(f"docker compose -f {DOCKERCOMPOSE_TEMPLATE_FOLDER}/tendermint.yaml up -d --force-recreate", env_vars=env_vars)
+        self.execute_command(
+            f"docker compose -f {DOCKERCOMPOSE_TEMPLATE_FOLDER}/tendermint.yaml up -d --force-recreate",
+            env_vars=env_vars,
+        )
 
     def execute_agent(self) -> None:
         """Execute the agent."""
@@ -135,7 +138,7 @@ class AgentRunner:
         # without having to use the subprocess module.
         os.system("aea -s run")  # noqa
 
-    def execute_command(self, command: str, verbose=None, env_vars = None) -> None:
+    def execute_command(self, command: str, verbose=None, env_vars=None) -> None:
         """Execute a shell command."""
         current_vars = deepcopy(os.environ)
         if env_vars:
