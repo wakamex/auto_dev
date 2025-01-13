@@ -79,7 +79,20 @@ adev test -p packages/eightballer/protocols/balances
 Generate smart contract components from deployed contracts:
 
 ```bash
+
 # Basic usage
+
+# Create a new repository
+adev repo scaffold fun_new_hack
+
+# Navigate to the repository
+cd fun_new_hack
+
+# Create an agent using a template
+adev create author/cool_agent --template eightballer/frontend_agent --no-clean-up
+
+cd cool_agent
+
 adev scaffold contract <NAME> --address <CONTRACT_ADDRESS> --network <NETWORK_NAME>
 
 # Example: Scaffold USDC contract from Base network
@@ -89,14 +102,14 @@ adev scaffold contract usdc --address 0x833589fcd6edb6e08f4c7c32d4f71b54bda02913
 adev scaffold contract my_contract \
     --address 0xContract_Address \
     --from-abi ./path/to/abi.json \
-    --network ethereum-mainnet
+    --network base
 
 # Specify specific functions to include
 adev scaffold contract my_contract \
     --address 0xContract_Address \
     --read-functions "balanceOf,totalSupply" \
     --write-functions "transfer,approve" \
-    --network polygon-mainnet
+    --network gnosis
 ```
 
 ## Release Process

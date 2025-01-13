@@ -19,6 +19,7 @@ from web3 import Web3
 from jinja2 import Environment, FileSystemLoader
 from aea.configurations.constants import DEFAULT_AEA_CONFIG_FILE, PROTOCOL_LANGUAGE_PYTHON, SUPPORTED_PROTOCOL_LANGUAGES
 from aea.configurations.data_types import PublicId
+from aea.configurations.base import PublicId
 
 from auto_dev.base import build_cli
 from auto_dev.enums import FileType, BehaviourTypes
@@ -102,18 +103,19 @@ def _process_from_file(ctx, yaml_dict, network, read_functions, write_functions,
         )
 
 
-def _get_author_from_pyproject(logger):
-    """Extract author from pyproject.toml."""
-    pyproject_path = Path.cwd() / "pyproject.toml"
-    if pyproject_path.exists():
+def _get_author_from_aea_config(logger):
+    """Extract author from aea-config.yaml."""
+    config_path = Path.cwd() / DEFAULT_AEA_CONFIG_FILE
+    if config_path.exists():
         try:
-            with open(pyproject_path, "rb") as f:
-                pyproject_data = tomli.load(f)
-            authors = pyproject_data.get("tool", {}).get("poetry", {}).get("authors", [])
-            if authors:
-                return authors[0].split("<")[0].strip()
-        except (tomli.TOMLDecodeError, KeyError, IndexError) as e:
-            logger.warning(f"Failed to parse pyproject.toml: {e}")
+            with open(config_path, encoding=DEFAULT_ENCODING) as f:
+                first_doc = f.read().split('---')[0]
+                config_data = yaml.safe_load(first_doc)
+            author = config_data.get("author")
+            if author:
+                return author
+        except (yaml.YAMLError, KeyError) as e:
+            logger.warning(f"Failed to parse {DEFAULT_AEA_CONFIG_FILE}: {e}")
     return None
 
 
@@ -136,13 +138,17 @@ def contract(ctx, address, name, author, network, read_functions, write_function
         return
 
     if author is None:
-        author = _get_author_from_pyproject(logger)
+        aea_author = _get_author_from_aea_config(logger)
+        if aea_author:
+            try:
+                author = PublicId.from_str(f"{aea_author}/default")
+            except ValueError:
+                logger.error("Invalid author format in aea-config.yaml")
+                return
+        else:
+            logger.error("Author is required. Please provide --author parameter or ensure it's specified in aea-config.yaml")
+            return
 
-    if not author:
-        logger.error("Author is required. Please provide --author parameter or ensure it's specified in pyproject.toml")
-        return
-
-    author = author.replace(" ", "_").replace("/", "_")
     if name:
         name = name.replace(" ", "_").replace("/", "_")
 
@@ -162,7 +168,7 @@ def contract(ctx, address, name, author, network, read_functions, write_function
             with open(from_abi, "r") as f:
                 abi_data = json.loads(f.read())
             validate_abi_version(abi_data)
-            scaffolder = ContractScaffolder(block_explorer=None, author=author)
+            scaffolder = ContractScaffolder(block_explorer=None, author=author.author)
             new_contract = scaffolder.from_abi(from_abi, validated_address, name)
             logger.info(f"New contract scaffolded at {new_contract.path}")
         except (json.JSONDecodeError, ValueError) as e:
@@ -172,7 +178,7 @@ def contract(ctx, address, name, author, network, read_functions, write_function
     else:
         logger.info(f"Fetching ABI for contract at address: {validated_address} on network: {network}")
         block_explorer = BlockExplorer(f"https://abidata.net", network=network)
-        scaffolder = ContractScaffolder(block_explorer=block_explorer, author=author)
+        scaffolder = ContractScaffolder(block_explorer=block_explorer, author=author.author)
         logger.info("Getting ABI from abidata.net")
         new_contract = scaffolder.from_block_explorer(validated_address, name)
 
