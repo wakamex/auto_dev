@@ -96,7 +96,7 @@ cd cool_agent
 adev scaffold contract author/some_contract --address <CONTRACT_ADDRESS> --network <NETWORK_NAME>
 
 # Example: Scaffold USDC contract from Base network
-adev scaffold contract kevin/usdc --address 0x833589fcd6edb6e08f4c7c
+adev scaffold contract author/usdc --address 0x833589fcd6edb6e08f4c7c
 32d4f71b54bda02913 --network base
 
 # Advanced usage with local ABI
