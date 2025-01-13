@@ -7,14 +7,14 @@ from pathlib import Path
 import pytest
 import responses
 
-from auto_dev.constants import DEFAULT_ENCODING
+from auto_dev.constants import DEFAULT_ENCODING, Network
 from auto_dev.exceptions import UnsupportedSolidityVersion
 from auto_dev.commands.scaffold import BlockExplorer, ContractScaffolder
 
 
 KNOWN_ADDRESS = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"  # checksum address
 BLOCK_EXPLORER_URL = "https://abidata.net"
-NETWORK = "base"
+NETWORK = Network.BASE
 
 DUMMY_ABI = json.loads((Path() / "tests" / "data" / "dummy_abi.json").read_text(DEFAULT_ENCODING))
 
@@ -68,11 +68,24 @@ def test_block_explorer_error_handling(block_explorer):
 @responses.activate
 def test_block_explorer_invalid_network():
     """Test the block explorer with an invalid network."""
+
     with pytest.raises(ValueError) as exc_info:
-        BlockExplorer(BLOCK_EXPLORER_URL, network="invalid_network")
+        BlockExplorer(BLOCK_EXPLORER_URL, network=Network.INVALID)
 
     assert "Invalid network" in str(exc_info.value)
-    assert "invalid_network" in str(exc_info.value)
+    assert Network.INVALID in str(exc_info.value)
+
+
+@responses.activate
+def test_block_explorer_non_enum_network():
+    """Test the block explorer with a network that's not in the Network enum."""
+    non_enum_network = "unknown_network"
+
+    with pytest.raises(ValueError) as exc_info:
+        BlockExplorer(BLOCK_EXPLORER_URL, network=non_enum_network)
+
+    assert "Invalid network" in str(exc_info.value)
+    assert str(non_enum_network) in str(exc_info.value)
 
 
 # we now test the scaffolder
@@ -99,17 +112,30 @@ def test_scaffolder_generate(scaffolder):
 
 
 @responses.activate
-def test_scaffolder_generate_openaea_contract(scaffolder, test_filesystem):
+def test_scaffolder_generate_openaea_contract(scaffolder, test_filesystem, tmp_path):
     """Test the scaffolder."""
     del test_filesystem
+
+    # Create necessary directory structure
+    contracts_dir = tmp_path / "packages" / "eightballer" / "contracts"
+    contracts_dir.mkdir(parents=True)
+
     responses.add(
         responses.GET,
-        f"{BLOCK_EXPLORER_URL}/{KNOWN_ADDRESS}?network={NETWORK}",
+        f"{BLOCK_EXPLORER_URL}/{KNOWN_ADDRESS}?network={NETWORK.value}",
         json={"ok": True, "abi": DUMMY_ABI},
     )
     new_contract = scaffolder.from_block_explorer(KNOWN_ADDRESS, "new_contract")
+
+    # Ensure the build directory exists
+    build_dir = contracts_dir / "new_contract" / "build"
+    build_dir.mkdir(parents=True, exist_ok=True)
+
+    # Write dummy ABI file
+    abi_file = build_dir / "new_contract.json"
+    abi_file.write_text(json.dumps(DUMMY_ABI))
+
     contract_path = scaffolder.generate_openaea_contract(new_contract)
-    assert contract_path
     assert contract_path.exists()
     assert contract_path.name == "new_contract"
     assert contract_path.parent.name == "contracts"
