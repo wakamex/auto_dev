@@ -33,9 +33,11 @@ class BlockExplorer:
         """
         try:
             url = f"{self.url}/{address}"
+            params = {}
             if self.network != "ethereum":
-                url += f"?network={self.network}"
-            response = requests.get(url, timeout=DEFAULT_TIMEOUT)
+                params["network"] = self.network
+
+            response = requests.get(url, params=params, timeout=DEFAULT_TIMEOUT)
 
             if not response.ok:
                 print(f"API request failed with status {response.status_code}: {response.text}")
