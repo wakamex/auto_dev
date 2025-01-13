@@ -32,7 +32,9 @@ class BlockExplorer:
             ValueError: If the response is invalid or missing ABI data
         """
         try:
-            url = f"{self.url}/{address}?network={self.network}"
+            url = f"{self.url}/{address}"
+            if self.network != "ethereum":
+                url += f"?network={self.network}"
             response = requests.get(url, timeout=DEFAULT_TIMEOUT)
 
             if not response.ok:

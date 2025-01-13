@@ -19,7 +19,6 @@ from web3 import Web3
 from jinja2 import Environment, FileSystemLoader
 from aea.configurations.constants import DEFAULT_AEA_CONFIG_FILE, PROTOCOL_LANGUAGE_PYTHON, SUPPORTED_PROTOCOL_LANGUAGES
 from aea.configurations.data_types import PublicId
-from aea.configurations.base import PublicId
 
 from auto_dev.base import build_cli
 from auto_dev.enums import FileType, BehaviourTypes
@@ -109,7 +108,7 @@ def _get_author_from_aea_config(logger):
     if config_path.exists():
         try:
             with open(config_path, encoding=DEFAULT_ENCODING) as f:
-                first_doc = f.read().split('---')[0]
+                first_doc = f.read().split("---")[0]
                 config_data = yaml.safe_load(first_doc)
             author = config_data.get("author")
             if author:
@@ -117,6 +116,61 @@ def _get_author_from_aea_config(logger):
         except (yaml.YAMLError, KeyError) as e:
             logger.warning(f"Failed to parse {DEFAULT_AEA_CONFIG_FILE}: {e}")
     return None
+
+
+def _process_abi_file(from_abi: str, validated_address: str, name: str, author: str, logger) -> None:
+    """Process contract from ABI file."""
+    logger.info(f"Using ABI file: {from_abi}")
+    try:
+        with open(from_abi, "r") as f:
+            abi_data = json.loads(f.read())
+        validate_abi_version(abi_data)
+        scaffolder = ContractScaffolder(block_explorer=None, author=author)
+        new_contract = scaffolder.from_abi(from_abi, validated_address, name)
+        logger.info(f"New contract scaffolded at {new_contract.path}")
+        return new_contract
+    except (json.JSONDecodeError, ValueError) as e:
+        logger.error(f"Error processing ABI file: {str(e)}")
+        return None
+
+
+def _process_block_explorer(
+    block_explorer: BlockExplorer, validated_address: str, name: str, author: str, logger
+) -> Optional[object]:
+    """Process contract from block explorer."""
+    logger.info(f"Fetching ABI for contract at address: {validated_address}")
+    scaffolder = ContractScaffolder(block_explorer=block_explorer, author=author)
+    logger.info("Getting ABI from abidata.net")
+    return scaffolder.from_block_explorer(validated_address, name)
+
+
+def _validate_and_get_author(author, logger):
+    """Validate and get author from parameters or config."""
+    if author is not None:
+        return author
+
+    aea_author = _get_author_from_aea_config(logger)
+    if not aea_author:
+        logger.error(
+            "Author is required. Please provide --author parameter or ensure it's specified in aea-config.yaml"
+        )
+        return None
+
+    try:
+        return PublicId.from_str(f"{aea_author}/default")
+    except ValueError:
+        logger.error("Invalid author format in aea-config.yaml")
+        return None
+
+
+def _validate_inputs(name, from_file, logger):
+    """Validate input parameters."""
+    if from_file is None and not name:
+        logger.error("Must provide a name when not using --from-file")
+        return False, None
+
+    processed_name = name.replace(" ", "_").replace("/", "_") if name else None
+    return True, processed_name
 
 
 @scaffold.command()
@@ -133,70 +187,60 @@ def contract(ctx, address, name, author, network, read_functions, write_function
     """Scaffold a contract."""
     logger = ctx.obj["LOGGER"]
 
-    if from_file is None and not name:
-        logger.error("Must provide a name when not using --from-file")
+    # Validate inputs
+    is_valid, processed_name = _validate_inputs(name, from_file, logger)
+    if not is_valid:
         return
 
+    author = _validate_and_get_author(author, logger)
     if author is None:
-        aea_author = _get_author_from_aea_config(logger)
-        if aea_author:
-            try:
-                author = PublicId.from_str(f"{aea_author}/default")
-            except ValueError:
-                logger.error("Invalid author format in aea-config.yaml")
-                return
-        else:
-            logger.error("Author is required. Please provide --author parameter or ensure it's specified in aea-config.yaml")
-            return
+        return
 
-    if name:
-        name = name.replace(" ", "_").replace("/", "_")
-
+    # Process from file if specified
     if from_file is not None:
         with open(from_file, encoding=DEFAULT_ENCODING) as file_pointer:
             yaml_dict = yaml.safe_load(file_pointer)
         _process_from_file(ctx, yaml_dict, network, read_functions, write_functions, logger)
         return
 
+    # Validate address
     validated_address = validate_address(address, logger)
     if validated_address is None:
         return
 
+    # Process contract
+    new_contract = None
     if from_abi is not None:
-        logger.info(f"Using ABI file: {from_abi}")
-        try:
-            with open(from_abi, "r") as f:
-                abi_data = json.loads(f.read())
-            validate_abi_version(abi_data)
-            scaffolder = ContractScaffolder(block_explorer=None, author=author.author)
-            new_contract = scaffolder.from_abi(from_abi, validated_address, name)
-            logger.info(f"New contract scaffolded at {new_contract.path}")
-        except (json.JSONDecodeError, ValueError) as e:
-            logger.error(f"Error processing ABI file: {str(e)}")
+        scaffolder = ContractScaffolder(block_explorer=None, author=author.author)
+        new_contract = _process_abi_file(from_abi, validated_address, processed_name, author.author, logger)
+        if new_contract is None:
             return
-
     else:
-        logger.info(f"Fetching ABI for contract at address: {validated_address} on network: {network}")
         block_explorer = BlockExplorer(f"https://abidata.net", network=network)
         scaffolder = ContractScaffolder(block_explorer=block_explorer, author=author.author)
-        logger.info("Getting ABI from abidata.net")
-        new_contract = scaffolder.from_block_explorer(validated_address, name)
+        new_contract = _process_block_explorer(block_explorer, validated_address, processed_name, author.author, logger)
 
+    # Generate and process contract
     logger.info("Generating openaea contract with aea scaffolder.")
     contract_path = scaffolder.generate_openaea_contract(new_contract)
     logger.info("Writing abi to file, Updating contract.yaml with build path. Parsing functions.")
     new_contract.process()
+
+    # Log extracted information
+    _log_contract_info(new_contract, contract_path, logger)
+
+
+def _log_contract_info(contract, contract_path, logger):
+    """Log contract information."""
     logger.info("Read Functions extracted:")
-    for function in new_contract.read_functions:
+    for function in contract.read_functions:
         logger.info(f"    {function.name}")
     logger.info("Write Functions extracted:")
-    for function in new_contract.write_functions:
+    for function in contract.write_functions:
         logger.info(f"    {function.name}")
-
     logger.info("Events extracted:")
-    for event in new_contract.events:
+    for event in contract.events:
         logger.info(f"    {event.name}")
-
     logger.info(f"New contract scaffolded at {contract_path}")
 
 
