@@ -58,6 +58,13 @@ def validate_address(address: str, logger, contract_name: str = None) -> Optiona
         return None
 
 
+def _process_from_block_explorer(validated_address, name, logger, scaffolder):
+    """Process contracts from a block explorer."""
+    logger.info("Getting ABI from abidata.net")
+    new_contract = scaffolder.from_block_explorer(validated_address, name)
+    return new_contract
+
+
 def _process_from_file(ctx, yaml_dict, network, read_functions, write_functions, logger):
     """Process contracts from a file."""
     for contract_name, contract_address in yaml_dict["contracts"].items():
@@ -90,33 +97,8 @@ def _get_author_from_aea_config(logger):
     return None
 
 
-def _process_abi_file(from_abi: str, validated_address: str, name: str, author: str, logger) -> None:
-    """Process contract from ABI file."""
-    logger.info(f"Using ABI file: {from_abi}")
-    try:
-        with open(from_abi, "r") as f:
-            abi_data = json.loads(f.read())
-        scaffolder = ContractScaffolder(block_explorer=None, author=author)
-        new_contract = scaffolder.from_abi(from_abi, validated_address, name)
-        logger.info(f"New contract scaffolded at {new_contract.path}")
-        return new_contract
-    except (json.JSONDecodeError, ValueError) as e:
-        logger.error(f"Error processing ABI file: {str(e)}")
-        return None
-
-
-def _process_block_explorer(
-    block_explorer: BlockExplorer, validated_address: str, name: str, author: str, logger
-) -> Optional[object]:
-    """Process contract from block explorer."""
-    logger.info(f"Fetching ABI for contract at address: {validated_address}")
-    scaffolder = ContractScaffolder(block_explorer=block_explorer, author=author)
-    logger.info("Getting ABI from abidata.net")
-    return scaffolder.from_block_explorer(validated_address, name)
-
-
-def _validate_and_get_author(author, logger):
-    """Validate and get author from parameters or config."""
+def _validate_and_get_public_id(author, logger):
+    """Validate and get PublicId from parameters or config."""
     if author is not None:
         return author
 
@@ -163,9 +145,13 @@ def contract(ctx, address, name, author, network, read_functions, write_function
     if not is_valid:
         return
 
-    author = _validate_and_get_author(author, logger)
-    if author is None:
+    public_id = _validate_and_get_public_id(author, logger)
+    if public_id is None:
         return
+
+    # Create the scaffolder before doing any processing
+    block_explorer = BlockExplorer(f"https://abidata.net", network=network)
+    scaffolder = ContractScaffolder(block_explorer=block_explorer, author=public_id.author)
 
     # Process from file if specified
     if from_file is not None:
@@ -182,14 +168,12 @@ def contract(ctx, address, name, author, network, read_functions, write_function
     # Process contract
     new_contract = None
     if from_abi is not None:
-        scaffolder = ContractScaffolder(block_explorer=None, author=author.author)
-        new_contract = _process_abi_file(from_abi, validated_address, processed_name, author.author, logger)
+        new_contract = _process_from_abi(from_abi, validated_address, processed_name, logger, scaffolder)
         if new_contract is None:
             return
     else:
-        block_explorer = BlockExplorer(f"https://abidata.net", network=network)
-        scaffolder = ContractScaffolder(block_explorer=block_explorer, author=author.author)
-        new_contract = _process_block_explorer(block_explorer, validated_address, processed_name, author.author, logger)
+        new_contract = _process_from_block_explorer(validated_address, processed_name, logger, scaffolder)
+        logger.info(f"New contract scaffolded from block explorer at {new_contract.path}")
 
     # Generate and process contract
     logger.info("Generating openaea contract with aea scaffolder.")
@@ -479,6 +463,18 @@ def dao(ctx, auto_confirm) -> None:
         scaffolder.scaffold()
     except Exception as e:
         logger.exception(f"Error during DAO scaffolding and test generation: {e}")
+
+
+def _process_from_abi(from_abi: str, validated_address: str, name: str, logger, scaffolder) -> Optional[object]:
+    """Process contract from ABI file."""
+    logger.info(f"Using ABI file: {from_abi}")
+    try:
+        new_contract = scaffolder.from_abi(from_abi, validated_address, name)
+        logger.info(f"New contract scaffolded from ABI file at {new_contract.path}")
+        return new_contract
+    except Exception as e:
+        logger.error(f"Error processing ABI file: {str(e)}")
+        return None
 
 
 if __name__ == "__main__":
