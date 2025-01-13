@@ -22,7 +22,7 @@ from aea.configurations.data_types import PublicId
 
 from auto_dev.base import build_cli
 from auto_dev.enums import FileType, BehaviourTypes
-from auto_dev.utils import load_aea_ctx, remove_suffix, camel_to_snake, read_from_file
+from auto_dev.utils import load_aea_ctx, remove_suffix, camel_to_snake, read_from_file, load_basic_aea_config
 from auto_dev.constants import BASE_FSM_SKILLS, DEFAULT_ENCODING, JINJA_TEMPLATE_FOLDER
 from auto_dev.cli_executor import CommandExecutor
 from auto_dev.handlers.base import HandlerTypes, HandlerScaffolder
@@ -93,28 +93,12 @@ def _process_from_file(ctx, yaml_dict, network, read_functions, write_functions,
         )
 
 
-def _get_author_from_aea_config(logger):
-    """Extract author from aea-config.yaml."""
-    config_path = Path.cwd() / DEFAULT_AEA_CONFIG_FILE
-    if config_path.exists():
-        try:
-            with open(config_path, encoding=DEFAULT_ENCODING) as f:
-                first_doc = f.read().split("---")[0]
-                config_data = yaml.safe_load(first_doc)
-            author = config_data.get("author")
-            if author:
-                return author
-        except (yaml.YAMLError, KeyError) as e:
-            logger.warning(f"Failed to parse {DEFAULT_AEA_CONFIG_FILE}: {e}")
-    return None
-
-
 def _validate_and_get_public_id(author, logger):
     """Validate and get PublicId from parameters or config."""
     if author is not None:
         return author
 
-    aea_author = _get_author_from_aea_config(logger)
+    aea_author = load_basic_aea_config().get("author")
     if not aea_author:
         logger.error(
             "Author is required. Please provide --author parameter or ensure it's specified in aea-config.yaml"
