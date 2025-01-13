@@ -8,6 +8,7 @@ import pytest
 import responses
 
 from auto_dev.constants import DEFAULT_ENCODING
+from auto_dev.exceptions import UnsupportedSolidityVersion
 from auto_dev.commands.scaffold import BlockExplorer, ContractScaffolder
 
 
@@ -142,11 +143,10 @@ def test_scaffolder_rejects_old_abi(scaffolder, test_filesystem):
     assert test_filesystem
     path = Path() / "tests" / "data" / "old_abi.json"
 
-    with pytest.raises(ValueError) as exc_info:
+    with pytest.raises(UnsupportedSolidityVersion) as exc_info:
         scaffolder.from_abi(str(path), KNOWN_ADDRESS, "new_contract")
 
     error_message = str(exc_info.value)
-    assert "Error processing ABI file:" in error_message
     assert all(
         expected in error_message
         for expected in [

@@ -10,6 +10,7 @@ from web3 import Web3
 from auto_dev.enums import FileType
 from auto_dev.utils import write_to_file, snake_to_camel
 from auto_dev.constants import DEFAULT_ENCODING
+from auto_dev.exceptions import UnsupportedSolidityVersion
 from auto_dev.contracts.function import Function
 from auto_dev.contracts.contract_events import ContractEvent
 from auto_dev.contracts.contract_functions import FunctionType, ContractFunction
@@ -43,7 +44,7 @@ class Contract:
         for item in abi:
             if item.get("type") == "function":
                 if "constant" in item:
-                    raise TypeError(
+                    raise UnsupportedSolidityVersion(
                         "Outdated ABI format detected (pre-0.6 Solidity). "
                         "The ABI uses 'constant' instead of 'stateMutability'. "
                         "Please provide an ABI from Solidity 0.6 or later."
