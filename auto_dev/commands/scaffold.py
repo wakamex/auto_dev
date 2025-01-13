@@ -8,10 +8,12 @@ Also contains a Contract, which we will use to allow the user to;
 
 """
 
+import json
 from typing import Optional
 from pathlib import Path
 
 import yaml
+import tomli
 import rich_click as click
 from web3 import Web3
 from jinja2 import Environment, FileSystemLoader
@@ -51,44 +53,103 @@ def validate_address(address: str, logger, contract_name: str = None) -> Optiona
     try:
         return Web3.to_checksum_address(str(address))
     except ValueError as e:
-        name_info = f" for {contract_name}" if contract_name else ""
-        logger.error(f"Invalid address format{name_info}: {e}")
+        name_suffix = f" for {contract_name}" if contract_name else ""
+        logger.error(f"Invalid address format{name_suffix}: {e}")
         return None
+
+
+def validate_abi_version(abi_data):
+    """Validate that ABI is Solidity 0.6+ format."""
+    if not isinstance(abi_data, list):
+        raise TypeError("Invalid ABI format: Expected a list of function/event definitions")
+
+    function_entries = [item for item in abi_data if item.get("type") == "function"]
+    if not function_entries:
+        raise TypeError("Invalid ABI: No function definitions found")
+
+    for function in function_entries:
+        if "constant" in function:
+            raise TypeError(
+                "Outdated ABI format detected (pre-0.6 Solidity). " "Please provide an ABI from Solidity 0.6 or later"
+            )
+
+        if "stateMutability" not in function:
+            raise TypeError(
+                "Outdated ABI format detected (pre-0.6 Solidity). " "Please provide an ABI from Solidity 0.6 or later"
+            )
+
+        for param in function.get("inputs", []) + function.get("outputs", []):
+            if "internalType" not in param:
+                raise TypeError(
+                    "Outdated ABI format detected (pre-0.6 Solidity). "
+                    "Please provide an ABI from Solidity 0.6 or later"
+                )
+
+
+def _process_from_file(ctx, yaml_dict, network, read_functions, write_functions, logger):
+    """Process contracts from a file."""
+    for contract_name, contract_address in yaml_dict["contracts"].items():
+        validated_address = validate_address(contract_address, logger, contract_name)
+        if validated_address is None:
+            continue
+        ctx.invoke(
+            contract,
+            address=validated_address,
+            name=camel_to_snake(contract_name),
+            network=yaml_dict.get("network", network),
+            read_functions=read_functions,
+            write_functions=write_functions,
+        )
+
+
+def _get_author_from_pyproject(logger):
+    """Extract author from pyproject.toml."""
+    pyproject_path = Path.cwd() / "pyproject.toml"
+    if pyproject_path.exists():
+        try:
+            with open(pyproject_path, "rb") as f:
+                pyproject_data = tomli.load(f)
+            authors = pyproject_data.get("tool", {}).get("poetry", {}).get("authors", [])
+            if authors:
+                return authors[0].split("<")[0].strip()
+        except (tomli.TOMLDecodeError, KeyError, IndexError) as e:
+            logger.warning(f"Failed to parse pyproject.toml: {e}")
+    return None
 
 
 @scaffold.command()
 @click.argument("name", default=None, required=False)
 @click.option("--address", default=DEFAULT_NULL_ADDRESS, required=False, help="The address of the contract.")
+@click.option("--author", required=False, help="The author of the contract.")
 @click.option("--from-file", default=None, help="Ingest a file containing a list of addresses and names.")
 @click.option("--from-abi", default=None, help="Ingest an ABI file to scaffold a contract.")
 @click.option("--network", default="ethereum", help="The network to fetch the ABI from (e.g., ethereum, polygon)")
 @click.option("--read-functions", default=None, help="Comma separated list of read functions to scaffold.")
 @click.option("--write-functions", default=None, help="Comma separated list of write functions to scaffold.")
 @click.pass_context
-def contract(  # pylint: disable=R0914
-    ctx, address, name, network, read_functions, write_functions, from_abi, from_file
-) -> None:
+def contract(ctx, address, name, author, network, read_functions, write_functions, from_abi, from_file):
     """Scaffold a contract."""
     logger = ctx.obj["LOGGER"]
-    if address is None and name is None and from_file is None:
-        logger.error("Must provide either an address and name or a file containing a list of addresses and names.")
+
+    if from_file is None and not name:
+        logger.error("Must provide a name when not using --from-file")
         return
+
+    if author is None:
+        author = _get_author_from_pyproject(logger)
+
+    if not author:
+        logger.error("Author is required. Please provide --author parameter or ensure it's specified in pyproject.toml")
+        return
+
+    author = author.replace(" ", "_").replace("/", "_")
+    if name:
+        name = name.replace(" ", "_").replace("/", "_")
 
     if from_file is not None:
         with open(from_file, encoding=DEFAULT_ENCODING) as file_pointer:
             yaml_dict = yaml.safe_load(file_pointer)
-        for contract_name, contract_address in yaml_dict["contracts"].items():
-            validated_address = validate_address(contract_address, logger, contract_name)
-            if validated_address is None:
-                continue
-            ctx.invoke(
-                contract,
-                address=validated_address,
-                name=camel_to_snake(contract_name),
-                network=yaml_dict.get("network", network),
-                read_functions=read_functions,
-                write_functions=write_functions,
-            )
+        _process_from_file(ctx, yaml_dict, network, read_functions, write_functions, logger)
         return
 
     validated_address = validate_address(address, logger)
@@ -97,14 +158,21 @@ def contract(  # pylint: disable=R0914
 
     if from_abi is not None:
         logger.info(f"Using ABI file: {from_abi}")
-        scaffolder = ContractScaffolder(block_explorer=None)
-        new_contract = scaffolder.from_abi(from_abi, validated_address, name)
-        logger.info(f"New contract scaffolded at {new_contract.path}")
+        try:
+            with open(from_abi, "r") as f:
+                abi_data = json.loads(f.read())
+            validate_abi_version(abi_data)
+            scaffolder = ContractScaffolder(block_explorer=None, author=author)
+            new_contract = scaffolder.from_abi(from_abi, validated_address, name)
+            logger.info(f"New contract scaffolded at {new_contract.path}")
+        except (json.JSONDecodeError, ValueError) as e:
+            logger.error(f"Error processing ABI file: {str(e)}")
+            return
 
     else:
         logger.info(f"Fetching ABI for contract at address: {validated_address} on network: {network}")
         block_explorer = BlockExplorer(f"https://abidata.net", network=network)
-        scaffolder = ContractScaffolder(block_explorer=block_explorer)
+        scaffolder = ContractScaffolder(block_explorer=block_explorer, author=author)
         logger.info("Getting ABI from abidata.net")
         new_contract = scaffolder.from_block_explorer(validated_address, name)
 

@@ -125,3 +125,16 @@ def test_scaffolder_extracts_events(scaffolder, test_filesystem):
     new_contract = scaffolder.from_abi(str(path), KNOWN_ADDRESS, "new_contract")
     new_contract.parse_events()
     assert new_contract.events
+
+
+def test_scaffolder_rejects_old_abi(scaffolder, test_filesystem):
+    """Test the scaffolder rejects pre-Solidity 0.6 ABIs."""
+    assert test_filesystem
+    path = Path() / "tests" / "data" / "old_abi.json"
+
+    with pytest.raises(TypeError) as exc_info:
+        scaffolder.from_abi(str(path), KNOWN_ADDRESS, "new_contract")
+
+    assert "Outdated ABI format detected" in str(exc_info.value)
+    assert "pre-0.6 Solidity" in str(exc_info.value)
+    assert "Please provide an ABI from Solidity 0.6 or later" in str(exc_info.value)
