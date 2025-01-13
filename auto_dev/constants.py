@@ -136,26 +136,28 @@ OS_ENV_MAP = {
     },
 }
 
-VALID_ABIDATA_NETWORKS = {
-    "ethereum",
-    "goerli",
-    "sepolia",
-    "avalanche",
-    "avalancheFuji",
-    "arbitrum",
-    "arbitrumGoerli",
-    "arbitrumNova",
-    "base",
-    "baseGoerli",
-    "bsc",
-    "bscTestnet",
-    "fantom",
-    "fantomTestnet",
-    "polygon",
-    "polygonMumbai",
-    "polygonZkEvm",
-    "polygonZkEvmTestnet",
-    "optimism",
-    "optimismGoerli",
-    "gnosis",
-}
+
+class Network(Enum):
+    """Supported blockchain networks."""
+
+    ETHEREUM = "ethereum"
+    GOERLI = "goerli"
+    SEPOLIA = "sepolia"
+    AVALANCHE = "avalanche"
+    AVALANCHE_FUJI = "avalancheFuji"
+    ARBITRUM = "arbitrum"
+    ARBITRUM_GOERLI = "arbitrumGoerli"
+    ARBITRUM_NOVA = "arbitrumNova"
+    BASE = "base"
+    BASE_GOERLI = "baseGoerli"
+    BSC = "bsc"
+    BSC_TESTNET = "bscTestnet"
+    FANTOM = "fantom"
+    FANTOM_TESTNET = "fantomTestnet"
+    POLYGON = "polygon"
+    POLYGON_MUMBAI = "polygonMumbai"
+    POLYGON_ZKEVM = "polygonZkEvm"
+    POLYGON_ZKEVM_TESTNET = "polygonZkEvmTestnet"
+    OPTIMISM = "optimism"
+    OPTIMISM_GOERLI = "optimismGoerli"
+    GNOSIS = "gnosis"

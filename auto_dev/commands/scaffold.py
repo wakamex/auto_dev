@@ -23,7 +23,7 @@ from aea.configurations.data_types import PublicId
 from auto_dev.base import build_cli
 from auto_dev.enums import FileType, BehaviourTypes
 from auto_dev.utils import load_aea_ctx, remove_suffix, camel_to_snake, read_from_file
-from auto_dev.constants import BASE_FSM_SKILLS, DEFAULT_ENCODING, JINJA_TEMPLATE_FOLDER
+from auto_dev.constants import BASE_FSM_SKILLS, DEFAULT_ENCODING, JINJA_TEMPLATE_FOLDER, Network
 from auto_dev.cli_executor import CommandExecutor
 from auto_dev.handlers.base import HandlerTypes, HandlerScaffolder
 from auto_dev.dao.scaffolder import DAOScaffolder
@@ -33,7 +33,7 @@ from auto_dev.dialogues.scaffolder import DialogueTypes, DialogueScaffolder
 from auto_dev.protocols.scaffolder import ProtocolScaffolder
 from auto_dev.behaviours.scaffolder import BehaviourScaffolder
 from auto_dev.connections.scaffolder import ConnectionScaffolder
-from auto_dev.contracts.block_explorer import VALID_ABIDATA_NETWORKS, BlockExplorer
+from auto_dev.contracts.block_explorer import BlockExplorer
 from auto_dev.contracts.contract_scafolder import ContractScaffolder
 
 
@@ -100,8 +100,8 @@ def _process_from_file(ctx, yaml_dict, network, read_functions, write_functions,
 @click.option("--from-abi", default=None, help="Ingest an ABI file to scaffold a contract.")
 @click.option(
     "--network",
-    type=click.Choice(list(VALID_ABIDATA_NETWORKS), case_sensitive=False),
-    default="ethereum",
+    type=click.Choice([network.value for network in Network], case_sensitive=False),
+    default=Network.ETHEREUM.value,
     help="The network to fetch the ABI from (e.g., ethereum, polygon)",
 )
 @click.option("--read-functions", default=None, help="Comma separated list of read functions to scaffold.")
@@ -128,7 +128,7 @@ def contract(ctx, public_id, address, network, read_functions, write_functions, 
         author = None
 
     # Create the scaffolder before doing any processing
-    block_explorer = BlockExplorer(f"https://abidata.net", network=network)
+    block_explorer = BlockExplorer(f"https://abidata.net", network=Network(network))
     scaffolder = ContractScaffolder(block_explorer=block_explorer, author=author)
 
     # Process from file if specified

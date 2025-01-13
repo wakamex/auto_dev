@@ -7,7 +7,7 @@ from dataclasses import dataclass
 import requests
 from web3 import Web3
 
-from auto_dev.constants import DEFAULT_TIMEOUT, VALID_ABIDATA_NETWORKS
+from auto_dev.constants import DEFAULT_TIMEOUT, Network
 
 
 @dataclass
@@ -15,14 +15,7 @@ class BlockExplorer:
     """Class to interact with the blockchain explorer."""
 
     url: str
-    network: str = "ethereum"
-
-    def __post_init__(self):
-        """Validate network after initialization."""
-        if self.network not in VALID_ABIDATA_NETWORKS:
-            raise ValueError(
-                f"Invalid network '{self.network}'. Must be one of: {', '.join(sorted(VALID_ABIDATA_NETWORKS))}"
-            )
+    network: Network = Network.ETHEREUM
 
     def get_abi(self, address: str) -> Optional[Dict]:
         """
@@ -41,8 +34,8 @@ class BlockExplorer:
         try:
             url = f"{self.url}/{address}"
             params = {}
-            if self.network != "ethereum":
-                params["network"] = self.network
+            if self.network != Network.ETHEREUM:
+                params["network"] = self.network.value
 
             response = requests.get(url, params=params, timeout=DEFAULT_TIMEOUT)
 
