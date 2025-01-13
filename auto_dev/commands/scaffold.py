@@ -64,6 +64,15 @@ def _process_from_block_explorer(validated_address, name, logger, scaffolder):
     new_contract = scaffolder.from_block_explorer(validated_address, name)
     return new_contract
 
+def _process_from_abi(from_abi: str, validated_address: str, name: str, logger, scaffolder) -> Optional[object]:
+    """Process contract from ABI file."""
+    logger.info(f"Using ABI file: {from_abi}")
+    try:
+        new_contract = scaffolder.from_abi(from_abi, validated_address, name)
+        logger.info(f"New contract scaffolded from ABI file at {new_contract.path}")
+        return new_contract
+    except Exception as e:
+        raise ValueError(f"Error processing ABI file: {str(e)}")
 
 def _process_from_file(ctx, yaml_dict, network, read_functions, write_functions, logger):
     """Process contracts from a file."""
@@ -168,9 +177,8 @@ def contract(ctx, address, name, author, network, read_functions, write_function
     # Process contract
     new_contract = None
     if from_abi is not None:
+        # note, if this fails, an error is raised
         new_contract = _process_from_abi(from_abi, validated_address, processed_name, logger, scaffolder)
-        if new_contract is None:
-            return
     else:
         new_contract = _process_from_block_explorer(validated_address, processed_name, logger, scaffolder)
         logger.info(f"New contract scaffolded from block explorer at {new_contract.path}")
@@ -463,18 +471,6 @@ def dao(ctx, auto_confirm) -> None:
         scaffolder.scaffold()
     except Exception as e:
         logger.exception(f"Error during DAO scaffolding and test generation: {e}")
-
-
-def _process_from_abi(from_abi: str, validated_address: str, name: str, logger, scaffolder) -> Optional[object]:
-    """Process contract from ABI file."""
-    logger.info(f"Using ABI file: {from_abi}")
-    try:
-        new_contract = scaffolder.from_abi(from_abi, validated_address, name)
-        logger.info(f"New contract scaffolded from ABI file at {new_contract.path}")
-        return new_contract
-    except Exception as e:
-        logger.error(f"Error processing ABI file: {str(e)}")
-        return None
 
 
 if __name__ == "__main__":
