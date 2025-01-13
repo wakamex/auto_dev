@@ -6,9 +6,11 @@ from dataclasses import dataclass
 
 import requests
 from web3 import Web3
-
 from auto_dev.constants import DEFAULT_TIMEOUT, Network
+from auto_dev.exceptions import APIError
+from auto_dev.utils import get_logger
 
+logger = get_logger()
 
 @dataclass
 class BlockExplorer:
@@ -40,23 +42,24 @@ class BlockExplorer:
             response = requests.get(url, params=params, timeout=DEFAULT_TIMEOUT)
 
             if not response.ok:
-                print(f"API request failed with status {response.status_code}: {response.text}")
-                return None
+                logger.error(f"API request failed with status {response.status_code}: {response.text}")
+                raise APIError(f"API request failed with status {response.status_code}: {response.text}")
 
             data = response.json()
             if not data.get("ok"):
-                print(f"API returned error response: {data}")
-                return None
+                logger.error(f"API not ok in {self.network} response: {data}")
+                raise APIError(f"API not ok in {self.network} response: {data}")
 
             if "abi" not in data:
-                print(f"No ABI found in response: {data}")
-                return None
+                logger.error(f"No ABI found in {self.network} response: {data}")
+                raise APIError(f"No ABI found in {self.network} response: {data}")
 
             return data["abi"]
 
         except requests.exceptions.RequestException as e:
-            print(f"Request failed: {str(e)}")
-            return None
+            logger.error(f"Request failed in {self.network}: {str(e)}")
+            raise APIError(f"Request failed in {self.network}: {str(e)}")
         except (json.JSONDecodeError, KeyError) as e:
-            print(f"Failed to parse response: {str(e)}")
-            return None
+            logger.error(f"Failed to parse response in {self.network}: {str(e)}")
+            raise APIError(f"Failed to parse response in {self.network}: {str(e)}")
+

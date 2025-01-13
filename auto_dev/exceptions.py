@@ -13,6 +13,10 @@ class NetworkTimeoutError(Exception):
     """Network error."""
 
 
+class APIError(Exception):
+    """API error."""
+
+
 class AuthenticationError(Exception):
     """Authentication error."""
 
