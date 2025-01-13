@@ -38,6 +38,16 @@ class Contract:
             raise ValueError(msg)
         with abi_path.open("r", encoding=DEFAULT_ENCODING) as file_pointer:
             abi = json.load(file_pointer)["abi"]
+
+        # this is added because web is not compatible with pre-Solidity 0.6
+        for item in abi:
+            if item.get("type") == "function":
+                if "constant" in item:
+                    raise TypeError(
+                        "Outdated ABI format detected (pre-0.6 Solidity). "
+                        "The ABI uses 'constant' instead of 'stateMutability'. "
+                        "Please provide an ABI from Solidity 0.6 or later."
+                    )
         w3_contract = self.web3.eth.contract(address=self.address, abi=abi)
         for function in w3_contract.all_functions():
             mutability = function.abi["stateMutability"]

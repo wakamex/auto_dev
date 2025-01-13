@@ -132,9 +132,17 @@ def test_scaffolder_rejects_old_abi(scaffolder, test_filesystem):
     assert test_filesystem
     path = Path() / "tests" / "data" / "old_abi.json"
 
-    with pytest.raises(TypeError) as exc_info:
+    with pytest.raises(ValueError) as exc_info:
         scaffolder.from_abi(str(path), KNOWN_ADDRESS, "new_contract")
 
-    assert "Outdated ABI format detected" in str(exc_info.value)
-    assert "pre-0.6 Solidity" in str(exc_info.value)
-    assert "Please provide an ABI from Solidity 0.6 or later" in str(exc_info.value)
+    error_message = str(exc_info.value)
+    assert "Error processing ABI file:" in error_message
+    assert all(
+        expected in error_message
+        for expected in [
+            "Outdated ABI format detected",
+            "pre-0.6 Solidity",
+            "The ABI uses 'constant' instead of 'stateMutability'",
+            "Please provide an ABI from Solidity 0.6 or later",
+        ]
+    )

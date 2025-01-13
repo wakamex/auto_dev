@@ -64,6 +64,7 @@ def _process_from_block_explorer(validated_address, name, logger, scaffolder):
     new_contract = scaffolder.from_block_explorer(validated_address, name)
     return new_contract
 
+
 def _process_from_abi(from_abi: str, validated_address: str, name: str, logger, scaffolder) -> Optional[object]:
     """Process contract from ABI file."""
     logger.info(f"Using ABI file: {from_abi}")
@@ -72,7 +73,9 @@ def _process_from_abi(from_abi: str, validated_address: str, name: str, logger, 
         logger.info(f"New contract scaffolded from ABI file at {new_contract.path}")
         return new_contract
     except Exception as e:
-        raise ValueError(f"Error processing ABI file: {str(e)}")
+        logger.error(f"Failed to process ABI file: {str(e)}")
+        raise ValueError(f"Error processing ABI file: {str(e)}") from e
+
 
 def _process_from_file(ctx, yaml_dict, network, read_functions, write_functions, logger):
     """Process contracts from a file."""
@@ -179,17 +182,20 @@ def contract(ctx, address, name, author, network, read_functions, write_function
     if from_abi is not None:
         # note, if this fails, an error is raised
         new_contract = _process_from_abi(from_abi, validated_address, processed_name, logger, scaffolder)
+        logger.info(f"New contract scaffolded from ABI file at {new_contract.path}")
     else:
         new_contract = _process_from_block_explorer(validated_address, processed_name, logger, scaffolder)
         logger.info(f"New contract scaffolded from block explorer at {new_contract.path}")
 
+    if new_contract is None:
+        logger.error("Failed to scaffold contract")
+        raise ValueError("Failed to scaffold contract")
     # Generate and process contract
     logger.info("Generating openaea contract with aea scaffolder.")
     contract_path = scaffolder.generate_openaea_contract(new_contract)
     logger.info("Writing abi to file, Updating contract.yaml with build path. Parsing functions.")
     new_contract.process()
 
-    # Log extracted information
     _log_contract_info(new_contract, contract_path, logger)
 
 
@@ -470,7 +476,8 @@ def dao(ctx, auto_confirm) -> None:
         scaffolder = DAOScaffolder(logger, verbose, auto_confirm, public_id)
         scaffolder.scaffold()
     except Exception as e:
-        logger.exception(f"Error during DAO scaffolding and test generation: {e}")
+        logger.error(f"Failed to scaffold DAO: {str(e)}")
+        raise ValueError("Error during DAO scaffolding and test generation") from e
 
 
 if __name__ == "__main__":
