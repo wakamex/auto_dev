@@ -62,6 +62,7 @@ def _process_from_block_explorer(validated_address, name, logger, scaffolder):
     """Process contracts from a block explorer."""
     logger.info("Getting ABI from abidata.net")
     new_contract = scaffolder.from_block_explorer(validated_address, name)
+    logger.info(f"New contract scaffolded from block explorer at {new_contract.path}")
     return new_contract
 
 
