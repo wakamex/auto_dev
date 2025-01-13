@@ -58,34 +58,6 @@ def validate_address(address: str, logger, contract_name: str = None) -> Optiona
         return None
 
 
-def validate_abi_version(abi_data):
-    """Validate that ABI is Solidity 0.6+ format."""
-    if not isinstance(abi_data, list):
-        raise TypeError("Invalid ABI format: Expected a list of function/event definitions")
-
-    function_entries = [item for item in abi_data if item.get("type") == "function"]
-    if not function_entries:
-        raise TypeError("Invalid ABI: No function definitions found")
-
-    for function in function_entries:
-        if "constant" in function:
-            raise TypeError(
-                "Outdated ABI format detected (pre-0.6 Solidity). " "Please provide an ABI from Solidity 0.6 or later"
-            )
-
-        if "stateMutability" not in function:
-            raise TypeError(
-                "Outdated ABI format detected (pre-0.6 Solidity). " "Please provide an ABI from Solidity 0.6 or later"
-            )
-
-        for param in function.get("inputs", []) + function.get("outputs", []):
-            if "internalType" not in param:
-                raise TypeError(
-                    "Outdated ABI format detected (pre-0.6 Solidity). "
-                    "Please provide an ABI from Solidity 0.6 or later"
-                )
-
-
 def _process_from_file(ctx, yaml_dict, network, read_functions, write_functions, logger):
     """Process contracts from a file."""
     for contract_name, contract_address in yaml_dict["contracts"].items():
@@ -124,7 +96,6 @@ def _process_abi_file(from_abi: str, validated_address: str, name: str, author: 
     try:
         with open(from_abi, "r") as f:
             abi_data = json.loads(f.read())
-        validate_abi_version(abi_data)
         scaffolder = ContractScaffolder(block_explorer=None, author=author)
         new_contract = scaffolder.from_abi(from_abi, validated_address, name)
         logger.info(f"New contract scaffolded at {new_contract.path}")
