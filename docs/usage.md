@@ -100,16 +100,16 @@ adev scaffold contract usdc --address 0x833589fcd6edb6e08f4c7c32d4f71b54bda02913
 
 # Advanced usage with local ABI
 adev scaffold contract my_contract \
-    --address 0xContract_Address \
     --from-abi ./path/to/abi.json \
-    --network base
 
-# Specify specific functions to include
+
+
+# Specify specific functions to include from a file (TODO)
 adev scaffold contract my_contract \
-    --address 0xContract_Address \
+    --address  0x833589fcd6edb6e08f4c7c32d4f71b54bda02913 \
     --read-functions "balanceOf,totalSupply" \
     --write-functions "transfer,approve" \
-    --network gnosis
+    --network base
 ```
 
 ## Release Process

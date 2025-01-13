@@ -93,30 +93,11 @@ def _process_from_file(ctx, yaml_dict, network, read_functions, write_functions,
         )
 
 
-def _validate_and_get_public_id(author, logger):
-    """Validate and get PublicId from parameters or config."""
-    if author is not None:
-        return author
-
-    aea_author = load_basic_aea_config().get("author")
-    if not aea_author:
-        logger.error(
-            "Author is required. Please provide --author parameter or ensure it's specified in aea-config.yaml"
-        )
-        return None
-
-    try:
-        return PublicId.from_str(f"{aea_author}/default")
-    except ValueError:
-        logger.error("Invalid author format in aea-config.yaml")
-        return None
-
-
-def _validate_inputs(name, from_file, logger):
+def _validate_inputs(address, name, from_file):
     """Validate input parameters."""
-    if from_file is None and not name:
-        logger.error("Must provide a name when not using --from-file")
-        return False, None
+    if address is None and name is None and from_file is None:
+        msg = "Must provide either an address and name or a file containing a list of addresses and names."
+        raise ValueError(msg)
 
     processed_name = name.replace(" ", "_").replace("/", "_") if name else None
     return True, processed_name
@@ -137,17 +118,13 @@ def contract(ctx, address, name, author, network, read_functions, write_function
     logger = ctx.obj["LOGGER"]
 
     # Validate inputs
-    is_valid, processed_name = _validate_inputs(name, from_file, logger)
-    if not is_valid:
-        return
+    processed_name = _validate_inputs(address, name, from_file)
 
-    public_id = _validate_and_get_public_id(author, logger)
-    if public_id is None:
-        return
+    author = load_basic_aea_config().get("author")
 
     # Create the scaffolder before doing any processing
     block_explorer = BlockExplorer(f"https://abidata.net", network=network)
-    scaffolder = ContractScaffolder(block_explorer=block_explorer, author=public_id.author)
+    scaffolder = ContractScaffolder(block_explorer=block_explorer, author=author)
 
     # Process from file if specified
     if from_file is not None:
