@@ -64,6 +64,16 @@ def test_block_explorer_error_handling(block_explorer):
     assert abi is None, "Should return None for invalid response"
 
 
+@responses.activate
+def test_block_explorer_invalid_network():
+    """Test the block explorer with an invalid network."""
+    with pytest.raises(ValueError) as exc_info:
+        BlockExplorer(BLOCK_EXPLORER_URL, network="invalid_network")
+
+    assert "Invalid network" in str(exc_info.value)
+    assert "invalid_network" in str(exc_info.value)
+
+
 # we now test the scaffolder
 @pytest.fixture
 def scaffolder(block_explorer):

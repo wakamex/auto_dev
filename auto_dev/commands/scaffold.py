@@ -33,7 +33,7 @@ from auto_dev.dialogues.scaffolder import DialogueTypes, DialogueScaffolder
 from auto_dev.protocols.scaffolder import ProtocolScaffolder
 from auto_dev.behaviours.scaffolder import BehaviourScaffolder
 from auto_dev.connections.scaffolder import ConnectionScaffolder
-from auto_dev.contracts.block_explorer import BlockExplorer
+from auto_dev.contracts.block_explorer import VALID_ABIDATA_NETWORKS, BlockExplorer
 from auto_dev.contracts.contract_scafolder import ContractScaffolder
 
 
@@ -107,7 +107,12 @@ def _validate_inputs(address, name, from_file):
 @click.option("--address", default=DEFAULT_NULL_ADDRESS, required=False, help="The address of the contract.")
 @click.option("--from-file", default=None, help="Ingest a file containing a list of addresses and names.")
 @click.option("--from-abi", default=None, help="Ingest an ABI file to scaffold a contract.")
-@click.option("--network", default="ethereum", help="The network to fetch the ABI from (e.g., ethereum, polygon)")
+@click.option(
+    "--network",
+    type=click.Choice(list(VALID_ABIDATA_NETWORKS), case_sensitive=False),
+    default="ethereum",
+    help="The network to fetch the ABI from (e.g., ethereum, polygon)",
+)
 @click.option("--read-functions", default=None, help="Comma separated list of read functions to scaffold.")
 @click.option("--write-functions", default=None, help="Comma separated list of write functions to scaffold.")
 @click.pass_context
