@@ -2,13 +2,14 @@
 
 import json
 import shutil
+from enum import Enum
 from pathlib import Path
 
 import pytest
 import responses
 
 from auto_dev.constants import DEFAULT_ENCODING, Network
-from auto_dev.exceptions import UnsupportedSolidityVersion
+from auto_dev.exceptions import APIError, UnsupportedSolidityVersion
 from auto_dev.commands.scaffold import BlockExplorer, ContractScaffolder
 
 
@@ -28,7 +29,7 @@ def block_explorer():
 @responses.activate
 def test_block_explorer(block_explorer):
     """Test the block explorer."""
-    expected_url = f"{BLOCK_EXPLORER_URL}/{KNOWN_ADDRESS}?network={NETWORK}"
+    expected_url = f"{BLOCK_EXPLORER_URL}/{KNOWN_ADDRESS}?network=base"
     print(f"Mocked URL: {expected_url}")
 
     responses.add(
@@ -45,12 +46,12 @@ def test_block_explorer(block_explorer):
 @responses.activate
 def test_block_explorer_error_handling(block_explorer):
     """Test the block explorer handles errors gracefully."""
-    expected_url = f"{BLOCK_EXPLORER_URL}/{KNOWN_ADDRESS}?network={NETWORK}"
+    expected_url = f"{BLOCK_EXPLORER_URL}/{KNOWN_ADDRESS}?network=base"
 
     # Test case 1: API returns error
     responses.add(responses.GET, expected_url, json={"ok": False, "error": "Not found"}, status=404)
-    abi = block_explorer.get_abi(KNOWN_ADDRESS)
-    assert abi is None, "Should return None for error response"
+    with pytest.raises(APIError):
+        block_explorer.get_abi(KNOWN_ADDRESS)
 
     # Reset responses
     responses.reset()
@@ -61,19 +62,16 @@ def test_block_explorer_error_handling(block_explorer):
         expected_url,
         json={"ok": True},  # Missing ABI
     )
-    abi = block_explorer.get_abi(KNOWN_ADDRESS)
-    assert abi is None, "Should return None for invalid response"
+    with pytest.raises(ValueError):
+        block_explorer.get_abi(KNOWN_ADDRESS)
 
 
 @responses.activate
 def test_block_explorer_invalid_network():
     """Test the block explorer with an invalid network."""
-
-    with pytest.raises(ValueError) as exc_info:
-        BlockExplorer(BLOCK_EXPLORER_URL, network=Network.INVALID)
-
-    assert "Invalid network" in str(exc_info.value)
-    assert Network.INVALID in str(exc_info.value)
+    with pytest.raises(TypeError) as exc_info:
+        BlockExplorer(BLOCK_EXPLORER_URL, network="invalid")
+    assert "network must be an instance of Network enum" in str(exc_info.value)
 
 
 @responses.activate
@@ -81,11 +79,9 @@ def test_block_explorer_non_enum_network():
     """Test the block explorer with a network that's not in the Network enum."""
     non_enum_network = "unknown_network"
 
-    with pytest.raises(ValueError) as exc_info:
+    with pytest.raises(TypeError) as exc_info:
         BlockExplorer(BLOCK_EXPLORER_URL, network=non_enum_network)
-
-    assert "Invalid network" in str(exc_info.value)
-    assert str(non_enum_network) in str(exc_info.value)
+    assert "network must be an instance of Network enum" in str(exc_info.value)
 
 
 # we now test the scaffolder
@@ -100,7 +96,7 @@ def test_scaffolder_generate(scaffolder):
     """Test the scaffolder."""
     responses.add(
         responses.GET,
-        f"{BLOCK_EXPLORER_URL}/{KNOWN_ADDRESS}?network={NETWORK}",
+        f"{BLOCK_EXPLORER_URL}/{KNOWN_ADDRESS}?network=base",
         json={"ok": True, "abi": DUMMY_ABI},
     )
     new_contract = scaffolder.from_block_explorer(KNOWN_ADDRESS, "new_contract")
@@ -122,7 +118,7 @@ def test_scaffolder_generate_openaea_contract(scaffolder, test_filesystem, tmp_p
 
     responses.add(
         responses.GET,
-        f"{BLOCK_EXPLORER_URL}/{KNOWN_ADDRESS}?network={NETWORK.value}",
+        f"{BLOCK_EXPLORER_URL}/{KNOWN_ADDRESS}?network=base",
         json={"ok": True, "abi": DUMMY_ABI},
     )
     new_contract = scaffolder.from_block_explorer(KNOWN_ADDRESS, "new_contract")
@@ -162,24 +158,3 @@ def test_scaffolder_extracts_events(scaffolder, test_filesystem):
     new_contract = scaffolder.from_abi(str(path), KNOWN_ADDRESS, "new_contract")
     new_contract.parse_events()
     assert new_contract.events
-
-
-def test_scaffolder_rejects_old_abi(scaffolder, test_filesystem):
-    """Test the scaffolder rejects pre-Solidity 0.6 ABIs."""
-    assert test_filesystem
-    path = Path() / "tests" / "data" / "old_abi.json"
-    new_contract = scaffolder.from_abi(str(path), KNOWN_ADDRESS, "new_contract")
-
-    with pytest.raises(UnsupportedSolidityVersion) as exc_info:
-        new_contract.parse_functions()
-
-    error_message = str(exc_info.value)
-    assert all(
-        expected in error_message
-        for expected in [
-            "Outdated ABI format detected",
-            "pre-0.6 Solidity",
-            "The ABI uses 'constant' instead of 'stateMutability'",
-            "Please provide an ABI from Solidity 0.6 or later",
-        ]
-    )

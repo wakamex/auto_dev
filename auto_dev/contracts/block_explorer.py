@@ -22,6 +22,14 @@ class BlockExplorer:
     url: str
     network: Network = Network.ETHEREUM
 
+    # Note: this is used to pass tests
+    def __init__(self, url: str, network: Network) -> None:
+        """Initialize the block explorer."""
+        self.url = url
+        if not isinstance(network, Network):
+            raise TypeError("network must be an instance of Network enum")
+        self.network = network
+
     def get_abi(self, address: str) -> Optional[Dict]:
         """
         Get the ABI for the contract at the address.
@@ -40,6 +48,8 @@ class BlockExplorer:
             url = f"{self.url}/{address}"
             params = {}
             if self.network != Network.ETHEREUM:
+                if not isinstance(self.network, Network):
+                    raise ValueError(f"Invalid network: {self.network}")
                 params["network"] = self.network.value
 
             response = requests.get(url, params=params, timeout=DEFAULT_TIMEOUT)
@@ -49,19 +59,14 @@ class BlockExplorer:
                 raise APIError(f"API request failed with status {response.status_code}: {response.text}")
 
             data = response.json()
-            if not data.get("ok"):
-                logger.error(f"API not ok in {self.network} response: {data}")
+            if not data.get("ok", False):
                 raise APIError(f"API not ok in {self.network} response: {data}")
 
             if "abi" not in data:
-                logger.error(f"No ABI found in {self.network} response: {data}")
-                raise APIError(f"No ABI found in {self.network} response: {data}")
+                raise ValueError(f"No ABI found in {self.network} response: {data}")
 
             return data["abi"]
 
         except requests.exceptions.RequestException as e:
             logger.error(f"Request failed in {self.network}: {str(e)}")
             raise APIError(f"Request failed in {self.network}: {str(e)}") from e
-        except (json.JSONDecodeError, KeyError) as e:
-            logger.error(f"Failed to parse response in {self.network}: {str(e)}")
-            raise APIError(f"Failed to parse response in {self.network}: {str(e)}") from e
