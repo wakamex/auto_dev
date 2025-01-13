@@ -142,9 +142,10 @@ def test_scaffolder_rejects_old_abi(scaffolder, test_filesystem):
     """Test the scaffolder rejects pre-Solidity 0.6 ABIs."""
     assert test_filesystem
     path = Path() / "tests" / "data" / "old_abi.json"
+    new_contract = scaffolder.from_abi(str(path), KNOWN_ADDRESS, "new_contract")
 
     with pytest.raises(UnsupportedSolidityVersion) as exc_info:
-        scaffolder.from_abi(str(path), KNOWN_ADDRESS, "new_contract")
+        new_contract.parse_functions()
 
     error_message = str(exc_info.value)
     assert all(
