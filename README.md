@@ -12,7 +12,7 @@ For detailed instructions please see the [Docs.](https://8ball030.github.io/auto
 
 ## TLDR
     # Install adev
-    pip install "autonomy-dev[all]"
+    pip install -U "autonomy-dev[all]"
     # Make a new agent
     adev create author/cool_agent
     # Run the new agent
