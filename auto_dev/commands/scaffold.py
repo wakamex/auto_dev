@@ -99,25 +99,23 @@ def _validate_inputs(address, name, from_file):
         msg = "Must provide either an address and name or a file containing a list of addresses and names."
         raise ValueError(msg)
 
-    processed_name = name.replace(" ", "_").replace("/", "_") if name else None
-    return True, processed_name
+    return name.replace(" ", "_").replace("/", "_") if name else None
 
 
 @scaffold.command()
 @click.argument("name", default=None, required=False)
 @click.option("--address", default=DEFAULT_NULL_ADDRESS, required=False, help="The address of the contract.")
-@click.option("--author", required=False, help="The author of the contract.")
 @click.option("--from-file", default=None, help="Ingest a file containing a list of addresses and names.")
 @click.option("--from-abi", default=None, help="Ingest an ABI file to scaffold a contract.")
 @click.option("--network", default="ethereum", help="The network to fetch the ABI from (e.g., ethereum, polygon)")
 @click.option("--read-functions", default=None, help="Comma separated list of read functions to scaffold.")
 @click.option("--write-functions", default=None, help="Comma separated list of write functions to scaffold.")
 @click.pass_context
-def contract(ctx, address, name, author, network, read_functions, write_functions, from_abi, from_file):
+def contract(ctx, address, name, network, read_functions, write_functions, from_abi, from_file):
     """Scaffold a contract."""
     logger = ctx.obj["LOGGER"]
 
-    # Validate inputs
+    # Validate name and inputs, throws error if not valid
     processed_name = _validate_inputs(address, name, from_file)
 
     author = load_basic_aea_config().get("author")
