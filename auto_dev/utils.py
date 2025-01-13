@@ -284,13 +284,6 @@ def remove_suffix(text: str, suffix: str) -> str:
     return text[: -len(suffix)] if suffix and text.endswith(suffix) else text
 
 
-def load_basic_aea_config():
-    """Load the aea-config.yaml file."""
-    aea_config = load_aea_config()
-    # we only care about the first document in the yaml file, the rest are overrides
-    return aea_config[0]
-
-
 def load_aea_config():
     """Load the aea-config.yaml file."""
     aea_config = Path("aea-config.yaml")

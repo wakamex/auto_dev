@@ -22,7 +22,7 @@ from aea.configurations.data_types import PublicId
 
 from auto_dev.base import build_cli
 from auto_dev.enums import FileType, BehaviourTypes
-from auto_dev.utils import load_aea_ctx, remove_suffix, camel_to_snake, read_from_file, load_basic_aea_config
+from auto_dev.utils import load_aea_ctx, remove_suffix, camel_to_snake, read_from_file
 from auto_dev.constants import BASE_FSM_SKILLS, DEFAULT_ENCODING, JINJA_TEMPLATE_FOLDER
 from auto_dev.cli_executor import CommandExecutor
 from auto_dev.handlers.base import HandlerTypes, HandlerScaffolder
