@@ -554,7 +554,7 @@ def get_update_command(poetry_dependencies: Dependency) -> str:
             )
             if dependency.extras is not None:
                 extras = ",".join(dependency.extras)
-                cmd += f"{dependency.name}[{extras}]@=={expected_version} "
+                cmd += f"{dependency.name}[{extras}]@{expected_version} "
             else:
                 cmd += f"{dependency.name}@{expected_version} "
             if dependency.plugins:
