@@ -11,8 +11,12 @@ Tooling to speed up open-autonomy development.
 For detailed instructions please see the [Docs.](https://8ball030.github.io/auto_dev/)
 
 ## TLDR
-
-    pip install autonomy-dev[all]
+    # Install adev
+    pip install "autonomy-dev[all]"
+    # Make a new agent
+    adev create author/cool_agent
+    # Run the new agent
+    adev run author/cool_agent
 
 ## Requirements
 
@@ -28,15 +32,6 @@ For detailed instructions please see the [Docs.](https://8ball030.github.io/auto
 - Linting and formatting tools
 - Dependency management tools
 - Test suite scaffolding
-
-## Installation
-
-Please verify the existance of the `poetry` command before proceeding.
-
-
-```bash
-pip install "autonomy-dev[all]"
-```
 
 ### Creating New Github Projects
 We can make an autonomy repo
