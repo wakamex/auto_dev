@@ -93,17 +93,8 @@ def _process_from_file(ctx, yaml_dict, network, read_functions, write_functions,
         )
 
 
-def _validate_inputs(address, name, from_file):
-    """Validate input parameters."""
-    if address is None and name is None and from_file is None:
-        msg = "Must provide either an address and name or a file containing a list of addresses and names."
-        raise ValueError(msg)
-
-    return name.replace(" ", "_").replace("/", "_") if name else None
-
-
 @scaffold.command()
-@click.argument("name", default=None, required=False)
+@click.argument("public_id", type=PublicId.from_str, default=None, required=False)
 @click.option("--address", default=DEFAULT_NULL_ADDRESS, required=False, help="The address of the contract.")
 @click.option("--from-file", default=None, help="Ingest a file containing a list of addresses and names.")
 @click.option("--from-abi", default=None, help="Ingest an ABI file to scaffold a contract.")
@@ -116,14 +107,25 @@ def _validate_inputs(address, name, from_file):
 @click.option("--read-functions", default=None, help="Comma separated list of read functions to scaffold.")
 @click.option("--write-functions", default=None, help="Comma separated list of write functions to scaffold.")
 @click.pass_context
-def contract(ctx, address, name, network, read_functions, write_functions, from_abi, from_file):
-    """Scaffold a contract."""
+def contract(ctx, public_id, address, network, read_functions, write_functions, from_abi, from_file):
+    """Scaffold a contract.
+
+    :param public_id: the public_id of the contract in the open-autonomy format i.e. `author/contract_name`
+    """
     logger = ctx.obj["LOGGER"]
 
-    # Validate name and inputs, throws error if not valid
-    processed_name = _validate_inputs(address, name, from_file)
+    # Validate inputs
+    if address is None and public_id is None and from_file is None:
+        msg = "Must provide either an address and public_id or a file containing a list of addresses and names."
+        raise ValueError(msg)
 
-    author = load_basic_aea_config().get("author")
+    # Process public_id
+    if public_id is not None:
+        processed_name = public_id.name if public_id else None
+        author = public_id.author if public_id else None
+    else:
+        processed_name = None
+        author = None
 
     # Create the scaffolder before doing any processing
     block_explorer = BlockExplorer(f"https://abidata.net", network=network)
