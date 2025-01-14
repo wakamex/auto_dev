@@ -170,8 +170,6 @@ For projects created with adev, updates to both:
 
 are automated using as so;
 
-![image](https://github.com/user-attachments/assets/df3e818a-e904-4d3a-a5d0-2375944fd34f)
-
 
 ```
 
