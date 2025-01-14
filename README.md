@@ -161,6 +161,22 @@ adev scaffold contract my_contract \
     --network polygon-mainnet
 ```
 
+## Dependency Management
+
+For projects created with adev, updates to both:
+
+- autonomy packages
+- upstream python packages
+
+are automated using as so;
+
+![image](https://github.com/user-attachments/assets/df3e818a-e904-4d3a-a5d0-2375944fd34f)
+
+
+```
+
+```
+
 ## Release
 
 ```bash
