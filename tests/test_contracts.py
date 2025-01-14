@@ -29,7 +29,7 @@ def block_explorer():
 @responses.activate
 def test_block_explorer(block_explorer):
     """Test the block explorer."""
-    expected_url = f"{BLOCK_EXPLORER_URL}/{KNOWN_ADDRESS}?network=base"
+    expected_url = f"{BLOCK_EXPLORER_URL}/{KNOWN_ADDRESS}?network={NETWORK.value}"
     print(f"Mocked URL: {expected_url}")
 
     responses.add(
@@ -46,7 +46,7 @@ def test_block_explorer(block_explorer):
 @responses.activate
 def test_block_explorer_error_handling(block_explorer):
     """Test the block explorer handles errors gracefully."""
-    expected_url = f"{BLOCK_EXPLORER_URL}/{KNOWN_ADDRESS}?network=base"
+    expected_url = f"{BLOCK_EXPLORER_URL}/{KNOWN_ADDRESS}?network={NETWORK.value}"
 
     # Test case 1: API returns error
     responses.add(responses.GET, expected_url, json={"ok": False, "error": "Not found"}, status=404)
@@ -96,7 +96,7 @@ def test_scaffolder_generate(scaffolder):
     """Test the scaffolder."""
     responses.add(
         responses.GET,
-        f"{BLOCK_EXPLORER_URL}/{KNOWN_ADDRESS}?network=base",
+        f"{BLOCK_EXPLORER_URL}/{KNOWN_ADDRESS}?network={NETWORK.value}",
         json={"ok": True, "abi": DUMMY_ABI},
     )
     new_contract = scaffolder.from_block_explorer(KNOWN_ADDRESS, "new_contract")
@@ -108,30 +108,17 @@ def test_scaffolder_generate(scaffolder):
 
 
 @responses.activate
-def test_scaffolder_generate_openaea_contract(scaffolder, test_filesystem, tmp_path):
+def test_scaffolder_generate_openaea_contract(scaffolder, test_filesystem):
     """Test the scaffolder."""
     del test_filesystem
-
-    # Create necessary directory structure
-    contracts_dir = tmp_path / "packages" / "eightballer" / "contracts"
-    contracts_dir.mkdir(parents=True)
-
     responses.add(
         responses.GET,
-        f"{BLOCK_EXPLORER_URL}/{KNOWN_ADDRESS}?network=base",
+        f"{BLOCK_EXPLORER_URL}/{KNOWN_ADDRESS}?network={NETWORK.value}",
         json={"ok": True, "abi": DUMMY_ABI},
     )
     new_contract = scaffolder.from_block_explorer(KNOWN_ADDRESS, "new_contract")
-
-    # Ensure the build directory exists
-    build_dir = contracts_dir / "new_contract" / "build"
-    build_dir.mkdir(parents=True, exist_ok=True)
-
-    # Write dummy ABI file
-    abi_file = build_dir / "new_contract.json"
-    abi_file.write_text(json.dumps(DUMMY_ABI))
-
     contract_path = scaffolder.generate_openaea_contract(new_contract)
+    assert contract_path
     assert contract_path.exists()
     assert contract_path.name == "new_contract"
     assert contract_path.parent.name == "contracts"
