@@ -12,6 +12,7 @@ from pathlib import Path
 from dataclasses import dataclass
 
 import docker
+import requests
 import rich_click as click
 from docker.errors import NotFound
 from aea.skills.base import PublicId
@@ -21,6 +22,7 @@ from auto_dev.utils import map_os_to_env_vars
 from auto_dev.constants import DOCKERCOMPOSE_TEMPLATE_FOLDER
 from auto_dev.cli_executor import CommandExecutor
 
+from docker.errors import APIError
 
 cli = build_cli()
 
@@ -55,20 +57,20 @@ class AgentRunner:
     def check_tendermint(self, retries: int = 0) -> None:
         """Check if Tendermint is running."""
         docker_engine = docker.from_env()
+        os_name = platform.system()
         container_name = "tm_0"
+        tm_overrides = map_os_to_env_vars(os_name)
         try:
             res = docker_engine.containers.get(container_name)
-
-        except (subprocess.CalledProcessError, RuntimeError, NotFound) as e:
+            res.kill()
+            res.stop()
+        except (subprocess.CalledProcessError, RuntimeError, NotFound, APIError) as e:
             if retries > 3:
                 self.logger.error(f"Tendermint is not running. Please install and run Tendermint using Docker. {e}")
                 sys.exit(1)
             self.logger.info("Starting Tendermint... 🚀")
-            os_name = platform.system()
-            tm_overrides = map_os_to_env_vars(os_name)
             self.start_tendermint(tm_overrides)
             return self.check_tendermint(retries + 1)
-
         if res.status != "running":
             self.logger.error("Tendermint is not healthy. Please check the logs.")
             sys.exit(1)
