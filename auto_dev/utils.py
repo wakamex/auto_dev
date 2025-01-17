@@ -288,7 +288,7 @@ def load_aea_config():
     """Load the aea-config.yaml file."""
     aea_config = Path("aea-config.yaml")
     if not aea_config.exists():
-        msg = f"Could not find {aea_config}"
+        msg = f"Could not find {aea_config}, are you in the correct directory?"
         raise FileNotFoundError(msg)
 
     # Notes, we have a bit of an issue here.
