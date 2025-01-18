@@ -28,8 +28,9 @@ from aea.configurations.base import AgentConfig
 from openapi_spec_validator.exceptions import OpenAPIValidationError
 
 from auto_dev.enums import FileType, FileOperation
-from auto_dev.constants import OS_ENV_MAP, DEFAULT_ENCODING, AUTONOMY_PACKAGES_FILE, SupportedOS
+from auto_dev.constants import OS_ENV_MAP, DEFAULT_ENCODING, AUTONOMY_PACKAGES_FILE, SupportedOS, COMPONENT_CONFIG_FILES
 from auto_dev.exceptions import NotFound, OperationError
+from aea.configurations.constants import DEFAULT_AEA_CONFIG_FILE, AGENT
 
 
 def reset_logging():
@@ -284,31 +285,44 @@ def remove_suffix(text: str, suffix: str) -> str:
     return text[: -len(suffix)] if suffix and text.endswith(suffix) else text
 
 
-def load_aea_config():
-    """Load the aea-config.yaml file."""
-    aea_config = Path("aea-config.yaml")
-    if not aea_config.exists():
-        msg = f"Could not find {aea_config}, are you in the correct directory?"
+def load_autonolas_yaml(component_type: str, directory: Optional[Union[str, Path]] = None) -> list:
+    """Load a component's yaml configuration file.
+    
+    Args:
+        component_type: Type of component (agent, skill, contract, protocol)
+        directory: Optional directory path where the config file is located
+        
+    Returns:
+        List of yaml documents from the file
+        
+    Raises:
+        FileNotFoundError: If the config file doesn't exist
+        ValueError: If invalid component type provided
+    """
+    if not component_type or component_type not in COMPONENT_CONFIG_FILES:
+        msg = f"Invalid component type. Must be one of: {list(COMPONENT_CONFIG_FILES.keys())}"
+        raise ValueError(msg)
+        
+    config_file = COMPONENT_CONFIG_FILES[component_type]
+    config_path = Path(directory or ".") / config_file
+    
+    if not config_path.exists():
+        msg = f"Could not find {config_path}, are you in the correct directory?"
         raise FileNotFoundError(msg)
 
-    # Notes, we have a bit of an issue here.
-    # The loader for the agent config only loads the first document in the yaml file.
-    # We have to load all the documents in the yaml file, however, later on, we run into issues
-    # with the agent config loader not being able to load the yaml file.
-    # I propose we we raise an issue to address ALL instances of agent loading
-    agent_config_yaml = list(yaml.safe_load_all(aea_config.read_text(encoding=DEFAULT_ENCODING)))
-    return agent_config_yaml
+    # Load all documents in the yaml file
+    config_yaml = list(yaml.safe_load_all(config_path.read_text(encoding=DEFAULT_ENCODING)))
+    return config_yaml
 
 
 def load_aea_ctx(func: Callable[[click.Context, Any, Any], Any]) -> Callable[[click.Context, Any, Any], Any]:
     """Load aea Context and AgentConfig if aea-config.yaml exists."""
 
     def wrapper(ctx: click.Context, *args, **kwargs):
-        agent_config_json = load_aea_config()[0]
+        agent_config_json = load_autonolas_yaml("agent")[0]
         registry_path = get_registry_path_from_cli_config()
         ctx.aea_ctx = Context(cwd=".", verbosity="INFO", registry_path=registry_path)
         ctx.aea_ctx.agent_config = AgentConfig.from_json(agent_config_json)
-        # we need a way to ensure we are also loading the overrides...
         return func(ctx, *args, **kwargs)
 
     wrapper.__name__ = func.__name__
