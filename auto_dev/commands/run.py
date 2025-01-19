@@ -3,11 +3,14 @@
 import os
 import sys
 import time
+import shutil
 import platform
 import subprocess
 from copy import deepcopy
 from typing import Any
 from pathlib import Path
+from textwrap import dedent
+from contextlib import chdir
 from dataclasses import dataclass
 
 import docker
@@ -15,14 +18,17 @@ import rich_click as click
 from docker.errors import NotFound
 from aea.skills.base import PublicId
 from aea.configurations.base import PackageType
+from aea.configurations.constants import DEFAULT_AEA_CONFIG_FILE
 
 from auto_dev.base import build_cli
 from auto_dev.utils import map_os_to_env_vars, load_autonolas_yaml
 from auto_dev.constants import DOCKERCOMPOSE_TEMPLATE_FOLDER
+from auto_dev.exceptions import UserInputError
 from auto_dev.cli_executor import CommandExecutor
 
 
 cli = build_cli()
+
 
 @dataclass
 class AgentRunner:
@@ -32,25 +38,35 @@ class AgentRunner:
     verbose: bool
     force: bool
     logger: Any
-    no_fetch: bool = False
+    fetch: bool = False
 
     def run(self) -> None:
         """Run the agent."""
-        if not self.no_fetch:
+        agent_path = "." if not self.fetch else self.agent_name.name
+        if self.fetch:
             self.fetch_agent()
-        else:
-            self.logger.info(f"Looking for local agent package in directory {self.agent_name.name}...")
-            if not Path(self.agent_name.name).exists():
-                self.logger.error(f"Local agent package {self.agent_name.name} does not exist.")
-                sys.exit(1)
-            self.logger.info(f"Found local agent package at {self.agent_name.name}")
-
+        if not self.check_agent_exists(locally=True, in_packages=False):
+            self.logger.error(f"Local agent package {self.agent_name.name} does not exist.")
+            sys.exit(1)
+        self.logger.info(f"Found local agent package at {self.agent_name.name}")
         self.logger.info(f"Changing to directory: {self.agent_name.name}")
-        self.change_directory(self.agent_name.name)
         self.check_tendermint()
-        self.setup_agent()
-        self.execute_agent()
+
+        with chdir(agent_path):
+            self.setup_agent()
+            self.execute_agent()
         self.stop_tendermint()
+
+    def check_agent_exists(self, locally=False, in_packages=True) -> bool:
+        """Check if the agent exists."""
+
+        if locally and in_packages:
+            raise UserInputError("Cannot check both locally and in packages.")
+        if locally:
+            return Path(self.agent_name.name).exists() or Path(DEFAULT_AEA_CONFIG_FILE).exists()
+        if in_packages:
+            return Path(f"packages/{self.agent_name.author}/agents/{self.agent_name.name}").exists()
+        return False
 
     def stop_tendermint(self) -> None:
         """Stop Tendermint."""
@@ -67,6 +83,10 @@ class AgentRunner:
             self.logger.info(f"Looking for Tendermint container: {container_name}")
             res = docker_engine.containers.get(container_name)
             self.logger.info(f"Found Tendermint container with status: {res.status}")
+            if res.status == "exited":
+                res.remove()
+                time.sleep(0.2)
+                self.check_tendermint(retries + 1)
 
         except (subprocess.CalledProcessError, RuntimeError, NotFound) as e:
             self.logger.info(f"Tendermint container not found or error: {e}")
@@ -90,7 +110,7 @@ class AgentRunner:
         """Fetch the agent from registry if needed."""
         self.logger.info(f"Fetching agent {self.agent_name} from the local package registry...")
 
-        if Path(self.agent_name.name).exists():
+        if self.check_agent_exists(locally=True, in_packages=False):
             if not self.force:
                 self.logger.error(f"Agent `{self.agent_name}` already exists. Use --force to overwrite.")
                 sys.exit(1)
@@ -104,112 +124,63 @@ class AgentRunner:
 
     def setup_agent(self) -> None:
         """Setup the agent."""
-        try:
-            if not self.no_fetch:
-                self.logger.info(f"Agent author: {self.agent_name.author}")
-                self.logger.info(f"Agent name: {self.agent_name.name}")
+        if not self.fetch:
+            self.logger.info(f"Agent author: {self.agent_name.author}")
+            self.logger.info(f"Agent name: {self.agent_name.name}")
 
-            self.logger.info("Setting up agent keys...")
-            self.manage_keys()
+        self.logger.info("Setting up agent keys...")
+        self.manage_keys()
 
-            self.logger.info("Installing dependencies...")
-            self.install_dependencies()
+        self.logger.info("Installing dependencies...")
+        self.install_dependencies()
 
-            self.logger.info("Setting up certificates...")
-            self.issue_certificates()
+        self.logger.info("Setting up certificates...")
+        self.issue_certificates()
+        self.logger.info("Agent setup complete. 🎉")
 
-            self.logger.info("Agent setup complete. 🎉")
-        except (subprocess.SubprocessError, OSError, RuntimeError) as e:
-            self.logger.error(f"Failed to setup agent: {e}")
-            sys.exit(1)
-
-    def manage_keys(self) -> None:
+    def manage_keys(
+        self,
+        generate_keys: bool = True,
+    ) -> None:
         """Manage keys based on the agent's default ledger configuration."""
-        try:
-            config = load_autonolas_yaml(PackageType.AGENT)[0]
-            default_ledger = config["default_ledger"]
+        config = load_autonolas_yaml(PackageType.AGENT)[0]
+        required_ledgers = config["required_ledgers"]
+        if not required_ledgers:
+            self.logger.error("No ledgers found in the agent configuration.")
+            sys.exit(1)
+        for ledger in required_ledgers:
+            self.logger.info(f"Processing ledger: {ledger}")
+            self.setup_ledger_key(ledger, generate_keys)
 
-            self.logger.info(f"Using default ledger: {default_ledger}")
+    def setup_ledger_key(self, ledger: str, generate_keys, existing_key_file: Path = None) -> None:
+        """
+        Setup the agent with the ledger key.
+        """
+        key_file = Path(f"{ledger}_private_key.txt")
+        commands_to_errors = []
+        if existing_key_file:
+            self.logger.info(f"Copying existing key file {existing_key_file} to {key_file}")
+            shutil.copy(existing_key_file, key_file)
+        if key_file.exists():
+            self.logger.error(f"Key file {key_file} already exists.")
+        else:
+            if generate_keys:
+                self.logger.info(f"Generating key for {ledger}...")
+                commands_to_errors.append([f"aea -s generate-key {ledger}", f"Key generation failed for {ledger}"])
+            commands_to_errors.append([f"aea -s add-key {ledger}", f"Key addition failed for {ledger}"])
 
-            key_file = Path(f"{default_ledger}_private_key.txt")
-
-            # If --no-fetch and key exists, just remove and re-add it
-            if self.no_fetch and key_file.exists():
-                self.logger.info(f"Found existing key file: {key_file}")
-
-                # Remove existing key from AEA
-                result = subprocess.run(
-                    ["aea", "-s", "remove-key", default_ledger],
-                    capture_output=True,
-                    text=True,
-                )
-                if "no key registered" not in result.stderr.lower():
-                    self.logger.info(f"Removed existing {default_ledger} key from AEA")
-
-                # Add existing key back
-                add_result = subprocess.run(
-                    ["aea", "-s", "add-key", default_ledger, str(key_file)],
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    text=True,
-                    check=False,
-                )
-                if add_result.returncode != 0:
-                    self.logger.error(f"Key addition failed: {add_result.stderr}")
-                    raise RuntimeError("Key addition failed")
-
-                self.logger.info(f"Re-added existing {default_ledger} key ✅")
-                return
-
-            # Otherwise, proceed with normal key generation process
-            if key_file.exists():
-                self.logger.info(f"Removing existing key file: {key_file}")
-                key_file.unlink()
-
-            # Remove existing key if present
-            result = subprocess.run(
-                ["aea", "-s", "remove-key", default_ledger],
-                capture_output=True,
-                text=True,
-            )
-            if "no key registered" not in result.stderr.lower():
-                self.logger.info(f"Removed existing {default_ledger} key")
-
-            # Generate and add new key
-            self.logger.info(f"Generating key for {default_ledger}...")
-            generate_result = subprocess.run(
-                ["aea", "-s", "generate-key", default_ledger],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                check=False,
-            )
-            if generate_result.returncode != 0:
-                self.logger.error(f"Key generation failed: {generate_result.stderr}")
-                raise RuntimeError("Key generation failed")
-
-            add_result = subprocess.run(
-                ["aea", "-s", "add-key", default_ledger, f"{default_ledger}_private_key.txt"],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                check=False,
-            )
-            if add_result.returncode != 0:
-                self.logger.error(f"Key addition failed: {add_result.stderr}")
-                raise RuntimeError("Key addition failed")
-
-            self.logger.info(f"{default_ledger} key setup complete ✅")
-        except (subprocess.SubprocessError, OSError) as e:
-            self.logger.error(f"Failed to generate and add {default_ledger} key: {str(e)}")
-            raise
+        for command, error in commands_to_errors:
+            result = self.execute_command(command)
+            if not result:
+                self.logger.error(error)
+        self.logger.info(f"{ledger} key setup complete ✅")
 
     def install_dependencies(self) -> None:
         """Install agent dependencies."""
         self.execute_command("aea -s install")
 
     def issue_certificates(self) -> None:
-        """Issue certificates for agent."""
+        """Issue certificates for agent if needed."""
         if not Path("../certs").exists():
             self.execute_command("aea -s issue-certificates")
         else:
@@ -236,22 +207,33 @@ class AgentRunner:
             sys.exit(1)
         except Exception as e:
             self.logger.error(f"Failed to start Tendermint: {str(e)}")
-            self.logger.error("Please check that:")
-            self.logger.error("1. Docker is installed and running")
-            self.logger.error("2. Docker compose is installed")
-            self.logger.error("3. You have necessary permissions to run Docker commands")
-            self.logger.error("4. The Tendermint configuration file exists and is valid")
+
+            msg = dedent("""
+                         Please check that:
+                         1. Docker is installed and running
+                         2. Docker compose is installed
+                         3. You have necessary permissions to run Docker commands
+                         4. The Tendermint configuration file exists and is valid
+                         """)
+            self.logger.error(msg)
             sys.exit(1)
 
-    def execute_agent(self) -> None:
-        """Execute the agent."""
+    def execute_agent(
+        self,
+    ) -> None:
+        """Execute the agent.
+        - args: background (bool): Run the agent in the background."""
         self.logger.info("Starting agent execution...")
         try:
-            subprocess.run(["aea", "-s", "run"], check=True)
-            self.logger.info("Agent execution started.")
-        except subprocess.CalledProcessError as e:
-            self.logger.error(f"Failed to start agent: {e}")
-            sys.exit(1)
+            result = self.execute_command("aea -s run", verbose=True)
+            if result:
+                self.logger.info("Agent execution completed successfully. 😎")
+            else:
+                self.logger.error("Agent execution failed.")
+                sys.exit(1)
+        except RuntimeError as error:
+            self.logger.error(f"Agent ended with error: {error}")
+        self.logger.info("Agent execution complete. 😎")
 
     def execute_command(self, command: str, verbose=None, env_vars=None) -> None:
         """Execute a shell command."""
@@ -263,19 +245,15 @@ class AgentRunner:
         if not result:
             self.logger.error(f"Command failed: {command}")
             self.logger.error(f"Error: {cli_executor.stderr}")
-            sys.exit(1)
+            raise RuntimeError(f"Command failed: {command}")
         return result
-
-    def change_directory(self, directory: str) -> None:
-        """Change the current working directory."""
-        os.chdir(directory)
 
 
 @cli.command()
 @click.argument(
     "agent_public_id",
     type=PublicId.from_str,
-    required=True,
+    required=False,
 )
 @click.option("-v", "--verbose", is_flag=True, help="Verbose mode.", default=False)
 @click.option("--force", is_flag=True, help="Force overwrite of existing agent", default=False)
@@ -289,6 +267,12 @@ def run(ctx, agent_public_id: PublicId, verbose: bool, force: bool, fetch: bool)
         adev run eightballer/my_agent  # Fetch and run from registry
         adev run eightballer/my_agent --no-fetch  # Run local agent package named my_agent
     """
+    if not agent_public_id:
+        # We set fetch to false if the agent is not provided, as we assume the user wants to run the agent locally.
+        fetch = False
+        agent_config = load_autonolas_yaml(PackageType.AGENT)[0]
+        id_str = f"{agent_config['author']}/{agent_config['agent_name']}:{agent_config['version']}"
+        agent_public_id = PublicId.from_str(id_str)
     logger = ctx.obj["LOGGER"]
 
     runner = AgentRunner(
@@ -296,7 +280,7 @@ def run(ctx, agent_public_id: PublicId, verbose: bool, force: bool, fetch: bool)
         verbose=verbose,
         force=force,
         logger=logger,
-        no_fetch=not fetch,
+        fetch=fetch,
     )
     runner.run()
     logger.info("Agent run complete. 😎")
