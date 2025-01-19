@@ -320,7 +320,7 @@ def load_aea_ctx(func: Callable[[click.Context, Any, Any], Any]) -> Callable[[cl
     """Load aea Context and AgentConfig if aea-config.yaml exists."""
 
     def wrapper(ctx: click.Context, *args, **kwargs):
-        agent_config_json = load_autonolas_yaml("agent")[0]
+        agent_config_json = load_autonolas_yaml(PackageType.AGENT)[0]
         registry_path = get_registry_path_from_cli_config()
         ctx.aea_ctx = Context(cwd=".", verbosity="INFO", registry_path=registry_path)
         ctx.aea_ctx.agent_config = AgentConfig.from_json(agent_config_json)
