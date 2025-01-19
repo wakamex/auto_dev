@@ -6,7 +6,6 @@ import time
 import platform
 import subprocess
 from copy import deepcopy
-from enum import Enum
 from typing import Any
 from pathlib import Path
 from dataclasses import dataclass
@@ -24,15 +23,6 @@ from auto_dev.cli_executor import CommandExecutor
 
 
 cli = build_cli()
-
-
-class SupportedLedger(Enum):
-    """Supported ledger types."""
-
-    ETHEREUM = "ethereum"
-    COSMOS = "cosmos"
-    SOLANA = "solana"
-
 
 @dataclass
 class AgentRunner:
