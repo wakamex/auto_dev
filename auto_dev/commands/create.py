@@ -8,11 +8,10 @@ from aea.configurations.base import PublicId
 
 from auto_dev.base import build_cli
 from auto_dev.enums import FileType
-from auto_dev.utils import change_dir, get_packages, write_to_file, load_aea_config
+from auto_dev.utils import change_dir, get_packages, write_to_file, load_autonolas_yaml
 from auto_dev.constants import AUTO_DEV_FOLDER, AUTONOMY_PACKAGES_FILE
 from auto_dev.exceptions import OperationError
 from auto_dev.cli_executor import CommandExecutor
-
 
 cli = build_cli()
 
@@ -30,7 +29,7 @@ def update_author(public_id: PublicId) -> None:
     """Update the author in the recently created agent"""
 
     with change_dir(public_id.name):
-        complete_agent_config = load_aea_config()
+        complete_agent_config = load_autonolas_yaml("agent")
 
         agent_config = complete_agent_config[0]
         if agent_config["author"] != public_id.author:
@@ -53,7 +52,7 @@ def publish_agent(public_id: PublicId, verbose: bool) -> None:
     with change_dir(public_id.name):
         # we have to do a horrible hack here, regards to the customs as they are not being published.
         # please see issue.
-        agent_config_yaml = load_aea_config()
+        agent_config_yaml = load_autonolas_yaml("agent")
         for package in agent_config_yaml[0]["customs"]:
             custom_id = PublicId.from_str(package)
             # We need to copy the customs to the parent now.
