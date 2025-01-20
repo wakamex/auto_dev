@@ -1,6 +1,5 @@
 """This module contains the logic for the fmt command."""
 
-import shutil
 from pathlib import Path
 
 import rich_click as click
@@ -13,9 +12,8 @@ from auto_dev.utils import change_dir, get_packages, write_to_file, load_autonol
 from auto_dev.constants import AUTO_DEV_FOLDER, AUTONOMY_PACKAGES_FILE
 from auto_dev.exceptions import OperationError
 from auto_dev.cli_executor import CommandExecutor
+from auto_dev.services.publish.index import publish_agent, ensure_local_registry
 
-
-AGENT_PUBLISHED_SUCCESS_MSG = "Agent published successfully."
 
 cli = build_cli()
 
@@ -44,44 +42,6 @@ def update_author(public_id: PublicId) -> None:
             agent_config["author"] = public_id.author
             complete_agent_config[0] = agent_config
             write_to_file("aea-config.yaml", complete_agent_config, FileType.YAML)
-
-
-def publish_agent(public_id: PublicId, verbose: bool) -> None:
-    """Publish an agent.
-    :param public_id: the public_id of the agent.
-    """
-    publish_commands = [
-        "aea publish --push-missing --local",
-    ]
-    with change_dir(public_id.name):
-        # we have to do a horrible hack here, regards to the customs as they are not being published.
-        # please see issue.
-        agent_config_yaml = load_autonolas_yaml(PackageType.AGENT)
-        for package in agent_config_yaml[0]["customs"]:
-            custom_id = PublicId.from_str(package)
-            # We need to copy the customs to the parent now.
-            customs_path = Path("vendor") / custom_id.author / "customs" / custom_id.name
-            package_path = Path("..") / "packages" / custom_id.author / "customs" / custom_id.name
-            if not package_path.exists():
-                shutil.copytree(
-                    customs_path,
-                    package_path,
-                )
-
-        for command in publish_commands:
-            command = CommandExecutor(
-                command.split(" "),
-            )
-            click.secho(f"Executing command: {command.command}", fg="yellow")
-            result = command.execute(verbose=verbose)
-            if not result:
-                msg = f"""
-                Command failed: {command.command}
-                Error: {command.stderr}
-                stdout: {command.stdout}"""
-                click.secho(msg, fg="red")
-                raise OperationError(msg)
-            click.secho(AGENT_PUBLISHED_SUCCESS_MSG, fg="green")
 
 
 @cli.command()
@@ -170,16 +130,13 @@ def create(ctx, public_id: str, template: str, force: bool, publish: bool, clean
 
     update_author(public_id=public_id)
     if publish:
-        # We check if there is a local registry.
-
-        if not Path("packages").exists():
-            command = CommandExecutor(["poetry", "run", "autonomy", "packages", "init"])
-            result = command.execute(verbose=verbose)
-            if not result:
-                msg = f"Command failed: {command.command}"
-                click.secho(msg, fg="red")
-                return OperationError()
-        publish_agent(public_id, verbose)
+        try:
+            ensure_local_registry(verbose)
+            publish_agent(public_id, verbose)
+            click.secho("Agent published successfully.", fg="green")
+        except OperationError as e:
+            click.secho(str(e), fg="red")
+            raise click.Abort() from e
 
     if clean_up:
         command = CommandExecutor(
@@ -197,3 +154,7 @@ def create(ctx, public_id: str, template: str, force: bool, publish: bool, clean
         click.secho(f"Agent {name} cleaned up successfully.", fg="green")
 
     click.secho(f"Agent {name} created successfully.", fg="green")
+
+
+if __name__ == "__main__":
+    cli()  # pylint: disable=no-value-for-parameter
