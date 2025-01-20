@@ -7,12 +7,12 @@ from aea.configurations.base import PublicId
 from aea.configurations.data_types import PackageType
 
 from auto_dev.base import build_cli
-from auto_dev.enums import FileType
+from auto_dev.enums import FileType, LockType
 from auto_dev.utils import change_dir, get_packages, write_to_file, load_autonolas_yaml
 from auto_dev.constants import AUTO_DEV_FOLDER, AUTONOMY_PACKAGES_FILE
 from auto_dev.exceptions import OperationError
 from auto_dev.cli_executor import CommandExecutor
-from auto_dev.services.publish.index import publish_agent, ensure_local_registry
+from auto_dev.services.publish.index import PublishService
 
 
 cli = build_cli()
@@ -78,7 +78,7 @@ def create(ctx, public_id: str, template: str, force: bool, publish: bool, clean
     ]:
         is_proposed_path_exists = Path(name).exists()
         if is_proposed_path_exists and not force:
-            msg = (f"Directory {name} already exists. Please remove it or use the --force flag to overwrite it.",)
+            msg = f"Directory {name} already exists. " "Please remove it or use the --force flag to overwrite it."
             click.secho(
                 msg,
                 fg="red",
@@ -131,8 +131,11 @@ def create(ctx, public_id: str, template: str, force: bool, publish: bool, clean
     update_author(public_id=public_id)
     if publish:
         try:
-            ensure_local_registry(verbose)
-            publish_agent(public_id, verbose)
+            publish_service = PublishService(verbose=verbose)
+            publish_service.ensure_local_registry()
+            # For now, we are not locking the packages. In the future, we could lock them
+            # as third_party (or via a flag).
+            publish_service.publish_agent(public_id)
             click.secho("Agent published successfully.", fg="green")
         except OperationError as e:
             click.secho(str(e), fg="red")
