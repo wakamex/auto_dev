@@ -306,14 +306,9 @@ def load_autonolas_yaml(package_type: PackageType, directory: Optional[Union[str
     if not config_path.exists():
         msg = f"Could not find {config_path}, are you in the correct directory?"
         raise FileNotFoundError(msg)
-
-    # Notes, we have a bit of an issue here.
-    # The loader for the agent config only loads the first document in the yaml file.
-    # We have to load all the documents in the yaml file, however, later on, we run into issues
-    # with the agent config loader not being able to load the yaml file.
-    # I propose we we raise an issue to address ALL instances of agent loading
     config_yaml = list(yaml.safe_load_all(config_path.read_text(encoding=DEFAULT_ENCODING)))
     return config_yaml
+
 
 def load_aea_ctx(func: Callable[[click.Context, Any, Any], Any]) -> Callable[[click.Context, Any, Any], Any]:
     """Load aea Context and AgentConfig if aea-config.yaml exists."""
