@@ -27,6 +27,10 @@ from auto_dev.exceptions import UserInputError
 from auto_dev.cli_executor import CommandExecutor
 
 
+TENDERMINT_RESET_TIMEOUT = 10
+TENDERMINT_RESET_ENDPOINT = "http://localhost:8080/hard_reset"
+
+
 cli = build_cli()
 
 
@@ -112,6 +116,14 @@ class AgentRunner:
                 res.remove()
                 time.sleep(0.2)
                 self.check_tendermint(retries + 1)
+            if res.status == "running":
+                try:
+                    self.logger.info("Tendermint is running, executing hard reset...")
+                    response = requests.get(TENDERMINT_RESET_ENDPOINT, timeout=TENDERMINT_RESET_TIMEOUT)
+                    if response.status_code != 200:
+                        self.logger.warning(f"Hard reset failed with status code {response.status_code}")
+                except requests.RequestException as e:
+                    self.logger.warning(f"Failed to execute hard reset: {e}")
         except (subprocess.CalledProcessError, RuntimeError, NotFound) as e:
             self.logger.info(f"Tendermint container not found or error: {e}")
             if retries > 3:
