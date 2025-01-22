@@ -5,11 +5,9 @@ from aea.configurations.base import PublicId
 
 from auto_dev.base import build_cli
 from auto_dev.enums import LockType
+from auto_dev.constants import AGENT_PUBLISHED_SUCCESS_MSG
 from auto_dev.exceptions import OperationError
 from auto_dev.services.publish.index import PublishService
-from auto_dev.constants import AGENT_PUBLISHED_SUCCESS_MSG
-
-
 
 
 cli = build_cli()
@@ -62,18 +60,21 @@ def publish(ctx, public_id: str = None, lock_type: str = None, force: bool = Fal
         publish_service = PublishService(verbose=verbose)
         publish_service.ensure_local_registry()
 
-        if public_id:
+        if isinstance(public_id, str):
             try:
                 public_id = PublicId.from_str(public_id)
-            except ValueError as e:
-                raise click.ClickException(f"Invalid value for '[PUBLIC_ID]': {public_id}") from e
+            except ValueError as err:
+                raise click.ClickException(f"Invalid value for '[PUBLIC_ID]': {public_id}") from err
 
-        publish_service.publish_agent(public_id, lock_type=LockType(lock_type) if lock_type else None, force=force)
+        lock_type_enum = LockType(lock_type) if lock_type else None
+        publish_service.publish_agent(public_id, lock_type=lock_type_enum, force=force)
+
         click.secho(AGENT_PUBLISHED_SUCCESS_MSG, fg="green")
         logger.info("Agent published successfully.")
+
     except OperationError as e:
         click.secho(str(e), fg="red")
-        raise click.Abort() from e
+        ctx.exit(1)
 
 
 if __name__ == "__main__":
