@@ -67,3 +67,4 @@ class LockType(Enum):
 
     DEV = "dev"
     THIRD_PARTY = "third_party"
+    MANUAL = "manual"  # Allows user to set lock type for each package individually

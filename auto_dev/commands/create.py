@@ -133,7 +133,7 @@ def create(ctx, public_id: str, template: str, force: bool, publish: bool, clean
             try:
                 publish_service = PublishService(verbose=verbose)
                 # We're already in the agent directory after update_author
-                publish_service.publish_agent(public_id=public_id, force=force)
+                publish_service.publish_agent(force=force)
                 click.secho("Agent published successfully.", fg="green")
             except OperationError as e:
                 click.secho(str(e), fg="red")

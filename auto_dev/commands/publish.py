@@ -77,7 +77,7 @@ def publish(ctx, public_id: str = None, lock_type: str = None, force: bool = Fal
 
             with change_dir(agent_path):
                 lock_type_enum = LockType(lock_type) if lock_type else None
-                publish_service.publish_agent(public_id=public_id, lock_type=lock_type_enum, force=force)
+                publish_service.publish_agent(lock_type=lock_type_enum, force=force)
         else:
             # No public_id means we should already be in an agent directory
             if not Path("aea-config.yaml").exists():

@@ -1,6 +1,7 @@
 """This module contains the service logic for publishing agents."""
 
 import shutil
+import subprocess
 from typing import Optional
 from pathlib import Path
 
@@ -135,16 +136,21 @@ class PublishService:
         """Lock the packages after publishing.
 
         Args:
-            lock_type: the type of lock to apply (dev or third_party).
+            lock_type: the type of lock to apply (dev, third_party, or manual).
         """
-
         logger.info(f"Locking packages as {lock_type.value}")
 
-        command = CommandExecutor(
-            ["bash", "-c", f"yes {lock_type.value} | autonomy packages lock"],
-        )
-        result = command.execute(verbose=self.verbose)
+        if lock_type == LockType.MANUAL:
+            command = CommandExecutor(["autonomy", "packages", "lock"])
+            result = command.execute(verbose=self.verbose, interactive=True)
+        else:
+            command = CommandExecutor(
+                ["bash", "-c", f"yes {lock_type.value} | autonomy packages lock"],
+            )
+            result = command.execute(verbose=self.verbose)
+
         if not result and command.return_code not in [0, 1]:
             msg = f"Packages lock failed with exit code {command.return_code}"
             raise OperationError(msg)
+
         logger.info("Packages locked")
