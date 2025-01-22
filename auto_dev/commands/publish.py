@@ -7,9 +7,10 @@ from auto_dev.base import build_cli
 from auto_dev.enums import LockType
 from auto_dev.exceptions import OperationError
 from auto_dev.services.publish.index import PublishService
+from auto_dev.constants import AGENT_PUBLISHED_SUCCESS_MSG
 
 
-AGENT_PUBLISHED_SUCCESS_MSG = "Agent published successfully."
+
 
 cli = build_cli()
 

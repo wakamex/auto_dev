@@ -7,9 +7,8 @@ from aea.configurations.base import PublicId
 
 from auto_dev.enums import LockType
 from auto_dev.utils import change_dir
-from auto_dev.constants import DEFAULT_AUTHOR, DEFAULT_AGENT_NAME
+from auto_dev.constants import DEFAULT_AUTHOR, DEFAULT_AGENT_NAME, AGENT_PUBLISHED_SUCCESS_MSG
 from auto_dev.exceptions import OperationError
-from auto_dev.commands.publish import AGENT_PUBLISHED_SUCCESS_MSG
 
 
 def test_force_removes_package(publish_service, test_packages_filesystem, dummy_agent_default):

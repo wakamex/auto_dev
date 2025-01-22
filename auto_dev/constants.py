@@ -164,3 +164,5 @@ class Network(Enum):
     OPTIMISM = "optimism"
     OPTIMISM_GOERLI = "optimismGoerli"
     GNOSIS = "gnosis"
+
+    AGENT_PUBLISHED_SUCCESS_MSG = "Agent published successfully."
