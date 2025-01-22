@@ -33,37 +33,13 @@ class PublishService:
         Raises:
             OperationError: if the command fails.
         """
-        # If we're in an agent directory, packages should be in parent dir
-        packages_dir = Path("../packages") if Path("aea-config.yaml").exists() else Path("packages")
-        if not packages_dir.exists():
-            # Need to cd to parent dir if initializing there
-            if packages_dir.parent != Path("."):
-                with change_dir(".."):
-                    command = CommandExecutor(["poetry", "run", "autonomy", "packages", "init"])
-                    result = command.execute(verbose=self.verbose)
-                    if not result:
-                        msg = f"Command failed: {command.command}"
-                        raise OperationError(msg)
-            else:
-                command = CommandExecutor(["poetry", "run", "autonomy", "packages", "init"])
-                result = command.execute(verbose=self.verbose)
-                if not result:
-                    msg = f"Command failed: {command.command}"
-                    raise OperationError(msg)
-
-    def _get_package_path(self, custom_id: PublicId, package_type: str = "customs") -> Path:
-        """Get the correct package path based on whether we're inside an agent directory.
-
-        Args:
-            custom_id: The custom package ID.
-            package_type: The type of package ("customs" or "agents"). Defaults to "customs".
-
-        Returns:
-            The correct package path.
-        """
-        # If we're in an agent directory (aea-config.yaml exists), use relative path
-        base = "../packages" if Path("aea-config.yaml").exists() else "packages"
-        return Path(base) / custom_id.author / package_type / custom_id.name
+        if not Path("packages").exists():
+            logger.info("Initializing local registry")
+            command = CommandExecutor(["poetry", "run", "autonomy", "packages", "init"])
+            result = command.execute(verbose=self.verbose)
+            if not result:
+                msg = f"Command failed: {command.command}"
+                raise OperationError(msg)
 
     def _publish_agent_internal(self, force: bool = False) -> None:
         """Internal function to handle agent publishing logic.
@@ -80,9 +56,11 @@ class PublishService:
         author = aea_config["author"]
 
         # Check if package exists and handle force flag
-        agent_id = PublicId(author, agent_name, "latest")
-        package_path = self._get_package_path(agent_id, "agents")
-        print(package_path)
+        # Package path should be relative to parent directory
+        parent_dir = Path("..") if Path("aea-config.yaml").exists() else Path(".")
+        package_path = parent_dir / "packages" / author / "agents" / agent_name
+        logger.info(f"Package path: {package_path}")
+
         if package_path.exists():
             if force:
                 logger.info(f"Removing existing package at {package_path}")
@@ -98,7 +76,7 @@ class PublishService:
             custom_id = PublicId.from_str(package)
             # We need to copy the customs to the parent now.
             customs_path = Path("vendor") / custom_id.author / "customs" / custom_id.name
-            package_path = self._get_package_path(custom_id)
+            package_path = parent_dir / "packages" / custom_id.author / "customs" / custom_id.name
             if not package_path.exists():
                 shutil.copytree(
                     customs_path,
@@ -119,38 +97,39 @@ class PublishService:
 
     def publish_agent(
         self,
-        public_id: Optional[PublicId] = None,
         lock_type: Optional[LockType] = None,
         force: bool = False,
     ) -> None:
         """Publish an agent.
 
         Args:
-            public_id: Optional. The public_id of the agent. If not provided,
-                assumes we're already in the agent directory.
             lock_type: the type of lock to apply (dev or third_party). If provided, packages will be locked.
             force: If True, remove existing package before publishing.
 
         Raises:
             OperationError: if the command fails.
         """
-        if public_id:
-            logger.info(f"Publishing agent {public_id}")
-            if Path(public_id.name).exists():
-                with change_dir(public_id.name):
-                    self._publish_agent_internal(force)
-            else:
-                raise OperationError(f"Agent directory {public_id.name} does not exist")
-        else:
-            logger.info("Publishing agent from current directory")
-            # Verify we're in an agent directory by checking for aea-config.yaml
-            if not Path("aea-config.yaml").exists():
-                raise OperationError("Not in an agent directory (aea-config.yaml not found)")
-            self._publish_agent_internal(force)
+        # First verify we're in the right place
+        if not Path("aea-config.yaml").exists():
+            raise OperationError("Not in an agent directory (aea-config.yaml not found)")
+
+        # Save current directory as we'll need to return here for publishing
+        current_dir = Path.cwd()
+        parent_dir = current_dir.parent if "packages" not in str(current_dir) else current_dir.parent.parent
+
+        # Initialize registry from parent directory
+        with change_dir(parent_dir):
+            self.ensure_local_registry()
+
+        # Publish from agent directory (we're already there)
+        self._publish_agent_internal(force)
+
+        # Lock packages from parent directory if needed
+        if lock_type is not None:
+            with change_dir(parent_dir):
+                self.lock_packages(lock_type)
 
         logger.info("Agent published!")
-        if lock_type is not None:
-            self.lock_packages(lock_type)
 
     def lock_packages(self, lock_type: LockType = LockType.DEV) -> None:
         """Lock the packages after publishing.

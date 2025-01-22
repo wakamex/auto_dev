@@ -30,18 +30,17 @@ available_agents = get_available_agents()
 def update_author(public_id: PublicId) -> None:
     """Update the author in the recently created agent"""
 
-    with change_dir(public_id.name):
-        complete_agent_config = load_autonolas_yaml(PackageType.AGENT)
+    complete_agent_config = load_autonolas_yaml(PackageType.AGENT)
 
-        agent_config = complete_agent_config[0]
-        if agent_config["author"] != public_id.author:
-            click.secho(
-                f"Updating author in aea-config.yaml from {agent_config['author']} to {public_id.author}",
-                fg="yellow",
-            )
-            agent_config["author"] = public_id.author
-            complete_agent_config[0] = agent_config
-            write_to_file("aea-config.yaml", complete_agent_config, FileType.YAML)
+    agent_config = complete_agent_config[0]
+    if agent_config["author"] != public_id.author:
+        click.secho(
+            f"Updating author in aea-config.yaml from {agent_config['author']} to {public_id.author}",
+            fg="yellow",
+        )
+        agent_config["author"] = public_id.author
+        complete_agent_config[0] = agent_config
+        write_to_file("aea-config.yaml", complete_agent_config, FileType.YAML)
 
 
 @cli.command()
@@ -108,7 +107,7 @@ def create(ctx, public_id: str, template: str, force: bool, publish: bool, clean
 
     verbose = ctx.obj["VERBOSE"]
     logger = ctx.obj["LOGGER"]
-    logger.info(f"Creating agent {name} from template {template}")
+    logger.info(f"Creating agent {agent_name} from template {template}")
 
     ipfs_hash = available_agents[template]
 
@@ -128,18 +127,17 @@ def create(ctx, public_id: str, template: str, force: bool, publish: bool, clean
             return OperationError(msg)
         click.secho("Command executed successfully.", fg="yellow")
 
-    update_author(public_id=public_id)
-    if publish:
-        try:
-            publish_service = PublishService(verbose=verbose)
-            publish_service.ensure_local_registry()
-            # For now, we are not locking the packages. In the future, we could lock them
-            # as third_party (or via a flag).
-            publish_service.publish_agent(public_id)
-            click.secho("Agent published successfully.", fg="green")
-        except OperationError as e:
-            click.secho(str(e), fg="red")
-            raise click.Abort() from e
+    with change_dir(agent_name):
+        update_author(public_id=public_id)
+        if publish:
+            try:
+                publish_service = PublishService(verbose=verbose)
+                # We're already in the agent directory after update_author
+                publish_service.publish_agent(public_id=public_id, force=force)
+                click.secho("Agent published successfully.", fg="green")
+            except OperationError as e:
+                click.secho(str(e), fg="red")
+                raise click.Abort() from e
 
     if clean_up:
         command = CommandExecutor(
@@ -154,9 +152,9 @@ def create(ctx, public_id: str, template: str, force: bool, publish: bool, clean
             msg = f"Command failed: {command.command}"
             click.secho(msg, fg="red")
             return OperationError()
-        click.secho(f"Agent {name} cleaned up successfully.", fg="green")
+        click.secho(f"Agent {agent_name} cleaned up successfully.", fg="green")
 
-    click.secho(f"Agent {name} created successfully.", fg="green")
+    click.secho(f"Agent {agent_name} created successfully.", fg="green")
 
 
 if __name__ == "__main__":
