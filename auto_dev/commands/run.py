@@ -133,21 +133,24 @@ class AgentRunner:
 
         self.logger.info("Tendermint is running and healthy ✅")
 
-    def attempt_hard_reset(self) -> None:
+    def attempt_hard_reset(self, attempts: int = 0) -> None:
         """Attempt to hard reset Tendermint."""
+        if attempts >= TENDERMINT_RESET_RETRIES:
+            self.logger.error(f"Failed to reset Tendermint after {TENDERMINT_RESET_RETRIES} attempts.")
+            sys.exit(1)
+
         self.logger.info("Tendermint is running, executing hard reset...")
-        for retry in range(TENDERMINT_RESET_RETRIES):
-            try:
-                response = requests.get(TENDERMINT_RESET_ENDPOINT, timeout=TENDERMINT_RESET_TIMEOUT)
-                if response.status_code == 200:
-                    self.logger.info("Tendermint hard reset successful.")
-                    return
-            except requests.RequestException as e:
-                self.logger.info(f"Failed to execute hard reset: {e}")
-            self.logger.info(f"Tendermint not ready (attempt {retry + 1}/{TENDERMINT_RESET_RETRIES}), waiting...")
-            time.sleep(1)
-        self.logger.error(f"Failed to reset Tendermint after {TENDERMINT_RESET_RETRIES} attempts.")
-        sys.exit(1)
+        try:
+            response = requests.get(TENDERMINT_RESET_ENDPOINT, timeout=TENDERMINT_RESET_TIMEOUT)
+            if response.status_code == 200:
+                self.logger.info("Tendermint hard reset successful.")
+                return
+        except requests.RequestException as e:
+            self.logger.info(f"Failed to execute hard reset: {e}")
+
+        self.logger.info(f"Tendermint not ready (attempt {attempts + 1}/{TENDERMINT_RESET_RETRIES}), waiting...")
+        time.sleep(1)
+        self.attempt_hard_reset(attempts + 1)
 
     def fetch_agent(self) -> None:
         """Fetch the agent from registry if needed."""
