@@ -75,9 +75,9 @@ class PublishService:
             OperationError: if the command fails.
         """
         # Load config to get agent details
-        agent_config_yaml = load_autonolas_yaml(PackageType.AGENT)
-        agent_name = agent_config_yaml[0]["agent_name"]
-        author = agent_config_yaml[0]["author"]
+        aea_config, *_ = load_autonolas_yaml(PackageType.AGENT)
+        agent_name = aea_config["agent_name"]
+        author = aea_config["author"]
 
         # Check if package exists and handle force flag
         agent_id = PublicId(author, agent_name, "latest")
@@ -94,7 +94,7 @@ class PublishService:
         publish_commands = ["aea publish --push-missing --local"]
         # we have to do a horrible hack here, regards to the customs as they are not being published.
         # please see issue.
-        for package in agent_config_yaml[0]["customs"]:
+        for package in aea_config["customs"]:
             custom_id = PublicId.from_str(package)
             # We need to copy the customs to the parent now.
             customs_path = Path("vendor") / custom_id.author / "customs" / custom_id.name

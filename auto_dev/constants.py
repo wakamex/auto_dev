@@ -110,6 +110,7 @@ BASE_FSM_SKILLS = {
     "reset_pause_abci": "bafybeibqz7y3i4aepuprhijwdydkcsbqjtpeea6gdzpp5fgc6abrvjz25a",
     "termination_abci": "bafybeieb3gnvjxxsh73g67m7rivzknwb63xu4qeagpkv7f4mqz33ecikem",
 }
+AGENT_PUBLISHED_SUCCESS_MSG = "Agent published successfully."
 
 
 class CheckResult(Enum):
@@ -164,5 +165,3 @@ class Network(Enum):
     OPTIMISM = "optimism"
     OPTIMISM_GOERLI = "optimismGoerli"
     GNOSIS = "gnosis"
-
-    AGENT_PUBLISHED_SUCCESS_MSG = "Agent published successfully."
