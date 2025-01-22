@@ -61,10 +61,8 @@ def publish(ctx, public_id: str = None, lock_type: str = None, force: bool = Fal
         publish_service.ensure_local_registry()
 
         if isinstance(public_id, str):
-            try:
-                public_id = PublicId.from_str(public_id)
-            except ValueError as err:
-                raise click.ClickException(f"Invalid value for '[PUBLIC_ID]': {public_id}") from err
+            # This will throw an error if the public_id is not valid
+            public_id = PublicId.from_str(public_id)
 
         lock_type_enum = LockType(lock_type) if lock_type else None
         publish_service.publish_agent(public_id, lock_type=lock_type_enum, force=force)
