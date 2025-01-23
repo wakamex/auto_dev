@@ -101,10 +101,6 @@ def test_publish_error_messages(publish_service, test_packages_filesystem, dummy
         with change_dir(".."):
             publish_service.publish_agent()
 
-    # Test non-existent directory error
-    with pytest.raises(OperationError, match="Agent directory .* does not exist"):
-        publish_service.publish_agent(PublicId(DEFAULT_AUTHOR, "nonexistent", "0.1.0"))
-
 
 def test_publish_package_creation(publish_service, test_packages_filesystem, dummy_agent_default):
     """Test package creation and structure."""
@@ -141,7 +137,7 @@ def test_publish_package_locking(publish_service, test_packages_filesystem, dumm
     lock_file = Path("..") / "packages" / "packages.json"
 
     # Test publish with lock creates lock file
-    publish_service.publish_agent(None, lock_type=LockType.DEV)
+    publish_service.publish_agent(lock_type=LockType.DEV)
     assert packages_path.exists()
     assert (packages_path / "aea-config.yaml").exists()
     assert lock_file.exists()
@@ -152,7 +148,7 @@ def test_publish_package_locking(publish_service, test_packages_filesystem, dumm
     assert test_file.exists()
 
     # Force publish with lock should remove and recreate everything
-    publish_service.publish_agent(None, lock_type=LockType.DEV, force=True)
+    publish_service.publish_agent(lock_type=LockType.DEV, force=True)
     assert packages_path.exists()
     assert (packages_path / "aea-config.yaml").exists()
     assert not test_file.exists()  # Test file should be gone
