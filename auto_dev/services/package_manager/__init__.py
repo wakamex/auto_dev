@@ -1,1 +1,1 @@
-"""Publish service package."""
+"""Package manager service."""

@@ -21,7 +21,7 @@ class PackageManager:
     """Service for managing packages."""
 
     def __init__(self, verbose: bool = False):
-        """Initialize the publish service.
+        """Initialize the package manager.
 
         Args:
             verbose: whether to show verbose output.
