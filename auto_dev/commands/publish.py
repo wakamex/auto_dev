@@ -9,7 +9,7 @@ from auto_dev.base import build_cli
 from auto_dev.utils import change_dir
 from auto_dev.constants import AGENT_PUBLISHED_SUCCESS_MSG
 from auto_dev.exceptions import OperationError
-from auto_dev.services.publish.index import PackageManager
+from auto_dev.services.package_manager.index import PackageManager
 
 
 cli = build_cli()

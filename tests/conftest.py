@@ -15,7 +15,7 @@ from auto_dev.constants import (
     AUTONOMY_PACKAGES_FILE,
 )
 from auto_dev.cli_executor import CommandExecutor
-from auto_dev.services.publish.index import PackageManager
+from auto_dev.services.package_manager.index import PackageManager
 
 
 OPENAPI_TEST_CASES = [

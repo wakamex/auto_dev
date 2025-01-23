@@ -12,7 +12,7 @@ from auto_dev.utils import change_dir, get_packages, write_to_file, load_autonol
 from auto_dev.constants import AUTO_DEV_FOLDER, AUTONOMY_PACKAGES_FILE
 from auto_dev.exceptions import OperationError
 from auto_dev.cli_executor import CommandExecutor
-from auto_dev.services.publish.index import PackageManager
+from auto_dev.services.package_manager.index import PackageManager
 
 
 cli = build_cli()
