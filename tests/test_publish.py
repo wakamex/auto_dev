@@ -3,7 +3,7 @@
 from pathlib import Path
 
 import pytest
-from aea.configurations.base import PublicId
+from aea.configurations.constants import DEFAULT_AEA_CONFIG_FILE
 
 from auto_dev.utils import change_dir
 from auto_dev.constants import DEFAULT_AUTHOR, DEFAULT_AGENT_NAME, AGENT_PUBLISHED_SUCCESS_MSG
@@ -14,7 +14,7 @@ def test_force_removes_package(publish_service, test_packages_filesystem, dummy_
     """Test that force flag properly removes existing package."""
     assert test_packages_filesystem
     assert dummy_agent_default
-    assert Path("aea-config.yaml").exists()
+    assert Path(DEFAULT_AEA_CONFIG_FILE).exists()
 
     # First publish
     publish_service.publish_agent()
@@ -29,7 +29,7 @@ def test_force_removes_package(publish_service, test_packages_filesystem, dummy_
     # Force publish should remove the entire package directory
     publish_service.publish_agent(force=True)
     assert packages_path.exists()  # Package should be recreated
-    assert (packages_path / "aea-config.yaml").exists()
+    assert (packages_path / DEFAULT_AEA_CONFIG_FILE).exists()
     assert not test_file.exists()  # Test file should be gone
 
 
@@ -37,7 +37,7 @@ def test_publish_command_messages(cli_runner, test_packages_filesystem, dummy_ag
     """Test publish command output messages."""
     assert test_packages_filesystem
     assert dummy_agent_default
-    assert Path("aea-config.yaml").exists()
+    assert Path(DEFAULT_AEA_CONFIG_FILE).exists()
 
     # Test invalid ID message first (before any publishing)
     cmd = ["adev", "-v", "publish", "invalid_id"]
@@ -78,7 +78,7 @@ def test_publish_error_messages(publish_service, test_packages_filesystem, dummy
     """Test error messages during publishing."""
     assert test_packages_filesystem
     assert dummy_agent_default
-    assert Path("aea-config.yaml").exists()
+    assert Path(DEFAULT_AEA_CONFIG_FILE).exists()
 
     # First publish to create package
     publish_service.publish_agent()
@@ -97,14 +97,14 @@ def test_publish_package_creation(publish_service, test_packages_filesystem, dum
     """Test package creation and structure."""
     assert test_packages_filesystem
     assert dummy_agent_default
-    assert Path("aea-config.yaml").exists()
+    assert Path(DEFAULT_AEA_CONFIG_FILE).exists()
 
     # Test basic publish creates correct package structure
     publish_service.publish_agent()
 
     packages_path = Path("..") / "packages" / DEFAULT_AUTHOR / "agents" / DEFAULT_AGENT_NAME
     assert packages_path.exists()
-    assert (packages_path / "aea-config.yaml").exists()
+    assert (packages_path / DEFAULT_AEA_CONFIG_FILE).exists()
 
     # Test force publish recreates package structure
     test_file = packages_path / "test.txt"
@@ -113,5 +113,5 @@ def test_publish_package_creation(publish_service, test_packages_filesystem, dum
 
     publish_service.publish_agent(force=True)
     assert packages_path.exists()
-    assert (packages_path / "aea-config.yaml").exists()
+    assert (packages_path / DEFAULT_AEA_CONFIG_FILE).exists()
     assert not test_file.exists()
