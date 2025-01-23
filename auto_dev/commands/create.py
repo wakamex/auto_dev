@@ -12,7 +12,7 @@ from auto_dev.utils import change_dir, get_packages, write_to_file, load_autonol
 from auto_dev.constants import AUTO_DEV_FOLDER, AUTONOMY_PACKAGES_FILE
 from auto_dev.exceptions import OperationError
 from auto_dev.cli_executor import CommandExecutor
-from auto_dev.services.publish.index import PublishService
+from auto_dev.services.publish.index import PackageManager
 
 
 cli = build_cli()
@@ -131,9 +131,9 @@ def create(ctx, public_id: str, template: str, force: bool, publish: bool, clean
         update_author(public_id=public_id)
         if publish:
             try:
-                publish_service = PublishService(verbose=verbose)
+                package_manager = PackageManager(verbose=verbose)
                 # We're already in the agent directory after update_author
-                publish_service.publish_agent(force=force)
+                package_manager.publish_agent(force=force)
                 click.secho("Agent published successfully.", fg="green")
             except OperationError as e:
                 click.secho(str(e), fg="red")

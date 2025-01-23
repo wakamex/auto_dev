@@ -17,8 +17,8 @@ from auto_dev.cli_executor import CommandExecutor
 logger = get_logger()
 
 
-class PublishService:
-    """Service for publishing agents."""
+class PackageManager:
+    """Service for managing packages."""
 
     def __init__(self, verbose: bool = False):
         """Initialize the publish service.

@@ -9,7 +9,7 @@ from auto_dev.base import build_cli
 from auto_dev.utils import change_dir
 from auto_dev.constants import AGENT_PUBLISHED_SUCCESS_MSG
 from auto_dev.exceptions import OperationError
-from auto_dev.services.publish.index import PublishService
+from auto_dev.services.publish.index import PackageManager
 
 
 cli = build_cli()
@@ -51,7 +51,7 @@ def publish(ctx, public_id: str = None, force: bool = False) -> None:
         logger.info("Publishing agent from current directory")
 
     try:
-        publish_service = PublishService(verbose=verbose)
+        package_manager = PackageManager(verbose=verbose)
 
         # If we're given a public_id, we need to cd into that directory first
         if public_id:
@@ -67,12 +67,12 @@ def publish(ctx, public_id: str = None, force: bool = False) -> None:
                 agent_path = packages_path
 
             with change_dir(agent_path):
-                publish_service.publish_agent(force=force)
+                package_manager.publish_agent(force=force)
         else:
             # No public_id means we should already be in an agent directory
             if not Path("aea-config.yaml").exists():
                 raise OperationError("Not in an agent directory (aea-config.yaml not found)")
-            publish_service.publish_agent(force=force)
+            package_manager.publish_agent(force=force)
 
         click.secho(AGENT_PUBLISHED_SUCCESS_MSG, fg="green")
         logger.info("Agent published successfully.")

@@ -15,7 +15,7 @@ from auto_dev.constants import (
     AUTONOMY_PACKAGES_FILE,
 )
 from auto_dev.cli_executor import CommandExecutor
-from auto_dev.services.publish.index import PublishService
+from auto_dev.services.publish.index import PackageManager
 
 
 OPENAPI_TEST_CASES = [
@@ -122,6 +122,6 @@ def dummy_agent_default(test_packages_filesystem) -> Path:
 
 
 @pytest.fixture
-def publish_service():
-    """Fixture for PublishService."""
-    return PublishService(verbose=True)
+def package_manager():
+    """Fixture for PackageManager."""
+    return PackageManager(verbose=True)
