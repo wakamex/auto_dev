@@ -6,9 +6,9 @@ from typing import Optional
 from pathlib import Path
 
 from aea.configurations.base import PublicId
+from aea.configurations.constants import DEFAULT_AEA_CONFIG_FILE
 from aea.configurations.data_types import PackageType
 
-from auto_dev.enums import FileType
 from auto_dev.utils import change_dir, get_logger, load_autonolas_yaml
 from auto_dev.exceptions import OperationError
 from auto_dev.cli_executor import CommandExecutor
@@ -18,7 +18,7 @@ logger = get_logger()
 
 
 class PublishService:
-    """Service for publishing agents and managing packages."""
+    """Service for publishing agents."""
 
     def __init__(self, verbose: bool = False):
         """Initialize the publish service.
@@ -58,7 +58,7 @@ class PublishService:
 
         # Check if package exists and handle force flag
         # Package path should be relative to parent directory
-        parent_dir = Path("..") if Path("aea-config.yaml").exists() else Path(".")
+        parent_dir = Path("..") if Path(DEFAULT_AEA_CONFIG_FILE).exists() else Path(".")
         package_path = parent_dir / "packages" / author / "agents" / agent_name
         logger.info(f"Package path: {package_path}")
 
@@ -109,7 +109,7 @@ class PublishService:
             OperationError: if the command fails.
         """
         # First verify we're in the right place
-        if not Path("aea-config.yaml").exists():
+        if not Path(DEFAULT_AEA_CONFIG_FILE).exists():
             raise OperationError("Not in an agent directory (aea-config.yaml not found)")
 
         # Save current directory as we'll need to return here for publishing
