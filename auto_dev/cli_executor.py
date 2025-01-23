@@ -27,25 +27,8 @@ class CommandExecutor:
         self.return_code = None
         self.exception = None
 
-    def execute(
-        self,
-        stream=False,
-        verbose: bool = True,
-        shell: bool = False,
-        env_vars: Optional[dict] = None,
-        interactive: bool = False,
-    ) -> bool:
-        """Execute the command.
-
-        Args:
-            stream: Whether to stream output
-            verbose: Whether to show verbose output
-            shell: Whether to run in shell
-            env_vars: Environment variables to set
-            interactive: Whether to allow interactive input/output
-        """
-        if interactive:
-            return self._execute_interactive(verbose, shell, env_vars)
+    def execute(self, stream=False, verbose: bool = True, shell: bool = False, env_vars: Optional[dict] = None) -> bool:
+        """Execute the command."""
         if stream:
             return self._execute_stream(verbose, shell, env_vars)
         if verbose:
@@ -75,31 +58,6 @@ class CommandExecutor:
             return True
         except Exception as error:  # pylint: disable=broad-except
             logger.exception("Command failed: %s", error)
-            self.exception = error
-            return False
-
-    def _execute_interactive(self, verbose: bool = True, shell: bool = False, env_vars: Optional[dict] = None) -> bool:
-        """Execute the command in interactive mode, connecting to the terminal's stdin/stdout."""
-        if verbose:
-            logger.debug(f"Executing interactive command:\n\"\"\n{' '.join(self.command)}\n\"\"")
-        try:
-            process = subprocess.Popen(
-                self.command,
-                stdin=None,
-                stdout=None,
-                stderr=None,
-                cwd=self.cwd,
-                shell=shell,
-                env=env_vars,
-            )
-            self.return_code = process.wait()
-            if self.return_code != 0:
-                if verbose:
-                    logger.error("Interactive command failed with return code: %s", self.return_code)
-                return False
-            return True
-        except Exception as error:  # pylint: disable=broad-except
-            logger.exception("Interactive command failed: %s", error)
             self.exception = error
             return False
 
