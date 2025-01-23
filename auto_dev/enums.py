@@ -60,11 +60,3 @@ class SupportedLedger(Enum):
     ETHEREUM = "ethereum"
     COSMOS = "cosmos"
     SOLANA = "solana"
-
-
-class LockType(Enum):
-    """Package lock types."""
-
-    DEV = "dev"
-    THIRD_PARTY = "third_party"
-    MANUAL = "manual"  # Allows user to set lock type for each package individually

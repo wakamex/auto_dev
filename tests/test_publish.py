@@ -5,7 +5,6 @@ from pathlib import Path
 import pytest
 from aea.configurations.base import PublicId
 
-from auto_dev.enums import LockType
 from auto_dev.utils import change_dir
 from auto_dev.constants import DEFAULT_AUTHOR, DEFAULT_AGENT_NAME, AGENT_PUBLISHED_SUCCESS_MSG
 from auto_dev.exceptions import OperationError
@@ -32,14 +31,6 @@ def test_force_removes_package(publish_service, test_packages_filesystem, dummy_
     assert packages_path.exists()  # Package should be recreated
     assert (packages_path / "aea-config.yaml").exists()
     assert not test_file.exists()  # Test file should be gone
-
-    # Add test file again and verify force publish with lock also removes it
-    test_file.write_text("test content")
-    assert test_file.exists()
-    publish_service.publish_agent(force=True, lock_type=LockType.DEV)
-    assert not test_file.exists()  # Test file should be gone again
-    assert packages_path.exists()  # Package should be recreated
-    assert (packages_path / "aea-config.yaml").exists()
 
 
 def test_publish_command_messages(cli_runner, test_packages_filesystem, dummy_agent_default):
@@ -69,7 +60,7 @@ def test_publish_command_messages(cli_runner, test_packages_filesystem, dummy_ag
     assert not result
     assert "already exists" in runner.output
 
-    # Test force publish succeeds by removing existing package
+    # Test force publish succeeds
     packages_path = Path("..") / "packages" / DEFAULT_AUTHOR / "agents" / DEFAULT_AGENT_NAME
     test_file = packages_path / "test.txt"
     test_file.write_text("test content")
@@ -80,7 +71,7 @@ def test_publish_command_messages(cli_runner, test_packages_filesystem, dummy_ag
     result = runner.execute()
     assert result
     assert AGENT_PUBLISHED_SUCCESS_MSG in runner.output
-    assert not test_file.exists()  # Test file should be gone
+    assert not test_file.exists()
 
 
 def test_publish_error_messages(publish_service, test_packages_filesystem, dummy_agent_default):
@@ -115,41 +106,12 @@ def test_publish_package_creation(publish_service, test_packages_filesystem, dum
     assert packages_path.exists()
     assert (packages_path / "aea-config.yaml").exists()
 
-    # Add a test file to verify it gets removed
+    # Test force publish recreates package structure
     test_file = packages_path / "test.txt"
     test_file.write_text("test content")
     assert test_file.exists()
 
-    # Force publish should remove the entire package directory
     publish_service.publish_agent(force=True)
-    assert packages_path.exists()  # Package should be recreated
-    assert (packages_path / "aea-config.yaml").exists()
-    assert not test_file.exists()  # Test file should be gone
-
-
-def test_publish_package_locking(publish_service, test_packages_filesystem, dummy_agent_default):
-    """Test package locking functionality."""
-    assert test_packages_filesystem
-    assert dummy_agent_default
-    assert Path("aea-config.yaml").exists()
-
-    packages_path = Path("..") / "packages" / DEFAULT_AUTHOR / "agents" / DEFAULT_AGENT_NAME
-    lock_file = Path("..") / "packages" / "packages.json"
-
-    # Test publish with lock creates lock file
-    publish_service.publish_agent(lock_type=LockType.DEV)
     assert packages_path.exists()
     assert (packages_path / "aea-config.yaml").exists()
-    assert lock_file.exists()
-
-    # Add a test file to verify force removes it
-    test_file = packages_path / "test.txt"
-    test_file.write_text("test content")
-    assert test_file.exists()
-
-    # Force publish with lock should remove and recreate everything
-    publish_service.publish_agent(lock_type=LockType.DEV, force=True)
-    assert packages_path.exists()
-    assert (packages_path / "aea-config.yaml").exists()
-    assert not test_file.exists()  # Test file should be gone
-    assert lock_file.exists()  # Lock file should still exist
+    assert not test_file.exists()

@@ -6,7 +6,6 @@ import rich_click as click
 from aea.configurations.base import PublicId
 
 from auto_dev.base import build_cli
-from auto_dev.enums import LockType
 from auto_dev.utils import change_dir
 from auto_dev.constants import AGENT_PUBLISHED_SUCCESS_MSG
 from auto_dev.exceptions import OperationError
@@ -23,33 +22,25 @@ cli = build_cli()
     required=False,
 )
 @click.option(
-    "--lock-type",
-    type=click.Choice([t.value for t in LockType], case_sensitive=False),
-    help="The type of lock to apply (dev or third_party). If not provided, defaults to none",
-    default=None,
-)
-@click.option(
     "--force",
     is_flag=True,
     help="Force overwrite if package already exists",
     default=False,
 )
 @click.pass_context
-def publish(ctx, public_id: str = None, lock_type: str = None, force: bool = False) -> None:
+def publish(ctx, public_id: str = None, force: bool = False) -> None:
     """
     Publish an agent to the local registry.
 
     Args:
         public_id: Optional. The public_id of the agent in the open-autonmy format i.e. `author/agent`.
                   If not provided, assumes you're inside the agent directory.
-        lock_type: Optional. The type of lock to apply (dev or third_party). If not provided, defaults to none.
         force: If True, will overwrite existing package.
 
     Example usage:
         From parent directory: `adev publish author/agent`
         From agent directory: `adev publish`
         With force: `adev publish --force`
-        With lock: `adev publish --lock-type dev`
     """
     verbose = ctx.obj["VERBOSE"]
     logger = ctx.obj["LOGGER"]
@@ -76,14 +67,12 @@ def publish(ctx, public_id: str = None, lock_type: str = None, force: bool = Fal
                 agent_path = packages_path
 
             with change_dir(agent_path):
-                lock_type_enum = LockType(lock_type) if lock_type else None
-                publish_service.publish_agent(lock_type=lock_type_enum, force=force)
+                publish_service.publish_agent(force=force)
         else:
             # No public_id means we should already be in an agent directory
             if not Path("aea-config.yaml").exists():
                 raise OperationError("Not in an agent directory (aea-config.yaml not found)")
-            lock_type_enum = LockType(lock_type) if lock_type else None
-            publish_service.publish_agent(lock_type=lock_type_enum, force=force)
+            publish_service.publish_agent(force=force)
 
         click.secho(AGENT_PUBLISHED_SUCCESS_MSG, fg="green")
         logger.info("Agent published successfully.")

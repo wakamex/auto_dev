@@ -8,7 +8,7 @@ from pathlib import Path
 from aea.configurations.base import PublicId
 from aea.configurations.data_types import PackageType
 
-from auto_dev.enums import FileType, LockType
+from auto_dev.enums import FileType
 from auto_dev.utils import change_dir, get_logger, load_autonolas_yaml
 from auto_dev.exceptions import OperationError
 from auto_dev.cli_executor import CommandExecutor
@@ -98,13 +98,11 @@ class PublishService:
 
     def publish_agent(
         self,
-        lock_type: Optional[LockType] = None,
         force: bool = False,
     ) -> None:
         """Publish an agent.
 
         Args:
-            lock_type: the type of lock to apply (dev or third_party). If provided, packages will be locked.
             force: If True, remove existing package before publishing.
 
         Raises:
@@ -125,32 +123,4 @@ class PublishService:
         # Publish from agent directory (we're already there)
         self._publish_agent_internal(force)
 
-        # Lock packages from parent directory if needed
-        if lock_type is not None:
-            with change_dir(parent_dir):
-                self.lock_packages(lock_type)
-
         logger.info("Agent published!")
-
-    def lock_packages(self, lock_type: LockType = LockType.DEV) -> None:
-        """Lock the packages after publishing.
-
-        Args:
-            lock_type: the type of lock to apply (dev, third_party, or manual).
-        """
-        logger.info(f"Locking packages as {lock_type.value}")
-
-        if lock_type == LockType.MANUAL:
-            command = CommandExecutor(["autonomy", "packages", "lock"])
-            result = command.execute(verbose=self.verbose, interactive=True)
-        else:
-            command = CommandExecutor(
-                ["bash", "-c", f"yes {lock_type.value} | autonomy packages lock"],
-            )
-            result = command.execute(verbose=self.verbose)
-
-        if not result and command.return_code not in [0, 1]:
-            msg = f"Packages lock failed with exit code {command.return_code}"
-            raise OperationError(msg)
-
-        logger.info("Packages locked")
