@@ -69,7 +69,8 @@ class AgentRunner:
     def _is_locally_fetched(self):
         return Path(self.agent_name.name).exists()
 
-    def _is_in_agent_dir(self):
+    def is_in_agent_dir(self):
+        """Check if the agent is in the agent directory."""
         return Path(DEFAULT_AEA_CONFIG_FILE).exists()
 
     def _is_in_packages(self):
@@ -83,7 +84,7 @@ class AgentRunner:
     @property
     def agent_dir(self) -> Path:
         """Get the agent directory based on where it is found."""
-        if self._is_in_agent_dir():
+        if self.is_in_agent_dir():
             return Path(".")
         if self._is_locally_fetched():
             return Path(self.agent_name.name)

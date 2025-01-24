@@ -8,7 +8,7 @@ from aea.configurations.data_types import PackageType
 
 from auto_dev.base import build_cli
 from auto_dev.enums import FileType
-from auto_dev.utils import change_dir, get_packages, write_to_file, load_autonolas_yaml
+from auto_dev.utils import change_dir, get_packages, update_author, write_to_file, load_autonolas_yaml
 from auto_dev.constants import AUTO_DEV_FOLDER, AUTONOMY_PACKAGES_FILE
 from auto_dev.exceptions import OperationError
 from auto_dev.cli_executor import CommandExecutor
@@ -25,22 +25,6 @@ def get_available_agents() -> list[str]:
 
 
 available_agents = get_available_agents()
-
-
-def update_author(public_id: PublicId) -> None:
-    """Update the author in the recently created agent"""
-
-    complete_agent_config = load_autonolas_yaml(PackageType.AGENT)
-
-    agent_config = complete_agent_config[0]
-    if agent_config["author"] != public_id.author:
-        click.secho(
-            f"Updating author in aea-config.yaml from {agent_config['author']} to {public_id.author}",
-            fg="yellow",
-        )
-        agent_config["author"] = public_id.author
-        complete_agent_config[0] = agent_config
-        write_to_file("aea-config.yaml", complete_agent_config, FileType.YAML)
 
 
 @cli.command()
@@ -68,9 +52,9 @@ def create(ctx, public_id: str, template: str, force: bool, publish: bool, clean
         `adev create -t eightballer/frontend_agent new_author/new_agent`
     """
     agent_name = public_id.name
-
+    verbose = ctx.obj["VERBOSE"]
+    logger = ctx.obj["LOGGER"]
     package_path = str(Path("packages") / public_id.author / "agents" / public_id.name)
-
     for name in [
         agent_name,
         package_path,
@@ -105,8 +89,6 @@ def create(ctx, public_id: str, template: str, force: bool, publish: bool, clean
                 raise OperationError(msg)
             click.secho("Command executed successfully.", fg="green")
 
-    verbose = ctx.obj["VERBOSE"]
-    logger = ctx.obj["LOGGER"]
     logger.info(f"Creating agent {agent_name} from template {template}")
 
     ipfs_hash = available_agents[template]
@@ -151,11 +133,7 @@ def create(ctx, public_id: str, template: str, force: bool, publish: bool, clean
         if not result:
             msg = f"Command failed: {command.command}"
             click.secho(msg, fg="red")
-            return OperationError()
+            return OperationError(msg)
         click.secho(f"Agent {agent_name} cleaned up successfully.", fg="green")
 
     click.secho(f"Agent {agent_name} created successfully.", fg="green")
-
-
-if __name__ == "__main__":
-    cli()  # pylint: disable=no-value-for-parameter
