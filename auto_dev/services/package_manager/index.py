@@ -9,7 +9,7 @@ from aea.configurations.base import PublicId
 from aea.configurations.constants import DEFAULT_AEA_CONFIG_FILE
 from aea.configurations.data_types import PackageType
 
-from auto_dev.utils import change_dir, get_logger, load_autonolas_yaml
+from auto_dev.utils import change_dir, get_logger, update_author, load_autonolas_yaml
 from auto_dev.exceptions import OperationError
 from auto_dev.cli_executor import CommandExecutor
 
@@ -20,7 +20,10 @@ logger = get_logger()
 class PackageManager:
     """Service for managing packages."""
 
-    def __init__(self, verbose: bool = False):
+    def __init__(
+        self,
+        verbose: bool = False,
+    ):
         """Initialize the package manager.
 
         Args:
@@ -42,7 +45,7 @@ class PackageManager:
                 msg = f"Command failed: {command.command}"
                 raise OperationError(msg)
 
-    def _publish_agent_internal(self, force: bool = False) -> None:
+    def _publish_agent_internal(self, force: bool = False, new_public_id: PublicId = None) -> None:
         """Internal function to handle agent publishing logic.
 
         Args:
@@ -53,6 +56,10 @@ class PackageManager:
         """
         # Load config to get agent details
         aea_config, *_ = load_autonolas_yaml(PackageType.AGENT)
+        if new_public_id:
+            update_author(new_public_id)
+            aea_config["agent_name"] = new_public_id.name
+            aea_config["author"] = new_public_id.author
         agent_name = aea_config["agent_name"]
         author = aea_config["author"]
 
@@ -99,6 +106,7 @@ class PackageManager:
     def publish_agent(
         self,
         force: bool = False,
+        new_public_id: Optional[PublicId] = None,
     ) -> None:
         """Publish an agent.
 
@@ -121,6 +129,6 @@ class PackageManager:
             self.ensure_local_registry()
 
         # Publish from agent directory (we're already there)
-        self._publish_agent_internal(force)
+        self._publish_agent_internal(force, new_public_id=new_public_id)
 
         logger.info("Agent published!")
