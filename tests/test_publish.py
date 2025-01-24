@@ -6,7 +6,7 @@ import pytest
 from aea.configurations.constants import DEFAULT_AEA_CONFIG_FILE
 
 from auto_dev.utils import change_dir
-from auto_dev.constants import DEFAULT_AUTHOR, DEFAULT_AGENT_NAME, AGENT_PUBLISHED_SUCCESS_MSG
+from auto_dev.constants import DEFAULT_AUTHOR, DEFAULT_PUBLIC_ID, DEFAULT_AGENT_NAME, AGENT_PUBLISHED_SUCCESS_MSG
 from auto_dev.exceptions import OperationError
 
 
@@ -33,7 +33,7 @@ def test_force_removes_package(package_manager, test_packages_filesystem, dummy_
     assert not test_file.exists()  # Test file should be gone
 
 
-def test_publish_command_messages(cli_runner, test_packages_filesystem, dummy_agent_default):
+def test_publish_command_invalid(cli_runner, test_packages_filesystem, dummy_agent_default):
     """Test publish command output messages."""
     assert test_packages_filesystem
     assert dummy_agent_default
@@ -44,29 +44,53 @@ def test_publish_command_messages(cli_runner, test_packages_filesystem, dummy_ag
     runner = cli_runner(cmd)
     result = runner.execute()
     assert not result
-    assert "Invalid value for '[PUBLIC_ID]': invalid_id" in runner.output
+    assert runner.return_code == 2
+    assert "Invalid value for 'PUBLIC_ID':" in runner.output
+
+
+def test_publish_command_happy_path(cli_runner, test_packages_filesystem, dummy_agent_default):
+    """Test publish command output messages."""
+    assert test_packages_filesystem
+    assert dummy_agent_default
 
     # Test successful first publish
-    cmd = ["adev", "-v", "publish"]
+    cmd = ["adev", "-v", "publish", str(DEFAULT_PUBLIC_ID)]
     runner = cli_runner(cmd)
     result = runner.execute()
     assert result
     assert AGENT_PUBLISHED_SUCCESS_MSG in runner.output
 
+
+def test_publish_command_unhappy_path(
+    cli_runner,
+    test_packages_filesystem,
+    dummy_agent_default,
+):
+    """Test publish command output messages."""
     # Test package exists error without force
-    cmd = ["adev", "-v", "publish"]
+
+    test_publish_command_happy_path(cli_runner, test_packages_filesystem, dummy_agent_default)
+    cmd = ["adev", "-v", "publish", str(DEFAULT_PUBLIC_ID)]
     runner = cli_runner(cmd)
     result = runner.execute()
     assert not result
     assert "already exists" in runner.output
 
+
+def test_publish_command_force(
+    cli_runner,
+    test_packages_filesystem,
+    dummy_agent_default,
+):
+    """Test publish command output with force."""
+    test_publish_command_happy_path(cli_runner, test_packages_filesystem, dummy_agent_default)
+    cmd = ["adev", "-v", "publish", str(DEFAULT_PUBLIC_ID)]
     # Test force publish succeeds
     packages_path = Path("..") / "packages" / DEFAULT_AUTHOR / "agents" / DEFAULT_AGENT_NAME
     test_file = packages_path / "test.txt"
     test_file.write_text("test content")
     assert test_file.exists()
-
-    cmd = ["adev", "-v", "publish", "--force"]
+    cmd = ["adev", "-v", "publish", "--force", str(DEFAULT_PUBLIC_ID)]
     runner = cli_runner(cmd)
     result = runner.execute()
     assert result
