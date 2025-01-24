@@ -58,7 +58,24 @@ get_download_url() {
 install_tool() {
     local tool="$1"
     local url
-    local venv_dir=".venv/bin"
+    local venv_dir
+
+    # Get virtualenv path from poetry env info
+    echo "Getting virtualenv path from poetry..."
+    venv_dir="$(poetry env info -p)/bin"
+    if [ $? -ne 0 ] || [ -z "${venv_dir}" ]; then
+        echo "Error: Could not find poetry virtualenv" >&2
+        return 1
+    fi
+    echo "Got venv_dir: ${venv_dir}"
+
+    if [ ! -d "${venv_dir}" ]; then
+        echo "Error: Virtualenv directory ${venv_dir} does not exist" >&2
+        return 1
+    fi
+
+    echo "Using virtualenv bin directory: ${venv_dir}"
+
     url="$(get_download_url "${tool}")" || return 1
 
     echo "Installing ${tool}"
@@ -93,12 +110,14 @@ install_tool() {
 
     if [ "${tool}" = "protoc" ]; then
         if ! command -v protoc > /dev/null 2>&1; then
+            mkdir -p "${venv_dir}"
             mv bin/protoc "${venv_dir}/protoc"
         else
             echo "protoc is already installed, skipping..."
         fi
     elif [ "${tool}" = "protolint" ]; then
         if ! command -v protolint > /dev/null 2>&1; then
+            echo "Installing protolint"
             mv protolint "${venv_dir}/protolint"
         else
             echo "protolint is already installed, skipping..."
