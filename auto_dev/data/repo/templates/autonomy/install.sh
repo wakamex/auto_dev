@@ -94,10 +94,9 @@ install_tool() {
             ;;
     esac
 
-    if [ "${tool}" = "protoc" ]; then
-        if ! command -v protoc > /dev/null 2>&1; then
-            mkdir -p "${venv_dir}"
-            mv bin/protoc "${venv_dir}/protoc"
+    if [ "$tool" = "protoc" ]; then
+        if ! command -v protoc &> /dev/null; then
+            mv bin/protoc $venv_dir/protoc
         else
             echo "protoc is already installed, skipping..."
         fi
