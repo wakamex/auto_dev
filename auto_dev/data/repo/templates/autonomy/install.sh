@@ -157,11 +157,13 @@ function set_env_file () {
 function setup_autonomy() {
     echo "Setting up autonomy"
     echo 'Initializing the author and remote for aea and syncing packages...'
-    author=$(cat ~/.aea/cli_config.yaml | yq -r '.author') || author="ci"
+
+    # Extract author from config file with fallback to ci
+    author=$(grep "^author:" ~/.aea/cli_config.yaml 2>/dev/null | sed 's/author:[[:space:]]*//') || author="ci"
+
     poetry run aea init --remote --author $author > /dev/null || exit 1
     echo 'Done initializing the author and remote for aea using the author: ' $author
-    echo 'To change the author, run the command;
-    `poetry run aea init --remote --author <author>`'
+    echo 'To change the author, run the command; `poetry run aea init --remote --author <author>`'
 
     if [ -f "packages/packages.json" ]; then
         echo 'Syncing packages...'
