@@ -61,23 +61,8 @@ get_download_url() {
 install_tool() {
     local tool=$1
     local url
-    local venv_dir
-
-    # Get virtualenv path from poetry env info
-    printf "Getting virtualenv path from poetry... "
-    venv_dir="$(poetry env info -p)/bin"
-    if [ $? -ne 0 ] || [ -z "${venv_dir}" ]; then
-        echo "Error: Could not find poetry virtualenv" >&2
-        return 1
-    fi
-    echo "${venv_dir}"
-
-    if [ ! -d "${venv_dir}" ]; then
-        echo "Error: Virtualenv directory ${venv_dir} does not exist" >&2
-        return 1
-    fi
-
-    url="$(get_download_url "${tool}")" || return 1
+    local venv_dir=$(echo $(poetry run command -v python) | sed 's|\(.*\)/python|\1|')
+    url=$(get_download_url "$tool") || return 1
 
     echo "Installing $tool"
     local temp_dir
