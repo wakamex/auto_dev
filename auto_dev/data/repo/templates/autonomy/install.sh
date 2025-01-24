@@ -147,8 +147,7 @@ function install_poetry_deps() {
     echo "Host poetry executable: $host_poetry_executable"
     echo "Setting up new poetry environment..."
 
-    poetry env use $(which python)
-    echo "Set up new poetry environment at $(which python)"
+    python_path="$(command -v python)"
     poetry_executable=$(echo -n $(poetry env info | grep Executable |head -n 1 | awk -F: '{ print $2 }') | xargs)
     echo "New poetry executable:   $poetry_executable"
 
