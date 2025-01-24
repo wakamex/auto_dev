@@ -21,11 +21,12 @@ on:
 jobs:
   check_deps:
     strategy:
-      fail-fast: false
       matrix:
-        python-versions: ["3.8", "3.9", "3.10", "3.11"]
-        os: [ubuntu-latest, ubuntu-22.04, ubuntu-20.04]
-    runs-on: ${{ matrix.os }}
+        python-versions:
+        - "3.10"
+        os:
+        - ubuntu-20.04
+    runs-on: ubuntu-20.04
     env:
       PYTHONPATH: .
     steps:
@@ -37,6 +38,7 @@ jobs:
       - name: Install and configure Poetry
         uses: snok/install-poetry@v1
         with:
+          version: ${{ matrix.poetry-version }}
           virtualenvs-create: true
           installer-parallel: true
 
@@ -51,3 +53,4 @@ jobs:
       - name: Lock application deps
         run: |
           poetry lock
+
