@@ -164,7 +164,8 @@ function setup_autonomy() {
 
     poetry run aea init --remote --author $author > /dev/null || exit 1
     echo 'Done initializing the author and remote for aea using the author: ' $author
-    echo 'To change the author, run the command; `poetry run aea init --remote --author <author>`'
+    echo 'To change the author, run the command;
+    `poetry run aea init --remote --author <author>`'
 
     if [ -f "packages/packages.json" ]; then
         echo 'Syncing packages...'
