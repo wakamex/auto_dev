@@ -3,6 +3,7 @@
 import shutil
 from pathlib import Path
 
+import yaml
 import rich_click as click
 from aea.configurations.base import PublicId, PackageType
 from aea.configurations.constants import PACKAGES, SERVICES, DEFAULT_SERVICE_CONFIG_FILE
@@ -75,12 +76,15 @@ class ConvertCliTool(BasePackageScaffolder):
     def create_service(self, agent_config, overrides, number_of_agents):
         """Create the service from a jinja template."""
         template = self.get_template(self.template_name)
+        override_strings = yaml.safe_dump_all(overrides, default_flow_style=False, sort_keys=False)
+        agent_public_id = f"{self.agent_public_id.author}/{self.agent_public_id.name}:{self.agent_runner.get_version()}"
         rendered = template.render(
-            agent_public_id=self.agent_public_id,
+            agent_public_id=agent_public_id,
             service_public_id=self.service_public_id,
             agent_config=agent_config,
-            overrides=overrides,
+            overrides=override_strings,
             number_of_agents=number_of_agents,
+            autoescape=False,
         )
         code_dir = Path(PACKAGES) / self.service_public_id.author / SERVICES / self.service_public_id.name
         code_dir.mkdir(parents=True, exist_ok=True)
