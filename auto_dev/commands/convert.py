@@ -1,17 +1,21 @@
 """Command."""
 
+import shutil
 from pathlib import Path
 
 import rich_click as click
 from aea.configurations.base import PublicId, PackageType
-from aea.configurations.constants import PACKAGES, SERVICES
+from aea.configurations.constants import PACKAGES, SERVICES, DEFAULT_SERVICE_CONFIG_FILE
 
 from auto_dev.base import build_cli
 from auto_dev.utils import get_logger, load_autonolas_yaml
+from auto_dev.constants import DEFAULT_ENCODING
 from auto_dev.exceptions import UserInputError
 from auto_dev.scaffolder import BasePackageScaffolder
 from auto_dev.commands.run import AgentRunner
 
+
+JINJA_SUFFIX = ".jinja"
 
 logger = get_logger()
 
@@ -26,7 +30,7 @@ def convert() -> None:
 class ConvertCliTool(BasePackageScaffolder):
     """Config for the agent servce convert cli."""
 
-    package_type = "service"
+    package_type = SERVICES
 
     def __init__(self, agent_public_id: PublicId, service_public_id: PublicId):
         """Init the config."""
@@ -37,6 +41,12 @@ class ConvertCliTool(BasePackageScaffolder):
             PublicId.from_str(service_public_id) if isinstance(service_public_id, str) else service_public_id
         )
         self.agent_runner = AgentRunner(self.agent_public_id, verbose=True, force=True, logger=logger)
+        self._post_init()
+
+    @property
+    def template_name(self):
+        """Get the template name."""
+        return DEFAULT_SERVICE_CONFIG_FILE + JINJA_SUFFIX
 
     def validate(self):
         """Validate function be called before the conversion."""
@@ -52,27 +62,43 @@ class ConvertCliTool(BasePackageScaffolder):
 
     def generate(self, force: bool = False, number_of_agents: int = 1):
         """Convert from agent to service."""
+        self.check_if_service_exists(
+            force,
+        )
         self.validate()
         agent_config, *overrides = load_autonolas_yaml(
             package_type=PackageType.AGENT, directory=self.agent_runner.agent_dir
         )
-        self.check_if_service_exists(force, number_of_agents)
-        self.create_service(agent_config, overrides)
+        self.create_service(agent_config, overrides, number_of_agents)
         return True
 
-    def create_service(self, agent_config, overrides):
+    def create_service(self, agent_config, overrides, number_of_agents):
         """Create the service from a jinja template."""
+        template = self.get_template(self.template_name)
+        rendered = template.render(
+            agent_public_id=self.agent_public_id,
+            service_public_id=self.service_public_id,
+            agent_config=agent_config,
+            overrides=overrides,
+            number_of_agents=number_of_agents,
+        )
+        code_dir = Path(PACKAGES) / self.service_public_id.author / SERVICES / self.service_public_id.name
+        code_dir.mkdir(parents=True, exist_ok=True)
+        code_path = code_dir / self.template_name.split(JINJA_SUFFIX)[0]
+        code_path.write_text(rendered, DEFAULT_ENCODING)
 
-    def check_if_service_exists(self, force: bool = False, number_of_agents: int = 1):
+    def check_if_service_exists(
+        self,
+        force: bool = False,
+    ):
         """Check if the service exists."""
-        number_of_agents = max(1, number_of_agents)
         code_path = Path(PACKAGES) / self.service_public_id.author / SERVICES / self.service_public_id.name
         if code_path.exists():
             if not force:
-                msg = f"Service {self.service_public_id} already exists."
-                raise UserInputError(msg)
+                msg = f"Service {self.service_public_id} already exists. Use --force to overwrite."
+                raise FileExistsError(msg)
             logger.warning(f"Service {self.service_public_id} already exists. Overwriting ...")
-            code_path.rmdir()
+            shutil.rmtree(code_path)
         return True
 
 
@@ -82,7 +108,10 @@ class ConvertCliTool(BasePackageScaffolder):
 @click.option(
     "--number_of_agents", type=int, default=1, required=False, help="Number of agents to be included in the service."
 )
-def agent_to_service(agent_public_id: PublicId, service_public_id: PublicId, number_of_agents: int = 1) -> None:
+@click.option("--force", is_flag=True, help="Force the operation.", default=False)
+def agent_to_service(
+    agent_public_id: PublicId, service_public_id: PublicId, number_of_agents: int = 1, force: bool = False
+) -> None:
     """Convert an agent to a service.
 
     Args:
@@ -97,5 +126,5 @@ def agent_to_service(agent_public_id: PublicId, service_public_id: PublicId, num
     """
     logger.info(f"Converting agent {agent_public_id} to service {service_public_id}.")
     converter = ConvertCliTool(agent_public_id, service_public_id)
-    converter.generate(number_of_agents=number_of_agents)
+    converter.generate(number_of_agents=number_of_agents, force=force)
     logger.info("Conversion complete. Service is ready! 🚀")

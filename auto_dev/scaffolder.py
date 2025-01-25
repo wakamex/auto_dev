@@ -12,9 +12,8 @@ class BasePackageScaffolder:
 
     def _post_init(self):
         """Post init function."""
-        self.env = Environment(
-            loader=FileSystemLoader(Path(JINJA_TEMPLATE_FOLDER) / self.package_type), autoescape=True
-        )
+        self.template_dir = Path(JINJA_TEMPLATE_FOLDER) / self.package_type
+        self.env = Environment(loader=FileSystemLoader(self.template_dir), autoescape=True)
 
     def generate(self) -> None:
         """Scaffold the package.
@@ -37,7 +36,6 @@ class BasePackageScaffolder:
         """Get the template name."""
         raise NotImplementedError
 
-    @property
-    def template(self):
+    def get_template(self, template_name: str):
         """Get the template."""
-        return self.env.get_template(str(Path(self.package_type) / self.template_name))
+        return self.env.get_template(str(template_name))
