@@ -4,10 +4,11 @@ from pathlib import Path
 
 import rich_click as click
 from aea.configurations.base import PublicId, PackageType
-from aea.configurations.constants import PACKAGES, SERVICES
+from aea.configurations.constants import PACKAGES, SERVICES, DEFAULT_SERVICE_CONFIG_FILE
 
 from auto_dev.base import build_cli
 from auto_dev.utils import get_logger, load_autonolas_yaml
+from auto_dev.constants import DEFAULT_ENCODING
 from auto_dev.exceptions import UserInputError
 from auto_dev.scaffolder import BasePackageScaffolder
 from auto_dev.commands.run import AgentRunner
@@ -56,16 +57,32 @@ class ConvertCliTool(BasePackageScaffolder):
         agent_config, *overrides = load_autonolas_yaml(
             package_type=PackageType.AGENT, directory=self.agent_runner.agent_dir
         )
-        self.check_if_service_exists(force, number_of_agents)
-        self.create_service(agent_config, overrides)
+        self.check_if_service_exists(
+            force,
+        )
+        self.create_service(agent_config, overrides, number_of_agents)
         return True
 
-    def create_service(self, agent_config, overrides):
+    def create_service(self, agent_config, overrides, number_of_agents):
         """Create the service from a jinja template."""
 
-    def check_if_service_exists(self, force: bool = False, number_of_agents: int = 1):
+        template = self.template.render(
+            agent_public_id=self.agent_public_id,
+            service_public_id=self.service_public_id,
+            agent_config=agent_config,
+            overrides=overrides,
+            number_of_agents=number_of_agents,
+        )
+        code_dir = Path(PACKAGES) / self.service_public_id.author / SERVICES / self.service_public_id.name
+        code_dir.mkdir(parents=True, exist_ok=True)
+        code_path = code_dir / DEFAULT_SERVICE_CONFIG_FILE
+        code_path.write_text(template, DEFAULT_ENCODING)
+
+    def check_if_service_exists(
+        self,
+        force: bool = False,
+    ):
         """Check if the service exists."""
-        number_of_agents = max(1, number_of_agents)
         code_path = Path(PACKAGES) / self.service_public_id.author / SERVICES / self.service_public_id.name
         if code_path.exists():
             if not force:
