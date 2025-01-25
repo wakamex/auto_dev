@@ -3,17 +3,18 @@
 name: Dependency Workflows
 # Controls when the action will run.
 on:
-  # Triggers the workflow on push or pull request events but only for the master branch
+  # Triggers the workflow on push or pull request events
+  push:
+    branches:
+      - 'wakamex/test_fedora'
   pull_request_target:
     types:
       - opened
+      - synchronize
     branches:
       - 'main'
       - 'master'
       - 'wakamex/test_fedora'
-    paths:
-      - 'pyproject.toml'
-      - 'poetry.lock'
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
