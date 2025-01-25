@@ -37,6 +37,10 @@ jobs:
       PYTHONPATH: .
     steps:
       - uses: actions/checkout@v4
+      - name: Install Fedora dependencies
+        if: ${{ matrix.environment.type == 'fedora' }}
+        run: |
+          dnf install -y make
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-versions }}
