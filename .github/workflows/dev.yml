@@ -14,7 +14,6 @@ on:
     branches:
       - 'main'
       - 'master'
-      - 'wakamex/test_fedora'
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -37,6 +36,21 @@ jobs:
       PYTHONPATH: .
     steps:
       - uses: actions/checkout@v4
+      - name: Debug environment
+        run: |
+          echo "Environment type: ${{ matrix.environment.type }}"
+          echo "Runner: ${{ matrix.environment.runner }}"
+          if [ "${{ matrix.environment.type }}" = "fedora" ]; then
+            echo "This is Fedora environment"
+          fi
+      - name: Install Fedora dependencies
+        if: matrix.environment.type == 'fedora'
+        shell: bash
+        run: |
+          dnf install -y make wget dnf-plugins-core
+          dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
+          dnf install -y docker-ce docker-ce-cli containerd.io
+          systemctl start docker
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-versions }}
