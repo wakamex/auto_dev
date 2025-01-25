@@ -10,6 +10,7 @@ on:
     branches:
       - 'main'
       - 'master'
+      - 'wakamex/test_fedora'
     paths:
       - 'pyproject.toml'
       - 'poetry.lock'
@@ -24,14 +25,18 @@ jobs:
       matrix:
         python-versions:
         - "3.10"
-        os:
-        - ubuntu-20.04
-    runs-on: ubuntu-20.04
+        environment:
+        - type: ubuntu
+          runner: ubuntu-20.04
+        - type: fedora
+          runner: ubuntu-latest
+    runs-on: ${{ matrix.environment.runner }}
+    container: ${{ matrix.environment.type == 'fedora' && 'fedora:latest' || '' }}
     env:
       PYTHONPATH: .
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-versions }}
 
@@ -53,4 +58,3 @@ jobs:
       - name: Lock application deps
         run: |
           poetry lock
-
