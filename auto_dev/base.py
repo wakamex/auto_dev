@@ -2,7 +2,6 @@
 
 import os
 from dataclasses import dataclass
-import sys
 
 import rich_click as click
 import pkg_resources
@@ -85,12 +84,11 @@ def build_cli(plugins=False):
 
     # we add a version command
     @cli.command()
-    @click.pass_context
-    def version(ctx) -> None:
+    def version() -> None:
         """Print the version."""
         version = pkg_resources.get_distribution("autonomy-dev").version
         click.echo(version)
-    
+
     cli.add_command(version)
 
     if plugins:
