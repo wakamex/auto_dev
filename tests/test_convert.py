@@ -14,6 +14,8 @@ from auto_dev.commands.convert import ConvertCliTool
     ("agent_public_id", "service_public_id"),
     [
         (str(DEFAULT_PUBLIC_ID), str(DEFAULT_PUBLIC_ID)),
+        (str(DEFAULT_PUBLIC_ID), "author/service"),
+        (str(DEFAULT_PUBLIC_ID), "jim/jones"),
     ],
 )
 def test_convert_agent_to_service(dummy_agent_tim, agent_public_id, service_public_id, test_packages_filesystem):
