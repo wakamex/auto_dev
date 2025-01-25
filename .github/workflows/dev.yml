@@ -47,7 +47,7 @@ jobs:
         if: matrix.environment.type == 'fedora'
         shell: bash
         run: |
-          dnf install -y make
+          dnf install -y make wget
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-versions }}
