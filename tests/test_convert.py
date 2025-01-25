@@ -1,22 +1,21 @@
-"""
-Tests for the convert command.
-"""
+"""Tests for the convert command."""
 
 import pytest
 
-from auto_dev.constants import DEFAULT_AUTHOR, DEFAULT_AGENT_NAME
+from auto_dev.constants import DEFAULT_PUBLIC_ID
 from auto_dev.commands.convert import ConvertCliTool
 
 
 @pytest.mark.parametrize(
-    "agent_public_id, service_public_id",
+    ("agent_public_id", "service_public_id"),
     [
-        (f"{DEFAULT_AUTHOR}/{DEFAULT_AGENT_NAME}", "author/service:0.1.0"),
+        (str(DEFAULT_PUBLIC_ID), str(DEFAULT_PUBLIC_ID)),
     ],
 )
-def test_convert_agent_to_service(dummy_agent_tim, agent_public_id, service_public_id):
+def test_convert_agent_to_service(dummy_agent_tim, agent_public_id, service_public_id, test_packages_filesystem):
     """Test the convert agent to service command."""
     assert dummy_agent_tim, "Dummy agent not created."
+    assert test_packages_filesystem, "Test packages filesystem not created."
     convert = ConvertCliTool(agent_public_id, service_public_id)
-    result = convert.from_agent_to_service()
+    result = convert.generate()
     assert result
