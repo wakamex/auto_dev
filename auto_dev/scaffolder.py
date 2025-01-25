@@ -1,6 +1,4 @@
-"""
-Module for the base class for the scaffolder.
-"""
+"""Module for the base class for the scaffolder."""
 
 from pathlib import Path
 
@@ -19,11 +17,14 @@ class BasePackageScaffolder:
         )
 
     def generate(self) -> None:
-        """
-        Scaffold the package.
+        """Scaffold the package.
 
         :return: None
         """
+        raise NotImplementedError
+
+    def validate(self):
+        """Validate the package."""
         raise NotImplementedError
 
     @property
