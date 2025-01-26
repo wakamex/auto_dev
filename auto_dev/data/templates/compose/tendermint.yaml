@@ -29,7 +29,7 @@ services:
         python3 - << 'PYEOF' > /tmp/port.txt
         import socket
         import errno
-        ports = range(8081, 8096)  # 8081 through 8095
+        ports = range(8080, 8096)  # 8080 through 8095
         for p in ports:
             try:
                 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
