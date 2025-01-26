@@ -3,18 +3,16 @@
 name: Dependency Workflows
 # Controls when the action will run.
 on:
-  # Triggers the workflow on push or pull request events
-  push:
-    branches:
-      - 'wakamex/test_fedora'
+  # Triggers the workflow on push or pull request events but only for the master branch
   pull_request_target:
     types:
       - opened
-      - synchronize
     branches:
       - 'main'
       - 'master'
-      - 'wakamex/test_fedora'
+    paths:
+      - 'pyproject.toml'
+      - 'poetry.lock'
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -26,18 +24,14 @@ jobs:
       matrix:
         python-versions:
         - "3.10"
-        environment:
-        - type: ubuntu
-          runner: ubuntu-20.04
-        - type: fedora
-          runner: ubuntu-latest
-    runs-on: ${{ matrix.environment.runner }}
-    container: ${{ matrix.environment.type == 'fedora' && 'fedora:latest' || '' }}
+        os:
+        - ubuntu-20.04
+    runs-on: ubuntu-20.04
     env:
       PYTHONPATH: .
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-versions }}
 
@@ -59,3 +53,4 @@ jobs:
       - name: Lock application deps
         run: |
           poetry lock
+
