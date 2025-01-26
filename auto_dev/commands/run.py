@@ -28,8 +28,30 @@ from auto_dev.cli_executor import CommandExecutor
 
 
 TENDERMINT_RESET_TIMEOUT = 10
-TENDERMINT_RESET_ENDPOINT = "http://localhost:8080/hard_reset"
 TENDERMINT_RESET_RETRIES = 20
+
+def _get_flask_port(container_name: str = "tm_0") -> int:
+    """Get the Flask port from the container."""
+    client = docker.from_env()
+    try:
+        container = client.containers.get(container_name)
+        # Wait up to 10 seconds for port file to exist and contain a port
+        for _ in range(10):
+            result = container.exec_run("cat /tmp/port.txt")
+            if result.exit_code == 0:
+                # Get last line that contains only digits
+                for line in reversed(result.output.decode().splitlines()):
+                    if line.strip().isdigit():
+                        port = int(line.strip())
+                        # Verify Flask is actually running on this port
+                        health_check = container.exec_run(f"curl -s http://127.0.0.1:{port}/")
+                        if health_check.exit_code == 0:
+                            return port
+            time.sleep(1)
+        return 8090  # fallback to default
+    except Exception as e:
+        print(f"Error getting Flask port: {e}")
+        return 8090  # fallback to default
 
 cli = build_cli()
 
@@ -143,9 +165,12 @@ class AgentRunner:
             self.logger.error(f"Failed to reset Tendermint after {TENDERMINT_RESET_RETRIES} attempts.")
             sys.exit(1)
 
+        port = _get_flask_port()
+        reset_endpoint = f"http://127.0.0.1:{port}/hard_reset"
+        
         self.logger.info("Tendermint is running, executing hard reset...")
         try:
-            response = requests.get(TENDERMINT_RESET_ENDPOINT, timeout=TENDERMINT_RESET_TIMEOUT)
+            response = requests.get(reset_endpoint, timeout=TENDERMINT_RESET_TIMEOUT)
             if response.status_code == 200:
                 self.logger.info("Tendermint hard reset successful.")
                 return
