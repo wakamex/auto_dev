@@ -18,8 +18,7 @@ services:
       - LOG_FILE=node_0.txt
       - LOG_LEVEL=INFO
       - WRITE_TO_LOG=true
-      - HOST_NAME=localhost
-      - FLASK_APP=/app/app.py:create_server
+      - HOST_NAME=${HOST_NAME}
     working_dir: /tendermint
     command:
       - /bin/sh
@@ -53,10 +52,10 @@ services:
         fi
 
         # Set proxy app for Tendermint
-        export PROXY_APP="tcp://127.0.0.1:$$port"
+        export PROXY_APP="tcp://${HOST_NAME}:$$port"
 
-        # Use the image's run command with our dynamic port
-        exec run --no-reload --host=127.0.0.1 --port=$$port
+        # Start Flask and Tendermint
+        exec flask run --no-reload --host=0.0.0.0 --port=$$port
     ports:
       - 8080:8080
       - 26656:26656
@@ -65,7 +64,6 @@ services:
       - "host.docker.internal:host-gateway"
     volumes:
       - tendermint:/tendermint/
-      - ../../..:/app  # Mount the app code
     depends_on:
       - "tendermint-init"
     healthcheck:
