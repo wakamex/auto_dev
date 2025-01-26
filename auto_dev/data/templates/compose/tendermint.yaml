@@ -73,25 +73,8 @@ services:
         echo "Starting Flask on port $$port"
         flask run --no-reload --host=127.0.0.1 --port=$$port &
         flask_pid=$$!
-
-        # Wait for Flask to start
-        echo "Waiting for Flask to start..."
-        for i in {1..30}; do
-            if curl -s http://127.0.0.1:$$port/ >/dev/null; then
-                echo "Flask is ready!"
-                break
-            fi
-            if ! kill -0 $$flask_pid 2>/dev/null; then
-                echo "Flask failed to start"
-                exit 1
-            fi
-            echo "Waiting for Flask... ($$i/30)"
-            sleep 1
-        done
-
-        echo "Starting Tendermint with proxy_app pointing to Flask on port $$port"
-        tendermint node --proxy_app="tcp://127.0.0.1:$$port" --rpc.laddr=tcp://127.0.0.1:26657 --p2p.laddr=tcp://127.0.0.1:26656 --p2p.seeds= --consensus.create_empty_blocks=true --abci=socket --home /tendermint/node0
     ports:
+      - 8080:8080
       - 26656:26656
       - 26657:26657
     extra_hosts:
@@ -100,7 +83,7 @@ services:
       - tendermint:/tendermint/
       - ../../..:/app
     healthcheck:
-      test: ["CMD", "bash", "-c", "port=$$(cat /tmp/port.txt | grep -oE '^[0-9]+$$' | tail -n 1) && curl -f http://127.0.0.1:$$port/"]
+      test: ["CMD", "bash", "-c", "port=$$(cat /tmp/port.txt) && curl -f http://127.0.0.1:$$port/"]
       interval: 10s
       timeout: 10s
       retries: 3
