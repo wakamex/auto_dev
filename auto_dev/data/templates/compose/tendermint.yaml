@@ -1,5 +1,6 @@
+version: "3.8"
 services:
-  tendermint:
+  tendermint: &tendermint
     user: "1000"
     mem_limit: 1024m
     mem_reservation: 256M
@@ -8,7 +9,7 @@ services:
     hostname: tm_0
     image: "valory/open-autonomy-tendermint:0.15.2"
     restart: always
-    network_mode: host
+    network_mode: ${NETWORK_MODE}
     environment:
       - ID=0
       - TMHOME=/tendermint/node0
@@ -18,25 +19,12 @@ services:
       - LOG_LEVEL=INFO
       - WRITE_TO_LOG=true
       - HOST_NAME=localhost
+      - FLASK_APP=/app/app.py:create_server
     working_dir: /tendermint
-    entrypoint: []
     command:
       - /bin/sh
       - -c
       - |
-        # Initialize Tendermint if needed
-        if [ ! -d "/tendermint/node0/config" ]; then
-            echo "Initializing Tendermint..."
-            rm -rf /tendermint/node0
-            mkdir -p /tendermint/node0
-            tendermint init validator
-            chown -R 1000:1000 /tendermint/
-        fi
-
-        # Wait a bit for previous processes to fully shut down
-        echo "Waiting for ports to be released..."
-        sleep 3
-
         # Try each port using Python socket binding
         python3 - << 'PYEOF' > /tmp/port.txt
         import socket
@@ -54,9 +42,6 @@ services:
             except socket.error as e:
                 if e.errno == errno.EADDRINUSE:
                     print(f"Port {p} is in use (Address already in use)")
-                    # Show what's using the port
-                    import subprocess
-                    subprocess.run(['lsof', '-i', f':{p}'])
                 else:
                     print(f"Port {p} error: {e} (errno={e.errno})")
         PYEOF
@@ -67,12 +52,11 @@ services:
             exit 1
         fi
 
-        proxy_app="tcp://127.0.0.1:$$port"
-        export PROXY_APP="$$proxy_app"
+        # Set proxy app for Tendermint
+        export PROXY_APP="tcp://127.0.0.1:$$port"
 
-        echo "Starting Flask on port $$port"
-        flask run --no-reload --host=127.0.0.1 --port=$$port &
-        flask_pid=$$!
+        # Use the image's run command with our dynamic port
+        exec run --no-reload --host=127.0.0.1 --port=$$port
     ports:
       - 8080:8080
       - 26656:26656
@@ -81,12 +65,26 @@ services:
       - "host.docker.internal:host-gateway"
     volumes:
       - tendermint:/tendermint/
-      - ../../..:/app
+      - ../../..:/app  # Mount the app code
+    depends_on:
+      - "tendermint-init"
     healthcheck:
       test: ["CMD", "bash", "-c", "port=$$(cat /tmp/port.txt) && curl -f http://127.0.0.1:$$port/"]
       interval: 10s
       timeout: 10s
       retries: 3
+
+  tendermint-init:
+    <<: *tendermint
+    container_name: tm_reset
+    hostname: tm_reset
+    entrypoint: ["/bin/sh", "-c"]
+    command: >
+      "rm -rf /tendermint/node0 && mkdir -p /tendermint/node0 && tendermint init validator && chown -R 1000:1000 /tendermint/ && echo 'reset done'"
+    restart: "no"
+    user: "0"
+    depends_on: []
+    ports: []
 
 volumes:
   tendermint:
