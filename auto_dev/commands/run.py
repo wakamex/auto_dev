@@ -40,21 +40,28 @@ def _get_flask_port(container_name: str = "tm_0") -> int:
     client = docker.from_env()
     try:
         container = client.containers.get(container_name)
-        # Wait up to 10 seconds for port file to exist and contain a port
-        for _ in range(10):
-            result = container.exec_run("cat /tmp/port.txt")
-            if result.exit_code == 0:
-                # Get last line that contains only digits
-                for line in reversed(result.output.decode().splitlines()):
-                    if line.strip().isdigit():
-                        port = int(line.strip())
-                        if _verify_flask_port(container, port):
-                            return port
-            time.sleep(1)
-        return 8080  # fallback to default
     except (docker.errors.NotFound, docker.errors.APIError, ValueError) as e:
         print(f"Error getting Flask port: {e}")
         return 8080  # fallback to default
+
+    # Wait up to 10 seconds for port file to exist and contain a port
+    for _ in range(10):
+        result = container.exec_run("cat /tmp/port.txt")
+        if result.exit_code != 0:
+            time.sleep(1)
+            continue
+
+        # Check each line for a valid port
+        lines = result.output.decode().splitlines()
+        for line in reversed(lines):
+            if not line.strip().isdigit():
+                continue
+            port = int(line.strip())
+            if _verify_flask_port(container, port):
+                return port
+        time.sleep(1)
+
+    return 8080  # fallback to default
 
 cli = build_cli()
 
