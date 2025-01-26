@@ -30,6 +30,11 @@ from auto_dev.cli_executor import CommandExecutor
 TENDERMINT_RESET_TIMEOUT = 10
 TENDERMINT_RESET_RETRIES = 20
 
+def _verify_flask_port(container: Any, port: int) -> bool:
+    """Verify Flask is running on the given port."""
+    health_check = container.exec_run(f"curl -s http://127.0.0.1:{port}/")
+    return health_check.exit_code == 0
+
 def _get_flask_port(container_name: str = "tm_0") -> int:
     """Get the Flask port from the container."""
     client = docker.from_env()
@@ -43,15 +48,13 @@ def _get_flask_port(container_name: str = "tm_0") -> int:
                 for line in reversed(result.output.decode().splitlines()):
                     if line.strip().isdigit():
                         port = int(line.strip())
-                        # Verify Flask is actually running on this port
-                        health_check = container.exec_run(f"curl -s http://127.0.0.1:{port}/")
-                        if health_check.exit_code == 0:
+                        if _verify_flask_port(container, port):
                             return port
             time.sleep(1)
-        return 8090  # fallback to default
-    except Exception as e:
+        return 8080  # fallback to default
+    except (docker.errors.NotFound, docker.errors.APIError, ValueError) as e:
         print(f"Error getting Flask port: {e}")
-        return 8090  # fallback to default
+        return 8080  # fallback to default
 
 cli = build_cli()
 
