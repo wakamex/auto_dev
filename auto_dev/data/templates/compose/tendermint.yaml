@@ -5,26 +5,22 @@ services:
     mem_limit: 1024m
     mem_reservation: 256M
     cpus: 0.5
-    image: "valory/open-autonomy-tendermint:0.15.2"
     container_name: tm_0
     hostname: tm_0
+    image: "valory/open-autonomy-tendermint:0.15.2"
     restart: always
     network_mode: ${NETWORK_MODE}
     environment:
       - ID=0
+      - PROXY_APP=tcp://${HOST_NAME}
       - TMHOME=/tendermint/node0
       - CREATE_EMPTY_BLOCKS=true
       - DEV_MODE=0
       - LOG_FILE=node_0.txt
       - LOG_LEVEL=INFO
       - WRITE_TO_LOG=true
-      - HOST_NAME=${HOST_NAME}
-      - PROXY_APP=tcp://${HOST_NAME}
-    working_dir: /app
-    command: ["flask", "run", "--no-reload", "--host=0.0.0.0", "--port=${TENDERMINT_PORT}"]
-    entrypoint: []
     ports:
-      - ${TENDERMINT_PORT}:${TENDERMINT_PORT}
+      - ${TENDERMINT_PORT}:8080
       - 26656:26656
       - 26657:26657
     extra_hosts:
@@ -32,7 +28,7 @@ services:
     depends_on:
       - "tendermint-init"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://127.0.0.1:${TENDERMINT_PORT}"]
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8080"]
       interval: 10s
       timeout: 10s
       retries: 3
