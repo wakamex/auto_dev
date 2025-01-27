@@ -31,6 +31,7 @@ from auto_dev.cli_executor import CommandExecutor
 
 TENDERMINT_RESET_TIMEOUT = 10
 TENDERMINT_RESET_RETRIES = 20
+TENDERMINT_CHECK_RETRIES = 3
 
 cli = build_cli()
 
@@ -111,7 +112,7 @@ class AgentRunner:
         self.execute_command(f"docker compose -f {DOCKERCOMPOSE_TEMPLATE_FOLDER}/tendermint.yaml down")
         self.logger.info("Tendermint stopped. 🛑")
 
-    def check_tendermint(self, retries: int = 0) -> None:
+    def check_tendermint(self, attempts: int = 0) -> None:
         """Check if Tendermint is running."""
         self.logger.info("Checking Tendermint status...")
         self.tendermint_port = self.tendermint_port or str(self.get_unused_tcp_port())
@@ -126,23 +127,23 @@ class AgentRunner:
             if res.status == "exited":
                 res.remove()
                 time.sleep(0.2)
-                self.check_tendermint(retries + 1)
+                self.check_tendermint(attempts + 1)
             if res.status == "running":
-                self.attempt_hard_reset(self.tendermint_port)
+                self.attempt_hard_reset()
         except (subprocess.CalledProcessError, RuntimeError, NotFound) as e:
             self.logger.info(f"Tendermint container not found or error: {e}")
-            if retries > 3:
+            if attempts > TENDERMINT_CHECK_RETRIES:
                 self.logger.exception(f"Tendermint is not running. Please install and run Tendermint using Docker. {e}")
                 sys.exit(1)
             self.logger.info("Starting Tendermint... 🚀")
             self.start_tendermint(tm_overrides)
             time.sleep(2)
-            return self.check_tendermint(retries + 1)
+            return self.check_tendermint(attempts + 1)
         if res.status != "running":
-            self.logger.error("Tendermint is not healthy. Please check the logs.")
+            self.logger.error(f"Tendermint is not healthy (port {self.tendermint_port}). Please check the logs.")
             sys.exit(1)
 
-        self.logger.info("Tendermint is running and healthy ✅")
+        self.logger.info(f"Tendermint is running and healthy ✅ (port {self.tendermint_port})")
         return None
 
     def attempt_hard_reset(self, attempts: int = 0) -> None:
@@ -151,7 +152,7 @@ class AgentRunner:
             self.logger.error(f"Failed to reset Tendermint after {TENDERMINT_RESET_RETRIES} attempts.")
             sys.exit(1)
 
-        self.logger.info("Tendermint is running, executing hard reset...")
+        self.logger.info(f"Tendermint is running, executing hard reset on port {self.tendermint_port}...")
         try:
             reset_endpoint = f"http://127.0.0.1:{self.tendermint_port}/hard_reset"
             response = requests.get(reset_endpoint, timeout=TENDERMINT_RESET_TIMEOUT)
