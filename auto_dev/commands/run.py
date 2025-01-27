@@ -165,43 +165,6 @@ class AgentRunner:
         time.sleep(1)
         self.attempt_hard_reset(attempts + 1)
 
-    def start_tendermint(self, env_vars=None) -> None:
-        """Start Tendermint."""
-        self.logger.info("Starting Tendermint with docker-compose...")
-
-        env_vars = env_vars or {}
-        env_vars["TENDERMINT_PORT"] = self.tendermint_port
-        
-        try:
-            result = self.execute_command(
-                f"docker compose -f {DOCKERCOMPOSE_TEMPLATE_FOLDER}/tendermint.yaml up -d --force-recreate",
-                env_vars=env_vars,
-            )
-            if not result:
-                msg = "Docker compose command failed to start Tendermint"
-                raise RuntimeError(msg)
-            self.logger.info(f"Tendermint started successfully on port {self.tendermint_port}")
-        except FileNotFoundError:
-            self.logger.exception("Docker compose file not found. Please ensure Tendermint configuration exists.")
-            sys.exit(1)
-        except docker.errors.DockerException as e:
-            self.logger.exception(
-                f"Docker error: {e!s}. Please ensure Docker is running and you have necessary permissions."
-            )
-            sys.exit(1)
-        except Exception as e:
-            self.logger.exception(f"Failed to start Tendermint: {e!s}")
-
-            msg = dedent("""
-                         Please check that:
-                         1. Docker is installed and running
-                         2. Docker compose is installed
-                         3. You have necessary permissions to run Docker commands
-                         4. The Tendermint configuration file exists and is valid
-                         """)
-            self.logger.exception(msg)
-            sys.exit(1)
-
     def fetch_agent(self) -> None:
         """Fetch the agent from registry if needed."""
         self.logger.info(f"Fetching agent {self.agent_name} from the local package registry...")
@@ -279,6 +242,43 @@ class AgentRunner:
             self.execute_command("aea -s issue-certificates")
         else:
             self.execute_command("cp -r ../certs ./")
+
+    def start_tendermint(self, env_vars=None) -> None:
+        """Start Tendermint."""
+        self.logger.info("Starting Tendermint with docker-compose...")
+
+        env_vars = env_vars or {}
+        env_vars["TENDERMINT_PORT"] = self.tendermint_port
+
+        try:
+            result = self.execute_command(
+                f"docker compose -f {DOCKERCOMPOSE_TEMPLATE_FOLDER}/tendermint.yaml up -d --force-recreate",
+                env_vars=env_vars,
+            )
+            if not result:
+                msg = "Docker compose command failed to start Tendermint"
+                raise RuntimeError(msg)
+            self.logger.info(f"Tendermint started successfully on port {self.tendermint_port}")
+        except FileNotFoundError:
+            self.logger.exception("Docker compose file not found. Please ensure Tendermint configuration exists.")
+            sys.exit(1)
+        except docker.errors.DockerException as e:
+            self.logger.exception(
+                f"Docker error: {e!s}. Please ensure Docker is running and you have necessary permissions."
+            )
+            sys.exit(1)
+        except Exception as e:
+            self.logger.exception(f"Failed to start Tendermint: {e!s}")
+
+            msg = dedent("""
+                         Please check that:
+                         1. Docker is installed and running
+                         2. Docker compose is installed
+                         3. You have necessary permissions to run Docker commands
+                         4. The Tendermint configuration file exists and is valid
+                         """)
+            self.logger.exception(msg)
+            sys.exit(1)
 
     def execute_agent(
         self,
