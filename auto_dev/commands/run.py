@@ -26,44 +26,18 @@ from auto_dev.constants import DOCKERCOMPOSE_TEMPLATE_FOLDER
 from auto_dev.exceptions import UserInputError
 from auto_dev.cli_executor import CommandExecutor
 
-
 TENDERMINT_RESET_TIMEOUT = 10
 TENDERMINT_RESET_RETRIES = 20
 
-def _verify_flask_port(container: Any, port: int) -> bool:
-    """Verify Flask is running on the given port."""
-    health_check = container.exec_run(f"curl -s http://127.0.0.1:{port}/")
-    return health_check.exit_code == 0
-
-def _get_flask_port(container_name: str = "tm_0") -> int:
-    """Get the Flask port from the container."""
+def get_container_port(container_name: str = "tm_0") -> int:
+    """Get the host port that Docker mapped to container's 8080."""
     client = docker.from_env()
     try:
         container = client.containers.get(container_name)
-    except (docker.errors.NotFound, docker.errors.APIError, ValueError) as e:
-        print(f"Error getting Flask port: {e}")
-        return 8080  # fallback to default
-
-    # Wait up to 10 seconds for port file to exist and contain a port
-    for _ in range(10):
-        result = container.exec_run("cat /tmp/port.txt")
-        if result.exit_code != 0:
-            time.sleep(1)
-            continue
-
-        # Check each line for a valid port
-        lines = result.output.decode().splitlines()
-        for line in reversed(lines):
-            if not line.strip().isdigit():
-                continue
-            port = int(line.strip())
-            if _verify_flask_port(container, port):
-                return port
-        time.sleep(1)
-
-    return 8080  # fallback to default
-
-cli = build_cli()
+        port_bindings = container.ports.get("8080/tcp")
+        return int(port_bindings[0]["HostPort"])
+    except Exception as exc:
+        raise Exception("Error getting container port") from exc
 
 
 @dataclass
@@ -152,7 +126,8 @@ class AgentRunner:
                 time.sleep(0.2)
                 self.check_tendermint(retries + 1)
             if res.status == "running":
-                self.attempt_hard_reset()
+                port = get_container_port()
+                self.attempt_hard_reset(port)
         except (subprocess.CalledProcessError, RuntimeError, NotFound) as e:
             self.logger.info(f"Tendermint container not found or error: {e}")
             if retries > 3:
@@ -169,27 +144,44 @@ class AgentRunner:
         self.logger.info("Tendermint is running and healthy ✅")
         return None
 
-    def attempt_hard_reset(self, attempts: int = 0) -> None:
-        """Attempt to hard reset Tendermint."""
-        if attempts >= TENDERMINT_RESET_RETRIES:
-            self.logger.error(f"Failed to reset Tendermint after {TENDERMINT_RESET_RETRIES} attempts.")
-            sys.exit(1)
+    def start_tendermint(self, env_vars=None) -> None:
+        """Start Tendermint."""
+        self.logger.info("Starting Tendermint with docker-compose...")
 
-        port = _get_flask_port()
-        reset_endpoint = f"http://127.0.0.1:{port}/hard_reset"
-        
-        self.logger.info("Tendermint is running, executing hard reset...")
+        # Get a free port for Flask
+        port = get_container_port()
+        env_vars = env_vars or {}
+        env_vars["FLASK_PORT"] = str(port)
+
         try:
-            response = requests.get(reset_endpoint, timeout=TENDERMINT_RESET_TIMEOUT)
-            if response.status_code == 200:
-                self.logger.info("Tendermint hard reset successful.")
-                return
-        except requests.RequestException as e:
-            self.logger.info(f"Failed to execute hard reset: {e}")
+            result = self.execute_command(
+                f"docker compose -f {DOCKERCOMPOSE_TEMPLATE_FOLDER}/tendermint.yaml up -d --force-recreate",
+                env_vars=env_vars,
+            )
+            if not result:
+                msg = "Docker compose command failed to start Tendermint"
+                raise RuntimeError(msg)
+            self.logger.info("Tendermint started successfully")
+        except FileNotFoundError:
+            self.logger.exception("Docker compose file not found. Please ensure Tendermint configuration exists.")
+            sys.exit(1)
+        except docker.errors.DockerException as e:
+            self.logger.exception(
+                f"Docker error: {e!s}. Please ensure Docker is running and you have necessary permissions."
+            )
+            sys.exit(1)
+        except Exception as e:
+            self.logger.exception(f"Failed to start Tendermint: {e!s}")
 
-        self.logger.info(f"Tendermint not ready (attempt {attempts + 1}/{TENDERMINT_RESET_RETRIES}), waiting...")
-        time.sleep(1)
-        self.attempt_hard_reset(attempts + 1)
+            msg = dedent("""
+                         Please check that:
+                         1. Docker is installed and running
+                         2. Docker compose is installed
+                         3. You have necessary permissions to run Docker commands
+                         4. The Tendermint configuration file exists and is valid
+                         """)
+            self.logger.exception(msg)
+            sys.exit(1)
 
     def fetch_agent(self) -> None:
         """Fetch the agent from registry if needed."""
@@ -269,39 +261,6 @@ class AgentRunner:
         else:
             self.execute_command("cp -r ../certs ./")
 
-    def start_tendermint(self, env_vars=None) -> None:
-        """Start Tendermint."""
-        self.logger.info("Starting Tendermint with docker-compose...")
-        try:
-            result = self.execute_command(
-                f"docker compose -f {DOCKERCOMPOSE_TEMPLATE_FOLDER}/tendermint.yaml up -d --force-recreate",
-                env_vars=env_vars,
-            )
-            if not result:
-                msg = "Docker compose command failed to start Tendermint"
-                raise RuntimeError(msg)
-            self.logger.info("Tendermint started successfully")
-        except FileNotFoundError:
-            self.logger.exception("Docker compose file not found. Please ensure Tendermint configuration exists.")
-            sys.exit(1)
-        except docker.errors.DockerException as e:
-            self.logger.exception(
-                f"Docker error: {e!s}. Please ensure Docker is running and you have necessary permissions."
-            )
-            sys.exit(1)
-        except Exception as e:
-            self.logger.exception(f"Failed to start Tendermint: {e!s}")
-
-            msg = dedent("""
-                         Please check that:
-                         1. Docker is installed and running
-                         2. Docker compose is installed
-                         3. You have necessary permissions to run Docker commands
-                         4. The Tendermint configuration file exists and is valid
-                         """)
-            self.logger.exception(msg)
-            sys.exit(1)
-
     def execute_agent(
         self,
     ) -> None:
@@ -339,6 +298,30 @@ class AgentRunner:
         agent_config = load_autonolas_yaml(PackageType.AGENT, self.agent_dir)[0]
         return agent_config["version"]
 
+    def attempt_hard_reset(self, port: int, attempts: int = 0) -> None:
+        """Attempt to hard reset Tendermint."""
+        if attempts >= TENDERMINT_RESET_RETRIES:
+            self.logger.error(f"Failed to reset Tendermint after {TENDERMINT_RESET_RETRIES} attempts.")
+            sys.exit(1)
+
+        reset_endpoint = f"http://127.0.0.1:{port}/hard_reset"
+        
+        self.logger.info("Tendermint is running, executing hard reset...")
+        try:
+            response = requests.get(reset_endpoint, timeout=TENDERMINT_RESET_TIMEOUT)
+            if response.status_code == 200:
+                self.logger.info("Tendermint hard reset successful.")
+                return
+        except requests.RequestException as e:
+            self.logger.info(f"Failed to execute hard reset: {e}")
+
+        self.logger.info(f"Tendermint not ready (attempt {attempts + 1}/{TENDERMINT_RESET_RETRIES}), waiting...")
+        time.sleep(1)
+        self.attempt_hard_reset(port, attempts + 1)
+
+
+# Initialize cli after AgentRunner class is defined
+cli = build_cli()
 
 @cli.command()
 @click.argument(

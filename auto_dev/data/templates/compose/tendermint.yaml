@@ -5,9 +5,10 @@ services:
     mem_limit: 1024m
     mem_reservation: 256M
     cpus: 0.5
+    image: ${TENDERMINT_IMAGE:-ghcr.io/valory-xyz/open-autonomy:latest}
+    platform: linux/amd64
     container_name: tm_0
     hostname: tm_0
-    image: "valory/open-autonomy-tendermint:0.15.2"
     restart: always
     network_mode: ${NETWORK_MODE}
     environment:
@@ -19,52 +20,22 @@ services:
       - LOG_LEVEL=INFO
       - WRITE_TO_LOG=true
       - HOST_NAME=${HOST_NAME}
+      - PROXY_APP=tcp://${HOST_NAME}
     working_dir: /app
-    entrypoint: []  # override image's "/usr/bin/flask" entrypoint
-    command:
-      - /bin/sh
-      - -c
-      - |
-        # Try each port using Python socket binding
-        python3 - << 'PYEOF' > /tmp/port.txt
-        import socket
-        import errno
-        ports = range(8080, 8096)  # 8080 through 8095
-        for p in ports:
-            try:
-                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                s.bind(('127.0.0.1', p))
-                s.close()
-                print(p)  # This will be captured in port.txt
-                break
-            except socket.error as e:
-                if e.errno != errno.EADDRINUSE:
-                    print(f"Port {p} error: {e}")
-        PYEOF
-
-        port=$$(cat /tmp/port.txt)
-        if [ -z "$$port" ]; then
-            echo "No ports available"
-            exit 1
-        fi
-
-        echo "Found port $$port, starting Flask..."
-        export FLASK_APP=app:create_server
-        export PROXY_APP="tcp://${HOST_NAME}"
-        echo "PROXY_APP=$$PROXY_APP"
-        flask run --no-reload --host=0.0.0.0 --port=$$port
+    command: ["flask", "run", "--no-reload", "--host=0.0.0.0", "--port=8080"]
     ports:
-      - 8080:8080
+      - "8080"  # Let Docker choose a free port
       - 26656:26656
       - 26657:26657
+    volumes:
+      - ${TENDERMINT_BUILD_FOLDER:-build}:/app
+      - ${TENDERMINT_BUILD_FOLDER:-build}/tendermint:/tendermint
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    volumes:
-      - tendermint:/tendermint/
     depends_on:
       - "tendermint-init"
     healthcheck:
-      test: ["CMD", "bash", "-c", "port=$$(cat /tmp/port.txt) && curl -f http://127.0.0.1:$$port/"]
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8080"]
       interval: 10s
       timeout: 10s
       retries: 3
@@ -79,7 +50,6 @@ services:
     restart: "no"
     user: "0"
     depends_on: []
-    ports: []
 
 volumes:
   tendermint:
