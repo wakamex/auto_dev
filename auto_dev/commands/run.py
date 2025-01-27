@@ -6,6 +6,7 @@ import time
 import shutil
 import platform
 import subprocess
+from contextlib import closing
 from copy import deepcopy
 from typing import Any
 from pathlib import Path
@@ -27,10 +28,10 @@ from auto_dev.constants import DOCKERCOMPOSE_TEMPLATE_FOLDER
 from auto_dev.exceptions import UserInputError
 from auto_dev.cli_executor import CommandExecutor
 
+
 TENDERMINT_RESET_TIMEOUT = 10
 TENDERMINT_RESET_RETRIES = 20
-PORT_START = 8080
-PORT_END = 8095
+
 
 @dataclass
 class AgentRunner:
@@ -41,19 +42,13 @@ class AgentRunner:
     force: bool
     logger: Any
     fetch: bool = False
-    flask_port: int = None
+    tendermint_port: int = None
 
-    def get_free_port(self, start: int = PORT_START, end: int = PORT_END) -> int:
-        """Find a free port in the given range."""
-        for port in range(start, end + 1):
-            try:
-                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                    s.bind(('127.0.0.1', port))
-                    return port
-            except socket.error as err:
-                if port == end:
-                    raise RuntimeError(f"No free ports in range {start}-{end}") from err
-        return end  # shouldn't reach here, but makes mypy happy
+    def get_unused_tcp_port(self) -> int:
+        """Get an unused TCP port."""
+        with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
+            s.bind(("127.0.0.1", 0))
+            return s.getsockname()[1]
 
     def run(self) -> None:
         """Run the agent."""
@@ -118,6 +113,7 @@ class AgentRunner:
     def check_tendermint(self, retries: int = 0) -> None:
         """Check if Tendermint is running."""
         self.logger.info("Checking Tendermint status...")
+        self.tendermint_port = self.tendermint_port or str(self.get_unused_tcp_port())
         docker_engine = docker.from_env()
         os_name = platform.system()
         container_name = "tm_0"
@@ -131,8 +127,7 @@ class AgentRunner:
                 time.sleep(0.2)
                 self.check_tendermint(retries + 1)
             if res.status == "running":
-                self.flask_port = self.get_free_port()
-                self.attempt_hard_reset(self.flask_port)
+                self.attempt_hard_reset(self.tendermint_port)
         except (subprocess.CalledProcessError, RuntimeError, NotFound) as e:
             self.logger.info(f"Tendermint container not found or error: {e}")
             if retries > 3:
@@ -154,7 +149,7 @@ class AgentRunner:
         self.logger.info("Starting Tendermint with docker-compose...")
 
         env_vars = env_vars or {}
-        env_vars["FLASK_PORT"] = self.flask_port
+        env_vars["TENDERMINT_PORT"] = self.tendermint_port
         
         try:
             result = self.execute_command(
@@ -164,7 +159,7 @@ class AgentRunner:
             if not result:
                 msg = "Docker compose command failed to start Tendermint"
                 raise RuntimeError(msg)
-            self.logger.info("Tendermint started successfully")
+            self.logger.info(f"Tendermint started successfully on port {self.tendermint_port}")
         except FileNotFoundError:
             self.logger.exception("Docker compose file not found. Please ensure Tendermint configuration exists.")
             sys.exit(1)

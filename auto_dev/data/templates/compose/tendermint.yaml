@@ -23,7 +23,7 @@ services:
     working_dir: /app
     command: ["flask", "run", "--no-reload", "--host=0.0.0.0", "--port=8080"]
     ports:
-      - ${FLASK_PORT}:8080  # Map host port to container's 8080
+      - ${TENDERMINT_PORT}:8080
       - 26656:26656
       - 26657:26657
     extra_hosts:
