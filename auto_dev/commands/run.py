@@ -32,20 +32,6 @@ TENDERMINT_RESET_RETRIES = 20
 PORT_START = 8080
 PORT_END = 8095
 
-def get_free_port(start: int = PORT_START, end: int = PORT_END) -> int:
-    """Find a free port in the given range."""
-    for port in range(start, end + 1):
-        try:
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.bind(('127.0.0.1', port))
-                return port
-        except socket.error:
-            continue
-    raise RuntimeError(f"No free ports in range {start}-{end}")
-
-FLASK_PORT = get_free_port(start=PORT_START, end=PORT_END)
-
-
 @dataclass
 class AgentRunner:
     """Class to manage running an agent."""
@@ -55,6 +41,19 @@ class AgentRunner:
     force: bool
     logger: Any
     fetch: bool = False
+    flask_port: int = None
+
+    def get_free_port(self, start: int = PORT_START, end: int = PORT_END) -> int:
+        """Find a free port in the given range."""
+        for port in range(start, end + 1):
+            try:
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                    s.bind(('127.0.0.1', port))
+                    return port
+            except socket.error:
+                if port == end:
+                    raise RuntimeError(f"No free ports in range {start}-{end}")
+        return end  # shouldn't reach here, but makes mypy happy
 
     def run(self) -> None:
         """Run the agent."""
@@ -132,7 +131,8 @@ class AgentRunner:
                 time.sleep(0.2)
                 self.check_tendermint(retries + 1)
             if res.status == "running":
-                self.attempt_hard_reset(FLASK_PORT)
+                self.flask_port = self.get_free_port()
+                self.attempt_hard_reset(self.flask_port)
         except (subprocess.CalledProcessError, RuntimeError, NotFound) as e:
             self.logger.info(f"Tendermint container not found or error: {e}")
             if retries > 3:
@@ -154,7 +154,7 @@ class AgentRunner:
         self.logger.info("Starting Tendermint with docker-compose...")
 
         env_vars = env_vars or {}
-        env_vars["FLASK_PORT"] = str(FLASK_PORT)
+        env_vars["FLASK_PORT"] = self.flask_port
         
         try:
             result = self.execute_command(
