@@ -43,16 +43,6 @@ def get_free_port(start: int = PORT_START, end: int = PORT_END) -> int:
             continue
     raise RuntimeError(f"No free ports in range {start}-{end}")
 
-def get_container_port(container_name: str = "tm_0") -> int:
-    """Get the host port that Docker mapped to container's 8080."""
-    client = docker.from_env()
-    try:
-        container = client.containers.get(container_name)
-        port_bindings = container.ports.get("8080/tcp")
-        return int(port_bindings[0]["HostPort"])
-    except Exception as exc:
-        raise Exception("Error getting container port") from exc
-
 FLASK_PORT = get_free_port(start=PORT_START, end=PORT_END)
 
 
@@ -142,13 +132,7 @@ class AgentRunner:
                 time.sleep(0.2)
                 self.check_tendermint(retries + 1)
             if res.status == "running":
-                try:
-                    port = get_container_port()
-                    self.attempt_hard_reset(port)
-                except Exception as e:
-                    self.logger.info(f"Container not ready yet, retrying: {e}")
-                    time.sleep(1)
-                    self.check_tendermint(retries + 1)
+                self.attempt_hard_reset(FLASK_PORT)
         except (subprocess.CalledProcessError, RuntimeError, NotFound) as e:
             self.logger.info(f"Tendermint container not found or error: {e}")
             if retries > 3:
@@ -336,7 +320,6 @@ class AgentRunner:
 
         self.logger.info(f"Tendermint not ready (attempt {attempts + 1}/{TENDERMINT_RESET_RETRIES}), waiting...")
         time.sleep(1)
-        self.attempt_hard_reset(port, attempts + 1)
 
 
 # Initialize cli after AgentRunner class is defined
