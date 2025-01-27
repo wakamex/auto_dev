@@ -50,9 +50,9 @@ class AgentRunner:
                 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                     s.bind(('127.0.0.1', port))
                     return port
-            except socket.error:
+            except socket.error as err:
                 if port == end:
-                    raise RuntimeError(f"No free ports in range {start}-{end}")
+                    raise RuntimeError(f"No free ports in range {start}-{end}") from err
         return end  # shouldn't reach here, but makes mypy happy
 
     def run(self) -> None:
