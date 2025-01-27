@@ -5,8 +5,7 @@ services:
     mem_limit: 1024m
     mem_reservation: 256M
     cpus: 0.5
-    image: ${TENDERMINT_IMAGE:-ghcr.io/valory-xyz/open-autonomy:latest}
-    platform: linux/amd64
+    image: "valory/open-autonomy-tendermint:0.15.2"
     container_name: tm_0
     hostname: tm_0
     restart: always
@@ -24,12 +23,9 @@ services:
     working_dir: /app
     command: ["flask", "run", "--no-reload", "--host=0.0.0.0", "--port=8080"]
     ports:
-      - "8080"  # Let Docker choose a free port
+      - ${FLASK_PORT}:8080  # Map host port to container's 8080
       - 26656:26656
       - 26657:26657
-    volumes:
-      - ${TENDERMINT_BUILD_FOLDER:-build}:/app
-      - ${TENDERMINT_BUILD_FOLDER:-build}/tendermint:/tendermint
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
@@ -50,6 +46,7 @@ services:
     restart: "no"
     user: "0"
     depends_on: []
+    ports: []
 
 volumes:
   tendermint:

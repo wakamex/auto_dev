@@ -14,6 +14,7 @@ from dataclasses import dataclass
 
 import docker
 import requests
+import socket
 import rich_click as click
 from docker.errors import NotFound
 from aea.skills.base import PublicId
@@ -28,6 +29,19 @@ from auto_dev.cli_executor import CommandExecutor
 
 TENDERMINT_RESET_TIMEOUT = 10
 TENDERMINT_RESET_RETRIES = 20
+PORT_START = 8080
+PORT_END = 8095
+
+def get_free_port(start: int = PORT_START, end: int = PORT_END) -> int:
+    """Find a free port in the given range."""
+    for port in range(start, end + 1):
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.bind(('127.0.0.1', port))
+                return port
+        except socket.error:
+            continue
+    raise RuntimeError(f"No free ports in range {start}-{end}")
 
 def get_container_port(container_name: str = "tm_0") -> int:
     """Get the host port that Docker mapped to container's 8080."""
@@ -38,6 +52,8 @@ def get_container_port(container_name: str = "tm_0") -> int:
         return int(port_bindings[0]["HostPort"])
     except Exception as exc:
         raise Exception("Error getting container port") from exc
+
+FLASK_PORT = get_free_port(start=PORT_START, end=PORT_END)
 
 
 @dataclass
@@ -126,8 +142,13 @@ class AgentRunner:
                 time.sleep(0.2)
                 self.check_tendermint(retries + 1)
             if res.status == "running":
-                port = get_container_port()
-                self.attempt_hard_reset(port)
+                try:
+                    port = get_container_port()
+                    self.attempt_hard_reset(port)
+                except Exception as e:
+                    self.logger.info(f"Container not ready yet, retrying: {e}")
+                    time.sleep(1)
+                    self.check_tendermint(retries + 1)
         except (subprocess.CalledProcessError, RuntimeError, NotFound) as e:
             self.logger.info(f"Tendermint container not found or error: {e}")
             if retries > 3:
@@ -148,11 +169,9 @@ class AgentRunner:
         """Start Tendermint."""
         self.logger.info("Starting Tendermint with docker-compose...")
 
-        # Get a free port for Flask
-        port = get_container_port()
         env_vars = env_vars or {}
-        env_vars["FLASK_PORT"] = str(port)
-
+        env_vars["FLASK_PORT"] = str(FLASK_PORT)
+        
         try:
             result = self.execute_command(
                 f"docker compose -f {DOCKERCOMPOSE_TEMPLATE_FOLDER}/tendermint.yaml up -d --force-recreate",
